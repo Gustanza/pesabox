@@ -241,7 +241,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 upcoming == null
                                     ? 'No upcoming meeting'
                                     : (upcoming['title']?.toString() ??
-                                        'Meeting #${upcoming['number']}'),
+                                        'Meeting #${upcoming['meetingNumber']}'),
                                 style: GoogleFonts.inter(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -304,8 +304,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         icon: Icons.play_arrow_rounded,
                         label: 'Start meeting',
                         onTap: () {
-                          final id =
-                              upcoming?['id']?.toString() ?? '12';
+                          final id = upcoming?['id']?.toString();
+                          if (id == null || id.isEmpty) {
+                            Navigator.of(context)
+                                .pushNamed(AppRouter.createMeeting);
+                            return;
+                          }
                           Navigator.of(context)
                               .pushNamed(AppRouter.startMeetingPath(id));
                         },

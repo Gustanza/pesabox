@@ -315,7 +315,7 @@ class _MeetingListCard extends StatelessWidget {
                   if (i > 0) const Divider(height: 1, indent: 56),
                   _MeetingRow(
                     title: meetings[i]['title']?.toString() ??
-                        'Meeting #${meetings[i]['number']}',
+                        'Meeting #${meetings[i]['meetingNumber']}',
                     subtitle: state.meetingSubtitle(meetings[i]),
                     upcoming: meetings[i]['status'] == 'upcoming',
                     onTap: () {

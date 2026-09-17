@@ -2,16 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../router/app_router.dart';
+import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
-class MeetingActivityScreen extends StatelessWidget {
+class MeetingActivityScreen extends StatefulWidget {
   const MeetingActivityScreen({super.key, this.meetingId = '12'});
 
   final String meetingId;
 
   @override
+  State<MeetingActivityScreen> createState() => _MeetingActivityScreenState();
+}
+
+class _MeetingActivityScreenState extends State<MeetingActivityScreen> {
+  Map<String, dynamic>? _meeting;
+
+  @override
+  void initState() {
+    super.initState();
+    AppState.I.meetingById(widget.meetingId).then((m) {
+      if (mounted) setState(() => _meeting = m);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final meetingId = widget.meetingId;
+    final meeting = _meeting;
+    final title = meeting?['title']?.toString().isNotEmpty == true
+        ? meeting!['title'].toString()
+        : 'Meeting #${meeting?['meetingNumber'] ?? meetingId}';
+
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: SafeArea(
@@ -36,7 +58,7 @@ class MeetingActivityScreen extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'Meeting #012',
+                          title,
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             color: AppColors.ink400,
@@ -105,8 +127,10 @@ class MeetingActivityScreen extends StatelessWidget {
                             title: 'Loans',
                             subtitle: 'View loans & record repayments',
                             onTap: () {
-                              Navigator.of(context)
-                                  .pushNamed(AppRouter.loansList);
+                              Navigator.of(context).pushNamed(
+                                AppRouter.loansList,
+                                arguments: meetingId,
+                              );
                             },
                           ),
                           const Divider(height: 1, indent: 56),
@@ -116,8 +140,10 @@ class MeetingActivityScreen extends StatelessWidget {
                             title: 'Fines',
                             subtitle: 'View fines & add new',
                             onTap: () {
-                              Navigator.of(context)
-                                  .pushNamed(AppRouter.finesList);
+                              Navigator.of(context).pushNamed(
+                                AppRouter.finesList,
+                                arguments: meetingId,
+                              );
                             },
                           ),
                           const Divider(height: 1, indent: 56),
@@ -127,8 +153,10 @@ class MeetingActivityScreen extends StatelessWidget {
                             title: 'Group expense',
                             subtitle: 'Record group expenses',
                             onTap: () {
-                              Navigator.of(context)
-                                  .pushNamed(AppRouter.groupExpense);
+                              Navigator.of(context).pushNamed(
+                                AppRouter.groupExpense,
+                                arguments: meetingId,
+                              );
                             },
                           ),
                         ],

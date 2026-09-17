@@ -44,24 +44,27 @@ class DashboardNavBar extends StatelessWidget {
                 isActive: currentIndex == 0,
                 onTap: () => _switchTab(context, 0),
               ),
-              _NavItem(
-                icon: Icons.group_rounded,
-                label: 'Group',
-                isActive: currentIndex == 1,
-                onTap: () => _switchTab(context, 1),
-              ),
+              // Group and Activity tabs are hidden for now — not ready to
+              // be seen yet. Screens/routes are untouched, just not linked
+              // from here.
+              // _NavItem(
+              //   icon: Icons.group_rounded,
+              //   label: 'Group',
+              //   isActive: currentIndex == 1,
+              //   onTap: () => _switchTab(context, 1),
+              // ),
               _NavItem(
                 icon: Icons.event_rounded,
                 label: 'Meetings',
                 isActive: currentIndex == 2,
                 onTap: () => _switchTab(context, 2),
               ),
-              _NavItem(
-                icon: Icons.notifications_rounded,
-                label: 'Activity',
-                isActive: currentIndex == 3,
-                onTap: () => _switchTab(context, 3),
-              ),
+              // _NavItem(
+              //   icon: Icons.notifications_rounded,
+              //   label: 'Activity',
+              //   isActive: currentIndex == 3,
+              //   onTap: () => _switchTab(context, 3),
+              // ),
               _NavItem(
                 icon: Icons.person_rounded,
                 label: 'Profile',

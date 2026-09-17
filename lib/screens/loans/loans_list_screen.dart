@@ -2,20 +2,86 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../router/app_router.dart';
+import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
-class LoansListScreen extends StatelessWidget {
+class LoansListScreen extends StatefulWidget {
   const LoansListScreen({super.key});
 
+  @override
+  State<LoansListScreen> createState() => _LoansListScreenState();
+}
+
+class _LoansListScreenState extends State<LoansListScreen> {
   static const List<Color> _avatarColors = [
     AppColors.green600,
     AppColors.blue,
     AppColors.gold500,
   ];
 
+  List<Map<String, dynamic>> _loans = [];
+  bool _loading = true;
+  String? _meetingId;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _meetingId ??= ModalRoute.of(context)?.settings.arguments as String?;
+  }
+
+  Future<void> _load() async {
+    final state = AppState.I;
+    final results = await Future.wait([
+      state.fetchLoans(refresh: true),
+      state.fetchMembers(),
+    ]);
+    if (!mounted) return;
+    setState(() {
+      _loans = results[0];
+      _loading = false;
+    });
+  }
+
+  String _memberName(String? memberId) {
+    final m = AppState.I.members.firstWhere(
+      (m) => m['id'] == memberId,
+      orElse: () => const {},
+    );
+    final name = [m['firstName'], m['lastName']]
+        .where((s) => (s ?? '').toString().isNotEmpty)
+        .join(' ');
+    return name.isEmpty ? 'Unknown member' : name;
+  }
+
+  String _initials(String name) {
+    final parts = name.split(' ').where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return '?';
+    final first = parts.first[0];
+    final last = parts.length > 1 ? parts.last[0] : '';
+    return ('$first$last').toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final state = AppState.I;
+    final active = _loans.where((l) => l['status'] == 'active').toList();
+    final outstanding = active.fold<double>(
+      0,
+      (sum, l) =>
+          sum + ((l['amount'] as num? ?? 0) - (l['amountRepaid'] as num? ?? 0)),
+    );
+    final totalLoaned =
+        _loans.fold<double>(0, (sum, l) => sum + (l['amount'] as num? ?? 0));
+    final totalRepaid = _loans.fold<double>(
+        0, (sum, l) => sum + (l['amountRepaid'] as num? ?? 0));
+
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: SafeArea(
@@ -40,8 +106,12 @@ class LoansListScreen extends StatelessWidget {
                     ),
                   ),
                   GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).pushNamed(AppRouter.recordLoan);
+                    onTap: () async {
+                      await Navigator.of(context).pushNamed(
+                        AppRouter.recordLoan,
+                        arguments: _meetingId,
+                      );
+                      _load();
                     },
                     child: Container(
                       width: 38,
@@ -51,175 +121,111 @@ class LoansListScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AppColors.line),
                       ),
-                      child: const Icon(
-                        Icons.add,
-                        size: 22,
-                        color: AppColors.teal900,
+                      child: const Icon(Icons.add, size: 22, color: AppColors.teal900),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (_loading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: _StatBox(
+                        label: 'Active loans',
+                        value: '${active.length}',
+                        color: AppColors.teal800,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              const _SegmentControl(),
-              const SizedBox(height: 16),
-              const Row(
-                children: [
-                  Expanded(
-                    child: _StatBox(
-                      label: 'Active loans',
-                      value: '3',
-                      color: AppColors.teal800,
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: _StatBox(
-                      label: 'Outstanding',
-                      value: 'TZS 1,240,000',
-                      color: AppColors.danger,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              const Row(
-                children: [
-                  Expanded(
-                    child: _StatBox(
-                      label: 'Total loaned',
-                      value: 'TZS 2,000,000',
-                      color: AppColors.blue,
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: _StatBox(
-                      label: 'Total repaid',
-                      value: 'TZS 1,660,000',
-                      color: AppColors.green600,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Recent loans',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.ink900,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: AppRadius.md,
-                  border: Border.all(color: AppColors.line),
-                ),
-                child: Column(
-                  children: [
-                    _LoanRow(
-                      name: 'John Mfinanga',
-                      initials: 'JM',
-                      amount: 'TZS 480K',
-                      months: '3 months',
-                      color: _avatarColors[0],
-                      onTap: () {
-                        Navigator.of(context)
-                            .pushNamed(AppRouter.loanDetailsPath('l3'));
-                      },
-                    ),
-                    const Divider(height: 1, indent: 56),
-                    _LoanRow(
-                      name: 'Asha Mwangi',
-                      initials: 'AM',
-                      amount: 'TZS 300K',
-                      months: '3 months',
-                      color: _avatarColors[1],
-                      onTap: () {
-                        Navigator.of(context)
-                            .pushNamed(AppRouter.loanDetailsPath('l2'));
-                      },
-                    ),
-                    const Divider(height: 1, indent: 56),
-                    _LoanRow(
-                      name: 'Grace Kileo',
-                      initials: 'GK',
-                      amount: 'TZS 400K',
-                      months: '3 months',
-                      color: _avatarColors[2],
-                      onTap: () {
-                        Navigator.of(context)
-                            .pushNamed(AppRouter.loanDetailsPath('l4'));
-                      },
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _StatBox(
+                        label: 'Outstanding',
+                        value: state.money(outstanding),
+                        color: AppColors.danger,
+                      ),
                     ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _StatBox(
+                        label: 'Total loaned',
+                        value: state.money(totalLoaned),
+                        color: AppColors.blue,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _StatBox(
+                        label: 'Total repaid',
+                        value: state.money(totalRepaid),
+                        color: AppColors.green600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Recent loans',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink900,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: AppRadius.md,
+                    border: Border.all(color: AppColors.line),
+                  ),
+                  child: _loans.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Text(
+                            'No loans recorded yet.',
+                            style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink400),
+                          ),
+                        )
+                      : Column(
+                          children: [
+                            for (var i = 0; i < _loans.length; i++) ...[
+                              if (i > 0) const Divider(height: 1, indent: 56),
+                              _LoanRow(
+                                name: _memberName(_loans[i]['memberId']?.toString()),
+                                initials: _initials(
+                                    _memberName(_loans[i]['memberId']?.toString())),
+                                amount: state.money((_loans[i]['amount'] as num?) ?? 0),
+                                months: '${state.maxLoanPeriodMonths} months',
+                                status: _loans[i]['status']?.toString() ?? 'active',
+                                color: _avatarColors[i % _avatarColors.length],
+                                onTap: () async {
+                                  await Navigator.of(context).pushNamed(
+                                    AppRouter.loanDetailsPath(
+                                        _loans[i]['id']?.toString() ?? ''),
+                                    arguments: _meetingId,
+                                  );
+                                  _load();
+                                },
+                              ),
+                            ],
+                          ],
+                        ),
+                ),
+              ],
               const SizedBox(height: 24),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SegmentControl extends StatelessWidget {
-  const _SegmentControl();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: AppColors.line.withValues(alpha: 0.5),
-        borderRadius: AppRadius.md,
-      ),
-      child: const Row(
-        children: [
-          Expanded(child: _Segment(label: 'Overview', active: true)),
-          Expanded(child: _Segment(label: 'Applications', active: false)),
-        ],
-      ),
-    );
-  }
-}
-
-class _Segment extends StatelessWidget {
-  final String label;
-  final bool active;
-
-  const _Segment({required this.label, required this.active});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(
-        color: active ? AppColors.white : Colors.transparent,
-        borderRadius: AppRadius.sm,
-        boxShadow: active
-            ? [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
-              ]
-            : null,
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        label,
-        style: GoogleFonts.inter(
-          fontSize: 13,
-          fontWeight: active ? FontWeight.w600 : FontWeight.w400,
-          color: active ? AppColors.ink900 : AppColors.ink400,
         ),
       ),
     );
@@ -231,11 +237,7 @@ class _StatBox extends StatelessWidget {
   final String value;
   final Color color;
 
-  const _StatBox({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
+  const _StatBox({required this.label, required this.value, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -249,23 +251,9 @@ class _StatBox extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: AppColors.ink400,
-            ),
-          ),
+          Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.ink400)),
           const SizedBox(height: 6),
-          Text(
-            value,
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
-          ),
+          Text(value, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: color)),
         ],
       ),
     );
@@ -277,6 +265,7 @@ class _LoanRow extends StatelessWidget {
   final String initials;
   final String amount;
   final String months;
+  final String status;
   final Color color;
   final VoidCallback onTap;
 
@@ -285,12 +274,14 @@ class _LoanRow extends StatelessWidget {
     required this.initials,
     required this.amount,
     required this.months,
+    required this.status,
     required this.color,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final active = status == 'active';
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -300,57 +291,30 @@ class _LoanRow extends StatelessWidget {
             Container(
               width: 40,
               height: 40,
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
               alignment: Alignment.center,
-              child: Text(
-                initials,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.white,
-                ),
-              ),
+              child: Text(initials, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.white)),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    name,
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.ink900,
-                    ),
-                  ),
+                  Text(name, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink900)),
                   const SizedBox(height: 2),
-                  Text(
-                    '$amount · $months',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: AppColors.ink400,
-                    ),
-                  ),
+                  Text('$amount · $months', style: GoogleFonts.inter(fontSize: 12, color: AppColors.ink400)),
                 ],
               ),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.green100,
+                color: active ? AppColors.green100 : AppColors.line,
                 borderRadius: AppRadius.sm,
               ),
               child: Text(
-                'Active',
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.teal800,
-                ),
+                active ? 'Active' : 'Repaid',
+                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: active ? AppColors.teal800 : AppColors.ink600),
               ),
             ),
             const SizedBox(width: 6),

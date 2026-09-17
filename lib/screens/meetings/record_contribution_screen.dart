@@ -1,18 +1,107 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../data/mock_data.dart';
-import '../../router/app_router.dart';
+import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
-class RecordContributionScreen extends StatelessWidget {
+class RecordContributionScreen extends StatefulWidget {
   const RecordContributionScreen({super.key, this.meetingId = '12'});
 
   final String meetingId;
 
   @override
+  State<RecordContributionScreen> createState() =>
+      _RecordContributionScreenState();
+}
+
+class _RecordContributionScreenState extends State<RecordContributionScreen> {
+  final _amountController = TextEditingController();
+  List<Map<String, dynamic>> _members = [];
+  Map<String, dynamic>? _meeting;
+  String? _memberId;
+  String _method = 'Cash';
+  bool _loading = true;
+  bool _submitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final state = AppState.I;
+    final members = await state.fetchMembers();
+    final meeting = await state.meetingById(widget.meetingId);
+    final mandatory = state.mandatorySavingsAmount;
+    if (mandatory > 0) {
+      _amountController.text = mandatory.toStringAsFixed(0);
+    }
+    if (!mounted) return;
+    setState(() {
+      _members = members;
+      _meeting = meeting;
+      _memberId = members.isNotEmpty ? members.first['id']?.toString() : null;
+      _loading = false;
+    });
+  }
+
+  String get _meetingTitle {
+    final m = _meeting;
+    if (m?['title']?.toString().isNotEmpty == true) return m!['title'].toString();
+    return 'Meeting #${m?['meetingNumber'] ?? widget.meetingId}';
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  String _memberName(Map<String, dynamic> m) => [m['firstName'], m['lastName']]
+      .where((s) => (s ?? '').toString().isNotEmpty)
+      .join(' ');
+
+  Future<void> _submit() async {
+    final memberId = _memberId;
+    final amount = double.tryParse(_amountController.text.trim());
+    if (memberId == null) {
+      _showError('Select a member');
+      return;
+    }
+    if (amount == null || amount <= 0) {
+      _showError('Enter a valid amount');
+      return;
+    }
+    setState(() => _submitting = true);
+    try {
+      await AppState.I.recordTransaction(
+        type: 'contribution',
+        memberId: memberId,
+        meetingId: widget.meetingId,
+        amount: amount,
+        method: _method,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } catch (e) {
+      _showError(e.toString());
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final mandatory = AppState.I.mandatorySavingsAmount;
+
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: SafeArea(
@@ -24,100 +113,103 @@ class RecordContributionScreen extends StatelessWidget {
               const SizedBox(height: 16),
               AuthHeader(
                 title: 'Record Contribution',
-                subtitle: 'Meeting #012',
+                subtitle: _meetingTitle,
                 onBack: () => Navigator.of(context).maybePop(),
               ),
-              const SizedBox(height: 20),
-              const _StepIndicator(activeStep: 1),
               const SizedBox(height: 24),
-              _SectionCard(
-                title: 'Select member',
-                children: [
-                  _SelectField(
-                    label: 'Member',
-                    initial: 'Neema Joseph',
-                    options: groupMembers.map((m) => m.fullName).toList(),
-                  ),
-                  const SizedBox(height: 16),
-                  _SelectField(
-                    label: 'Contribution type',
-                    initial: 'Mandatory Savings',
-                    options: const [
-                      'Mandatory Savings',
-                      'Voluntary Savings',
-                      'Special Contribution',
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  _Field(
-                    label: 'Amount',
-                    child: TextField(
-                      keyboardType: TextInputType.number,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: AppColors.ink900,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'Enter amount',
-                        hintStyle: GoogleFonts.inter(
-                          fontSize: 14,
+              if (_loading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else ...[
+                _SectionCard(
+                  title: 'Contribution details',
+                  children: [
+                    _Field(
+                      label: 'Member',
+                      child: _members.isEmpty
+                          ? Text(
+                              'No members in this group yet.',
+                              style: GoogleFonts.inter(
+                                  fontSize: 13, color: AppColors.ink400),
+                            )
+                          : DropdownButtonFormField<String>(
+                              initialValue: _memberId,
+                              items: _members
+                                  .map((m) => DropdownMenuItem(
+                                        value: m['id']?.toString(),
+                                        child: Text(_memberName(m)),
+                                      ))
+                                  .toList(),
+                              onChanged: (v) => setState(() => _memberId = v),
+                              decoration: _inputDecoration(),
+                            ),
+                    ),
+                    if (mandatory > 0) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        'Mandatory savings: ${AppState.I.money(mandatory)} per meeting',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
                           color: AppColors.ink400,
                         ),
-                        filled: true,
-                        fillColor: AppColors.white,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 13,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                              color: AppColors.line, width: 1.5),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                              color: AppColors.teal900, width: 1.5),
-                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    _Field(
+                      label: 'Amount',
+                      child: TextField(
+                        controller: _amountController,
+                        keyboardType: TextInputType.number,
+                        decoration:
+                            _inputDecoration(hint: 'Enter amount'),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  const _SelectField(
-                    label: 'Payment method',
-                    initial: 'Cash',
-                    options: ['Cash', 'Mobile Money', 'Bank Transfer'],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pushNamed(
-                      AppRouter.meetingActivityPath(meetingId),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.green600,
-                    foregroundColor: AppColors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.md,
+                    const SizedBox(height: 16),
+                    _Field(
+                      label: 'Payment method',
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _method,
+                        items: const ['Cash', 'Mobile Money', 'Bank Transfer']
+                            .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                            .toList(),
+                        onChanged: (v) => setState(() => _method = v ?? 'Cash'),
+                        decoration: _inputDecoration(),
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    'Next',
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.white,
+                  ],
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: (_submitting || _members.isEmpty) ? null : _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.green600,
+                      foregroundColor: AppColors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
                     ),
+                    child: _submitting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: AppColors.white),
+                          )
+                        : Text(
+                            'Save contribution',
+                            style: GoogleFonts.inter(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.white,
+                            ),
+                          ),
                   ),
                 ),
-              ),
+              ],
               const SizedBox(height: 32),
             ],
           ),
@@ -127,83 +219,25 @@ class RecordContributionScreen extends StatelessWidget {
   }
 }
 
-class _StepIndicator extends StatelessWidget {
-  final int activeStep;
-
-  const _StepIndicator({required this.activeStep});
-
-  @override
-  Widget build(BuildContext context) {
-    const steps = ['Member', 'Details', 'Review'];
-    return Row(
-      children: [
-        for (var i = 0; i < steps.length; i++) ...[
-          Expanded(
-            child: _Step(
-              number: i + 1,
-              label: steps[i],
-              active: (i + 1) == activeStep,
-            ),
-          ),
-          if (i < steps.length - 1)
-            Container(
-              height: 1,
-              width: 20,
-              color: AppColors.line,
-            ),
-        ],
-      ],
-    );
-  }
-}
-
-class _Step extends StatelessWidget {
-  final int number;
-  final String label;
-  final bool active;
-
-  const _Step({
-    required this.number,
-    required this.label,
-    required this.active,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: active ? AppColors.green600 : AppColors.white,
-            border: Border.all(
-              color: active ? AppColors.green600 : AppColors.line,
-            ),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            '$number',
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: active ? AppColors.white : AppColors.ink600,
-            ),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 11,
-            fontWeight: active ? FontWeight.w600 : FontWeight.w400,
-            color: active ? AppColors.teal900 : AppColors.ink400,
-          ),
-        ),
-      ],
-    );
-  }
+InputDecoration _inputDecoration({String? hint}) {
+  return InputDecoration(
+    hintText: hint,
+    filled: true,
+    fillColor: AppColors.white,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.line, width: 1.5),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.teal900, width: 1.5),
+    ),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.line, width: 1.5),
+    ),
+  );
 }
 
 class _SectionCard extends StatelessWidget {
@@ -262,73 +296,6 @@ class _Field extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         child,
-      ],
-    );
-  }
-}
-
-class _SelectField extends StatelessWidget {
-  final String label;
-  final String initial;
-  final List<String> options;
-
-  const _SelectField({
-    required this.label,
-    required this.initial,
-    required this.options,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w700,
-            color: AppColors.ink700,
-          ),
-        ),
-        const SizedBox(height: 6),
-        DropdownButtonFormField<String>(
-          initialValue: initial,
-          items: options
-              .map(
-                (option) => DropdownMenuItem(
-                  value: option,
-                  child: Text(
-                    option,
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: AppColors.ink900,
-                    ),
-                  ),
-                ),
-              )
-              .toList(),
-          onChanged: (_) {},
-          style: GoogleFonts.inter(fontSize: 14, color: AppColors.ink900),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: AppColors.white,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 12,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  const BorderSide(color: AppColors.line, width: 1.5),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  const BorderSide(color: AppColors.teal900, width: 1.5),
-            ),
-          ),
-        ),
       ],
     );
   }

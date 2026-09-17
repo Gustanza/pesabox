@@ -1,17 +1,112 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../data/mock_data.dart';
+import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
-class RecordSocialFundScreen extends StatelessWidget {
+class RecordSocialFundScreen extends StatefulWidget {
   const RecordSocialFundScreen({super.key, this.meetingId = '12'});
 
   final String meetingId;
 
   @override
+  State<RecordSocialFundScreen> createState() =>
+      _RecordSocialFundScreenState();
+}
+
+class _RecordSocialFundScreenState extends State<RecordSocialFundScreen> {
+  final _amountController = TextEditingController();
+  List<Map<String, dynamic>> _members = [];
+  Map<String, dynamic>? _meeting;
+  String? _memberId;
+  String _method = 'Cash';
+  bool _loading = true;
+  bool _submitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+    _amountController.addListener(() => setState(() {}));
+  }
+
+  Future<void> _load() async {
+    final state = AppState.I;
+    final members = await state.fetchMembers();
+    final meeting = await state.meetingById(widget.meetingId);
+    final contribution = state.socialFundContribution;
+    if (contribution > 0) {
+      _amountController.text = contribution.toStringAsFixed(0);
+    }
+    if (!mounted) return;
+    setState(() {
+      _members = members;
+      _meeting = meeting;
+      _memberId = members.isNotEmpty ? members.first['id']?.toString() : null;
+      _loading = false;
+    });
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  String _memberName(Map<String, dynamic> m) => [m['firstName'], m['lastName']]
+      .where((s) => (s ?? '').toString().isNotEmpty)
+      .join(' ');
+
+  String get _meetingTitle {
+    final m = _meeting;
+    if (m?['title']?.toString().isNotEmpty == true) return m!['title'].toString();
+    return 'Meeting #${m?['meetingNumber'] ?? widget.meetingId}';
+  }
+
+  double get _amount => double.tryParse(_amountController.text.trim()) ?? 0;
+
+  Future<void> _submit() async {
+    final memberId = _memberId;
+    final amount = _amount;
+    if (memberId == null) {
+      _showError('Select a member');
+      return;
+    }
+    if (amount <= 0) {
+      _showError('Enter a valid amount');
+      return;
+    }
+    setState(() => _submitting = true);
+    try {
+      await AppState.I.recordTransaction(
+        type: 'social_fund',
+        memberId: memberId,
+        meetingId: widget.meetingId,
+        amount: amount,
+        method: _method,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } catch (e) {
+      _showError(e.toString());
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final state = AppState.I;
+    final before = state.groupSocialFund;
+    final after = before + _amount;
+
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: SafeArea(
@@ -23,108 +118,115 @@ class RecordSocialFundScreen extends StatelessWidget {
               const SizedBox(height: 16),
               AuthHeader(
                 title: 'Record Social Fund',
-                subtitle: 'Meeting #012',
+                subtitle: _meetingTitle,
                 onBack: () => Navigator.of(context).maybePop(),
               ),
               const SizedBox(height: 24),
-              _SectionCard(
-                title: 'Contribution details',
-                children: [
-                  _SelectField(
-                    label: 'Member',
-                    initial: 'Neema Joseph',
-                    options: groupMembers.map((m) => m.fullName).toList(),
-                  ),
-                  const SizedBox(height: 16),
-                  _Field(
-                    label: 'Amount',
-                    child: TextFormField(
-                      initialValue: '2,000',
-                      keyboardType: TextInputType.number,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: AppColors.ink900,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'Enter amount',
-                        hintStyle: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: AppColors.ink400,
-                        ),
-                        filled: true,
-                        fillColor: AppColors.white,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 13,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                              color: AppColors.line, width: 1.5),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                              color: AppColors.teal900, width: 1.5),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const _SelectField(
-                    label: 'Payment method',
-                    initial: 'Cash',
-                    options: ['Cash', 'Mobile Money', 'Bank Transfer'],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: AppRadius.md,
-                  border: Border.all(color: AppColors.line),
-                ),
-                child: Column(
+              if (_loading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else ...[
+                _SectionCard(
+                  title: 'Contribution details',
                   children: [
-                    const _KVRow(
-                      label: 'Social Fund balance before',
-                      value: 'TZS 50,000',
+                    _Field(
+                      label: 'Member',
+                      child: _members.isEmpty
+                          ? Text(
+                              'No members in this group yet.',
+                              style: GoogleFonts.inter(
+                                  fontSize: 13, color: AppColors.ink400),
+                            )
+                          : DropdownButtonFormField<String>(
+                              initialValue: _memberId,
+                              items: _members
+                                  .map((m) => DropdownMenuItem(
+                                        value: m['id']?.toString(),
+                                        child: Text(_memberName(m)),
+                                      ))
+                                  .toList(),
+                              onChanged: (v) => setState(() => _memberId = v),
+                              decoration: _inputDecoration(),
+                            ),
                     ),
-                    _KVRow(
-                      label: 'Balance after',
-                      value: 'TZS 52,000',
-                      valueColor: AppColors.green600,
+                    const SizedBox(height: 16),
+                    _Field(
+                      label: 'Amount',
+                      child: TextField(
+                        controller: _amountController,
+                        keyboardType: TextInputType.number,
+                        decoration: _inputDecoration(hint: 'Enter amount'),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _Field(
+                      label: 'Payment method',
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _method,
+                        items: const ['Cash', 'Mobile Money', 'Bank Transfer']
+                            .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                            .toList(),
+                        onChanged: (v) => setState(() => _method = v ?? 'Cash'),
+                        decoration: _inputDecoration(),
+                      ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.of(context).maybePop(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.green600,
-                    foregroundColor: AppColors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.md,
-                    ),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: AppRadius.md,
+                    border: Border.all(color: AppColors.line),
                   ),
-                  child: Text(
-                    'Save contribution',
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.white,
-                    ),
+                  child: Column(
+                    children: [
+                      _KVRow(
+                        label: 'Social Fund balance before',
+                        value: state.money(before),
+                      ),
+                      _KVRow(
+                        label: 'Balance after',
+                        value: state.money(after),
+                        valueColor: AppColors.green600,
+                      ),
+                    ],
                   ),
                 ),
-              ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: (_submitting || _members.isEmpty) ? null : _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.green600,
+                      foregroundColor: AppColors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
+                    ),
+                    child: _submitting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: AppColors.white),
+                          )
+                        : Text(
+                            'Save contribution',
+                            style: GoogleFonts.inter(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.white,
+                            ),
+                          ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 32),
             ],
           ),
@@ -132,6 +234,27 @@ class RecordSocialFundScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+InputDecoration _inputDecoration({String? hint}) {
+  return InputDecoration(
+    hintText: hint,
+    filled: true,
+    fillColor: AppColors.white,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.line, width: 1.5),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.teal900, width: 1.5),
+    ),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.line, width: 1.5),
+    ),
+  );
 }
 
 class _SectionCard extends StatelessWidget {
@@ -174,11 +297,7 @@ class _KVRow extends StatelessWidget {
   final String value;
   final Color? valueColor;
 
-  const _KVRow({
-    required this.label,
-    required this.value,
-    this.valueColor,
-  });
+  const _KVRow({required this.label, required this.value, this.valueColor});
 
   @override
   Widget build(BuildContext context) {
@@ -187,13 +306,7 @@ class _KVRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              color: AppColors.ink600,
-            ),
-          ),
+          Text(label, style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600)),
           Text(
             value,
             style: GoogleFonts.inter(
@@ -229,73 +342,6 @@ class _Field extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         child,
-      ],
-    );
-  }
-}
-
-class _SelectField extends StatelessWidget {
-  final String label;
-  final String initial;
-  final List<String> options;
-
-  const _SelectField({
-    required this.label,
-    required this.initial,
-    required this.options,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w700,
-            color: AppColors.ink700,
-          ),
-        ),
-        const SizedBox(height: 6),
-        DropdownButtonFormField<String>(
-          initialValue: initial,
-          items: options
-              .map(
-                (option) => DropdownMenuItem(
-                  value: option,
-                  child: Text(
-                    option,
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: AppColors.ink900,
-                    ),
-                  ),
-                ),
-              )
-              .toList(),
-          onChanged: (_) {},
-          style: GoogleFonts.inter(fontSize: 14, color: AppColors.ink900),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: AppColors.white,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 12,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  const BorderSide(color: AppColors.line, width: 1.5),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  const BorderSide(color: AppColors.teal900, width: 1.5),
-            ),
-          ),
-        ),
       ],
     );
   }

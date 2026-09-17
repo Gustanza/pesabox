@@ -1,23 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart'
-    show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:http/http.dart' as http;
 
-/// Resolves the base URL of the PesaBox Go backend for the current platform.
+/// Resolves the base URL of the PesaBox Go backend.
 ///
-///   - `--dart-define=API_BASE_URL=...` always wins (e.g. a device pointing
-///     at the dev machine's LAN IP: `flutter run --dart-define=API_BASE_URL=http://192.168.1.10:8181`).
-///   - Android emulator defaults to `10.0.2.2` (the host machine).
-///   - Everywhere else (iOS simulator, desktop, web) defaults to `localhost`.
+/// Defaults to the live VPS deployment. `--dart-define=API_BASE_URL=...`
+/// overrides this (e.g. `flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8090`
+/// for a local dev server).
 String resolveApiBaseUrl() {
   const fromEnv = String.fromEnvironment('API_BASE_URL');
   if (fromEnv.isNotEmpty) return fromEnv;
-  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-    return 'http://10.0.2.2:8181';
-  }
-  return 'http://localhost:8181';
+  return 'http://161.97.99.40:8090';
 }
 
 /// Thin HTTP client for the PesaBox Go backend (`/api/v1`).

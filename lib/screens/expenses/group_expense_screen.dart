@@ -1,11 +1,70 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
-class GroupExpenseScreen extends StatelessWidget {
+class GroupExpenseScreen extends StatefulWidget {
   const GroupExpenseScreen({super.key});
+
+  @override
+  State<GroupExpenseScreen> createState() => _GroupExpenseScreenState();
+}
+
+class _GroupExpenseScreenState extends State<GroupExpenseScreen> {
+  final _descriptionController = TextEditingController();
+  final _amountController = TextEditingController();
+  String _method = 'Cash';
+  String? _meetingId;
+  bool _submitting = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _meetingId ??= ModalRoute.of(context)?.settings.arguments as String?;
+  }
+
+  @override
+  void dispose() {
+    _descriptionController.dispose();
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final description = _descriptionController.text.trim();
+    final amount = double.tryParse(_amountController.text.trim()) ?? 0;
+    if (description.isEmpty) {
+      _showError('Enter a description');
+      return;
+    }
+    if (amount <= 0) {
+      _showError('Enter a valid amount');
+      return;
+    }
+    setState(() => _submitting = true);
+    try {
+      await AppState.I.recordExpense(
+        amount: amount,
+        description: description,
+        method: _method,
+        meetingId: _meetingId,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } catch (e) {
+      _showError(e.toString());
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,37 +90,32 @@ class GroupExpenseScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const _Field(
+                    _Field(
                       label: 'Description',
                       child: TextField(
-                        decoration: InputDecoration(
-                          hintText: 'e.g. Printing cards',
-                        ),
+                        controller: _descriptionController,
+                        decoration: _inputDecoration(hint: 'e.g. Printing cards'),
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const _Field(
+                    _Field(
                       label: 'Amount (TZS)',
                       child: TextField(
+                        controller: _amountController,
                         keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          hintText: 'Enter amount',
-                        ),
+                        decoration: _inputDecoration(hint: 'Enter amount'),
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const _SelectField(
+                    _Field(
                       label: 'Payment method',
-                      initial: 'Cash',
-                      options: ['Cash', 'Mobile Money', 'Bank Transfer'],
-                    ),
-                    const SizedBox(height: 16),
-                    const _Field(
-                      label: 'Reason (optional)',
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Add a note...',
-                        ),
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _method,
+                        items: const ['Cash', 'Mobile Money', 'Bank Transfer']
+                            .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                            .toList(),
+                        onChanged: (v) => setState(() => _method = v ?? 'Cash'),
+                        decoration: _inputDecoration(),
                       ),
                     ),
                   ],
@@ -72,25 +126,23 @@ class GroupExpenseScreen extends StatelessWidget {
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).maybePop();
-                  },
+                  onPressed: _submitting ? null : _submit,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.green600,
                     foregroundColor: AppColors.white,
                     elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.md,
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
                   ),
-                  child: Text(
-                    'Save expense',
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.white,
-                    ),
-                  ),
+                  child: _submitting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white),
+                        )
+                      : Text(
+                          'Save expense',
+                          style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.white),
+                        ),
                 ),
               ),
               const SizedBox(height: 32),
@@ -100,6 +152,27 @@ class GroupExpenseScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+InputDecoration _inputDecoration({String? hint}) {
+  return InputDecoration(
+    hintText: hint,
+    filled: true,
+    fillColor: AppColors.white,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.line, width: 1.5),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.teal900, width: 1.5),
+    ),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.line, width: 1.5),
+    ),
+  );
 }
 
 class _Field extends StatelessWidget {
@@ -113,83 +186,9 @@ class _Field extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w700,
-            color: AppColors.ink700,
-          ),
-        ),
+        Text(label, style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.ink700)),
         const SizedBox(height: 6),
         child,
-      ],
-    );
-  }
-}
-
-class _SelectField extends StatelessWidget {
-  final String label;
-  final String initial;
-  final List<String> options;
-
-  const _SelectField({
-    required this.label,
-    required this.initial,
-    required this.options,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w700,
-            color: AppColors.ink700,
-          ),
-        ),
-        const SizedBox(height: 6),
-        DropdownButtonFormField<String>(
-          initialValue: initial,
-          items: options
-              .map(
-                (option) => DropdownMenuItem(
-                  value: option,
-                  child: Text(
-                    option,
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: AppColors.ink900,
-                    ),
-                  ),
-                ),
-              )
-              .toList(),
-          onChanged: (_) {},
-          style: GoogleFonts.inter(fontSize: 14, color: AppColors.ink900),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: AppColors.white,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  const BorderSide(color: AppColors.line, width: 1.5),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: AppColors.teal900,
-                width: 1.5,
-              ),
-            ),
-          ),
-        ),
       ],
     );
   }

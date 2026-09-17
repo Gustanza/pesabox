@@ -204,6 +204,11 @@ class AppState {
               memberCount femaleMembers maleMembers youthMembers
               meetingFrequency adminName adminPhone status
               cycleCurrent cycleTotal
+              shareValue minShares maxShares socialFundContribution
+              mandatorySavingsAmount loanInterestRate maxLoanPeriodMonths
+              lateMeetingFine absenceFine lateLoanRepaymentFine fineReasons
+              totalSavings totalShares totalSocialFund totalLoans
+              totalFines totalExpenses savingsModel enabledServices
             }
           }
         ''',
@@ -263,11 +268,56 @@ class AppState {
   String get groupType => (group?['type'] as String?) ?? 'Vikoba';
   String get groupLocation => (group?['location'] as String?) ?? '';
 
-  double get groupSavings => _num(group, 'savings');
-  double get groupShares => _num(group, 'shares');
-  double get groupSocialFund => _num(group, 'social');
-  double get groupLoansOut => _num(group, 'loans');
-  int get memberCount => int.tryParse(_str(group, 'members')) ?? 0;
+  double get groupSavings => _num(group, 'totalSavings');
+  double get groupShares => _num(group, 'totalShares');
+  double get groupSocialFund => _num(group, 'totalSocialFund');
+  double get groupLoansOut => _num(group, 'totalLoans');
+  double get groupFines => _num(group, 'totalFines');
+  double get groupExpenses => _num(group, 'totalExpenses');
+  int get memberCount =>
+      (group?['memberCount'] as num?)?.toInt() ?? members.length;
+
+  // Group financial rules (server/database.json "Groups") — the amounts and
+  // limits configured for this group, used to prefill/validate the record
+  // screens instead of hardcoding placeholder numbers.
+  double get shareValue => _num(group, 'shareValue');
+  int get minShares => (group?['minShares'] as num?)?.toInt() ?? 1;
+  int get maxShares => (group?['maxShares'] as num?)?.toInt() ?? 5;
+  double get socialFundContribution => _num(group, 'socialFundContribution');
+  double get mandatorySavingsAmount => _num(group, 'mandatorySavingsAmount');
+  double get loanInterestRate {
+    final v = _num(group, 'loanInterestRate');
+    return v > 0 ? v : 10;
+  }
+
+  int get maxLoanPeriodMonths {
+    final v = (group?['maxLoanPeriodMonths'] as num?)?.toInt() ?? 0;
+    return v > 0 ? v : 3;
+  }
+
+  static const _defaultFineReasons = [
+    {'reason': 'Late Attendance', 'amount': 1000.0},
+    {'reason': 'Absent', 'amount': 2000.0},
+    {'reason': 'Missed Contribution', 'amount': 1000.0},
+    {'reason': 'Late Loan Repayment', 'amount': 2000.0},
+    {'reason': 'Other', 'amount': 0.0},
+  ];
+
+  /// The group's configured fine reasons ({reason, amount}), falling back to
+  /// the platform defaults (mirrors server/main.go's defaultFineReasons) if
+  /// the group hasn't configured its own yet.
+  List<Map<String, dynamic>> get fineReasons {
+    final raw = group?['fineReasons'];
+    if (raw is List && raw.isNotEmpty) {
+      final parsed = raw
+          .whereType<Map>()
+          .map((r) => Map<String, dynamic>.from(r))
+          .where((r) => (r['reason'] as String?)?.isNotEmpty == true)
+          .toList();
+      if (parsed.isNotEmpty) return parsed;
+    }
+    return _defaultFineReasons;
+  }
 
   Future<Map<String, dynamic>?> fetchGroup({bool refresh = false}) async {
     if (group != null && !refresh) return group;
@@ -404,6 +454,93 @@ class AppState {
     return meetings;
   }
 
+  Map<String, dynamic>? _meetingById(String? id) {
+    if (id == null) return null;
+    for (final m in meetings) {
+      if (m['id'] == id) return m;
+    }
+    return null;
+  }
+
+  /// Looks up a meeting by id, refreshing the meetings list once if it
+  /// isn't cached yet.
+  Future<Map<String, dynamic>?> meetingById(String? id) async {
+    final cached = _meetingById(id);
+    if (cached != null) return cached;
+    await fetchMeetings(refresh: meetings.isEmpty);
+    return _meetingById(id);
+  }
+
+  /// Marks [meetingId] as in progress — the Start Meeting screen's action.
+  Future<void> startMeeting(String meetingId) async {
+    await _restPost('/api/main/meetings/$meetingId/start', {});
+    final i = meetings.indexWhere((m) => m['id'] == meetingId);
+    if (i != -1) meetings[i] = {...meetings[i], 'status': 'in_progress'};
+  }
+
+  /// Creates a new meeting for the current group — the Create Meeting
+  /// screen's action. `title` is required by the backend; the meeting
+  /// number itself is assigned server-side (count of existing meetings + 1).
+  Future<Map<String, dynamic>> createMeeting({
+    required String title,
+    String? date,
+    String? time,
+    String? location,
+  }) async {
+    final created = await _restPost('/api/main/meetings', {
+      'title': title,
+      if (date != null && date.isNotEmpty) 'date': date,
+      if (time != null && time.isNotEmpty) 'time': time,
+      if (location != null && location.isNotEmpty) 'location': location,
+    });
+    meetings = [created, ...meetings];
+    return created;
+  }
+
+  /// Attendance rows already recorded for [meetingId] — each has
+  /// `memberId`, `status`, and a `fullName` the backend joins in.
+  Future<List<Map<String, dynamic>>> fetchMeetingAttendance(
+          String meetingId) =>
+      _list('/meetings/$meetingId/attendance');
+
+  /// Records/updates attendance for [meetingId] — the Attendance screen's
+  /// "Continue to activities" action. [statusByMemberId] maps memberId to
+  /// one of present/late/absent/excused.
+  Future<void> submitAttendance(
+    String meetingId,
+    Map<String, String> statusByMemberId,
+  ) =>
+      _restPost('/api/main/meetings/$meetingId/attendance', {
+        'members': statusByMemberId.entries
+            .map((e) => {'memberId': e.key, 'status': e.value})
+            .toList(),
+      });
+
+  /// Closes [meetingId] (marks it completed) — the Review & Close screen's
+  /// final action. Meeting has no dedicated REST route for this, so it goes
+  /// through the framework's auto-generated GraphQL update mutation instead.
+  Future<void> closeMeeting(String meetingId) async {
+    // The auto-generated MeetingInput enforces the schema's `required: true`
+    // flags even on update, so groupId (Meeting's only required field) has
+    // to be resent alongside the actual change or the mutation 400s.
+    final groupId = group?['id'];
+    await gql.query(
+      r'''
+        mutation($input: MeetingInput!, $where: WhereMeetingInput){
+          updateMeeting(input: $input, where: $where) { success message }
+        }
+      ''',
+      {
+        'input': {'groupId': groupId, 'status': 'completed'},
+        'where': {
+          'id': {'equalTo': meetingId},
+        },
+      },
+    );
+    final i = meetings.indexWhere((m) => m['id'] == meetingId);
+    if (i != -1) meetings[i] = {...meetings[i], 'status': 'completed'};
+  }
+
   Future<List<Map<String, dynamic>>> fetchTransactions(
       {bool refresh = false}) async {
     if (transactions.isNotEmpty && !refresh) return transactions;
@@ -411,6 +548,70 @@ class AppState {
       transactions = await _list('/transactions');
     } catch (_) {}
     return transactions;
+  }
+
+  /// Records a member-scoped transaction (contribution / share /
+  /// social_fund) — the shared submit path for the meeting activity record
+  /// screens. For a share purchase, pass [shareCount] instead of [amount]
+  /// and the backend derives amount = shareCount * the group's shareValue.
+  Future<Map<String, dynamic>> recordTransaction({
+    required String type,
+    required String memberId,
+    String? meetingId,
+    double? amount,
+    int? shareCount,
+    String method = 'Cash',
+  }) async {
+    final created = await _restPost('/api/main/transactions', {
+      'type': type,
+      'memberId': memberId,
+      if (meetingId != null && meetingId.isNotEmpty) 'meetingId': meetingId,
+      if (amount != null) 'amount': amount,
+      if (shareCount != null) 'shareCount': shareCount,
+      'method': method,
+    });
+    transactions = [created, ...transactions];
+    return created;
+  }
+
+  /// Records a group expense (money out, not tied to a member) — the Group
+  /// Expense screen's action.
+  Future<Map<String, dynamic>> recordExpense({
+    required double amount,
+    required String description,
+    String method = 'Cash',
+    String? meetingId,
+  }) async {
+    final created = await _restPost('/api/main/expenses', {
+      'amount': amount,
+      'description': description,
+      'method': method,
+      if (meetingId != null && meetingId.isNotEmpty) 'meetingId': meetingId,
+    });
+    transactions = [created, ...transactions];
+    return created;
+  }
+
+  /// Each member's live financial position (savings, shares, social fund,
+  /// outstanding loans, fines) computed server-side from the group's actual
+  /// Transactions/Loans/Fines — see GET /api/main/members/balances.
+  List<Map<String, dynamic>> memberBalances = [];
+
+  Future<List<Map<String, dynamic>>> fetchMemberBalances(
+      {bool refresh = false}) async {
+    if (memberBalances.isNotEmpty && !refresh) return memberBalances;
+    try {
+      memberBalances = await _list('/members/balances');
+    } catch (_) {}
+    return memberBalances;
+  }
+
+  Map<String, dynamic>? balanceFor(String? memberId) {
+    if (memberId == null) return null;
+    for (final b in memberBalances) {
+      if (b['id'] == memberId) return b;
+    }
+    return null;
   }
 
   Future<List<Map<String, dynamic>>> fetchLoans({bool refresh = false}) async {
@@ -421,12 +622,116 @@ class AppState {
     return loans;
   }
 
+  Map<String, dynamic>? _loanById(String? id) {
+    if (id == null) return null;
+    for (final l in loans) {
+      if (l['id'] == id) return l;
+    }
+    return null;
+  }
+
+  /// Looks up a loan by id, refreshing the loans list once if it isn't
+  /// cached yet.
+  Future<Map<String, dynamic>?> loanById(String? id) async {
+    final cached = _loanById(id);
+    if (cached != null) return cached;
+    await fetchLoans(refresh: loans.isEmpty);
+    return _loanById(id);
+  }
+
+  /// Disburses a new loan — the Record Loan screen's action. Interest rate
+  /// and repayment period come from the group's configured rules
+  /// server-side; there's no per-loan override in this UI.
+  Future<Map<String, dynamic>> createLoan({
+    required String memberId,
+    required double amount,
+    String? meetingId,
+    String method = 'Cash',
+  }) async {
+    final created = await _restPost('/api/main/loans', {
+      'memberId': memberId,
+      'amount': amount,
+      if (meetingId != null && meetingId.isNotEmpty) 'meetingId': meetingId,
+      'method': method,
+    });
+    loans = [created, ...loans];
+    return created;
+  }
+
+  /// Records a repayment against [loanId] — the Record Repayment screen's
+  /// action.
+  Future<void> repayLoan(
+    String loanId, {
+    required double amount,
+    String? meetingId,
+    String method = 'Cash',
+  }) async {
+    await _restPost('/api/main/loans/$loanId/repayment', {
+      'amount': amount,
+      if (meetingId != null && meetingId.isNotEmpty) 'meetingId': meetingId,
+      'method': method,
+    });
+    final i = loans.indexWhere((l) => l['id'] == loanId);
+    if (i != -1) {
+      final repaid = _num(loans[i], 'amountRepaid') + amount;
+      final total = _num(loans[i], 'amount');
+      loans[i] = {
+        ...loans[i],
+        'amountRepaid': repaid,
+        'status': repaid >= total ? 'repaid' : 'active',
+      };
+    }
+  }
+
   Future<List<Map<String, dynamic>>> fetchFines({bool refresh = false}) async {
     if (fines.isNotEmpty && !refresh) return fines;
     try {
       fines = await _list('/fines');
     } catch (_) {}
     return fines;
+  }
+
+  /// Issues a fine — the Record Fine screen's action. [amount] should be
+  /// the configured amount for [reason] (see [fineReasons]) unless the admin
+  /// typed an override (always required for the 'Other' reason).
+  Future<Map<String, dynamic>> createFine({
+    required String memberId,
+    required String reason,
+    required double amount,
+    String? meetingId,
+  }) async {
+    final created = await _restPost('/api/main/fines', {
+      'memberId': memberId,
+      'reason': reason,
+      'amount': amount,
+      if (meetingId != null && meetingId.isNotEmpty) 'meetingId': meetingId,
+    });
+    fines = [created, ...fines];
+    return created;
+  }
+
+  /// Records a payment against a fine — the Fines list's "mark paid" action.
+  Future<void> payFine(
+    String fineId, {
+    required double amount,
+    String method = 'Cash',
+    String? meetingId,
+  }) async {
+    await _restPost('/api/main/fines/$fineId/pay', {
+      'amount': amount,
+      'method': method,
+      if (meetingId != null && meetingId.isNotEmpty) 'meetingId': meetingId,
+    });
+    final i = fines.indexWhere((f) => f['id'] == fineId);
+    if (i != -1) {
+      final paid = _num(fines[i], 'amountPaid') + amount;
+      final total = _num(fines[i], 'amount');
+      fines[i] = {
+        ...fines[i],
+        'amountPaid': paid,
+        'status': paid >= total ? 'paid' : 'pending',
+      };
+    }
   }
 
   Future<List<Map<String, dynamic>>> fetchAnnouncements(
@@ -447,9 +752,36 @@ class AppState {
     return smsActivity;
   }
 
+  /// GETs a REST endpoint (not GraphQL) with the session's Bearer token —
+  /// the read counterpart to [_restPost]. These `/api/main/*` routes (see
+  /// server/main.go) require an authenticated group admin, which the old
+  /// unauthenticated [api] client (pointed at a nonexistent `/api/v1` host)
+  /// could never satisfy, so every list below silently returned empty.
+  Future<dynamic> _restGet(String path, {bool retrying = false}) async {
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) headers['Authorization'] = 'Bearer $token';
+
+    final res = await http
+        .get(Uri.parse('${resolveApiBaseUrl()}$path'), headers: headers)
+        .timeout(const Duration(seconds: 15));
+
+    if (res.statusCode == 401 && !retrying && await refreshSession()) {
+      return _restGet(path, retrying: true);
+    }
+
+    final decoded = jsonDecode(res.body);
+    if (res.statusCode >= 400) {
+      final message = (decoded is Map ? decoded['error'] as String? : null) ??
+          'Request failed (${res.statusCode})';
+      throw GraphQLException(message);
+    }
+    return decoded;
+  }
+
   Future<List<Map<String, dynamic>>> _list(String path) async {
-    final raw = await api.getList(path);
-    return raw
+    final raw = await _restGet('/api/main$path');
+    final list = raw is List ? raw : const [];
+    return list
         .map((e) => Map<String, dynamic>.from(e as Map))
         .toList(growable: false);
   }
@@ -569,7 +901,4 @@ class AppState {
     if (v is String) return double.tryParse(v) ?? 0;
     return 0;
   }
-
-  static String _str(Map<String, dynamic>? m, String key) =>
-      (m?[key] as String?) ?? '';
 }
