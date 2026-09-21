@@ -7,6 +7,8 @@ import '../../router/app_router.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class MemberDetailsScreen extends StatelessWidget {
   const MemberDetailsScreen({super.key, this.memberId = 'm1'});
 
@@ -47,7 +49,7 @@ class MemberDetailsScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          member.fullName,
+                          tr(member.fullName),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 17,
                             fontWeight: FontWeight.w800,
@@ -55,7 +57,7 @@ class MemberDetailsScreen extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'Member #${member.id.replaceFirst('m', '').padLeft(3, '0')}',
+                          tr('Member #{0}', [member.id.replaceFirst('m', '').padLeft(3, '0')]),
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             color: AppColors.ink400,
@@ -91,7 +93,7 @@ class MemberDetailsScreen extends StatelessWidget {
               _ProfileCard(member: member),
               const SizedBox(height: 20),
               Text(
-                'Financial position',
+                tr('Financial position'),
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -103,7 +105,7 @@ class MemberDetailsScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _StatBox(
-                      label: 'Savings',
+                      label: tr('Savings'),
                       value: 'TZS ${_formatK(member.savingsBalance)}',
                       color: AppColors.green600,
                     ),
@@ -111,7 +113,7 @@ class MemberDetailsScreen extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: _StatBox(
-                      label: 'Shares ${member.shareCount}',
+                      label: tr('Shares {0}', [member.shareCount]),
                       value: 'TZS ${_formatK(totalShares)}',
                       color: AppColors.blue,
                     ),
@@ -123,7 +125,7 @@ class MemberDetailsScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _StatBox(
-                      label: 'Social Fund',
+                      label: tr('Social Fund'),
                       value: 'TZS ${_formatK(member.socialFundBalance)}',
                       color: AppColors.gold500,
                     ),
@@ -131,7 +133,7 @@ class MemberDetailsScreen extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: _StatBox(
-                      label: 'Outstanding loan',
+                      label: tr('Outstanding loan'),
                       value: 'TZS ${_formatK(member.outstandingLoan)}',
                       color: AppColors.danger,
                     ),
@@ -157,7 +159,7 @@ class MemberDetailsScreen extends StatelessWidget {
                   child: Row(
                     children: [
                       Text(
-                        'View full financial position',
+                        tr('View full financial position'),
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -176,7 +178,7 @@ class MemberDetailsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                'Recent transactions',
+                tr('Recent transactions'),
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -194,7 +196,7 @@ class MemberDetailsScreen extends StatelessWidget {
                     border: Border.all(color: AppColors.line),
                   ),
                   child: Text(
-                    'No transactions yet.',
+                    tr('No transactions yet.'),
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       color: AppColors.ink400,
@@ -208,7 +210,7 @@ class MemberDetailsScreen extends StatelessWidget {
                     ),
               const SizedBox(height: 16),
               OutlineButton(
-                text: 'View statement',
+                text: tr('View statement'),
                 onPressed: () {
                   Navigator.of(context).pushNamed(
                     AppRouter.memberStatementPath(member.id),
@@ -259,7 +261,7 @@ class _ProfileCard extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: Text(
-              member.initials,
+              tr(member.initials),
               style: GoogleFonts.inter(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
@@ -273,7 +275,7 @@ class _ProfileCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  member.fullName,
+                  tr(member.fullName),
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -282,7 +284,7 @@ class _ProfileCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  member.phone,
+                  tr(member.phone),
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     color: AppColors.ink400,
@@ -290,7 +292,7 @@ class _ProfileCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Joined ${_formatDate(member.joinedAt)}',
+                  tr('Joined {0}', [_formatDate(member.joinedAt)]),
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: AppColors.ink400,
@@ -306,7 +308,7 @@ class _ProfileCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
-              'Active',
+              tr('Active'),
               style: GoogleFonts.inter(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
@@ -320,9 +322,9 @@ class _ProfileCard extends StatelessWidget {
   }
 
   String _formatDate(DateTime date) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    final months = [
+      tr('Jan'), tr('Feb'), tr('Mar'), tr('Apr'), tr('May'), tr('Jun'),
+      tr('Jul'), tr('Aug'), tr('Sep'), tr('Oct'), tr('Nov'), tr('Dec')
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
@@ -352,7 +354,7 @@ class _StatBox extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            label,
+            tr(label),
             style: GoogleFonts.inter(
               fontSize: 11,
               fontWeight: FontWeight.w500,
@@ -361,7 +363,7 @@ class _StatBox extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            value,
+            tr(value),
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -405,7 +407,7 @@ class _TransactionRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _typeName,
+                  tr(_typeName),
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -414,7 +416,7 @@ class _TransactionRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  _formatDate(transaction.date),
+                  tr(_formatDate(transaction.date)),
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     color: AppColors.ink400,
@@ -424,7 +426,7 @@ class _TransactionRow extends StatelessWidget {
             ),
           ),
           Text(
-            'TZS ${transaction.amount.toInt().toString().replaceAll(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), ',')}',
+            tr('TZS {0}', [transaction.amount.toInt().toString().replaceAll(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), ',')]),
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -473,26 +475,26 @@ class _TransactionRow extends StatelessWidget {
   String get _typeName {
     switch (transaction.type) {
       case TransactionType.contribution:
-        return 'Contribution';
+        return tr('Contribution');
       case TransactionType.loanDisbursement:
-        return 'Loan Disbursement';
+        return tr('Loan Disbursement');
       case TransactionType.loanRepayment:
-        return 'Loan Repayment';
+        return tr('Loan Repayment');
       case TransactionType.fine:
-        return 'Fine';
+        return tr('Fine');
       case TransactionType.socialFund:
-        return 'Social Fund';
+        return tr('Social Fund');
       case TransactionType.expense:
-        return 'Expense';
+        return tr('Expense');
       default:
-        return 'Transaction';
+        return tr('Transaction');
     }
   }
 
   String _formatDate(DateTime date) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    final months = [
+      tr('Jan'), tr('Feb'), tr('Mar'), tr('Apr'), tr('May'), tr('Jun'),
+      tr('Jul'), tr('Aug'), tr('Sep'), tr('Oct'), tr('Nov'), tr('Dec')
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }

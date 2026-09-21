@@ -5,6 +5,8 @@ import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class GroupExpenseScreen extends StatefulWidget {
   const GroupExpenseScreen({super.key});
 
@@ -36,11 +38,11 @@ class _GroupExpenseScreenState extends State<GroupExpenseScreen> {
     final description = _descriptionController.text.trim();
     final amount = double.tryParse(_amountController.text.trim()) ?? 0;
     if (description.isEmpty) {
-      _showError('Enter a description');
+      _showError(tr('Enter a description'));
       return;
     }
     if (amount <= 0) {
-      _showError('Enter a valid amount');
+      _showError(tr('Enter a valid amount'));
       return;
     }
     setState(() => _submitting = true);
@@ -62,7 +64,7 @@ class _GroupExpenseScreenState extends State<GroupExpenseScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+      SnackBar(content: Text(tr(message)), behavior: SnackBarBehavior.floating),
     );
   }
 
@@ -77,7 +79,7 @@ class _GroupExpenseScreenState extends State<GroupExpenseScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-              const AuthHeader(title: 'Log Group Expense'),
+              AuthHeader(title: tr('Log Group Expense')),
               const SizedBox(height: 20),
               Container(
                 width: double.infinity,
@@ -91,28 +93,28 @@ class _GroupExpenseScreenState extends State<GroupExpenseScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _Field(
-                      label: 'Description',
+                      label: tr('Description'),
                       child: TextField(
                         controller: _descriptionController,
-                        decoration: _inputDecoration(hint: 'e.g. Printing cards'),
+                        decoration: _inputDecoration(hint: tr('e.g. Printing cards')),
                       ),
                     ),
                     const SizedBox(height: 16),
                     _Field(
-                      label: 'Amount (TZS)',
+                      label: tr('Amount (TZS)'),
                       child: TextField(
                         controller: _amountController,
                         keyboardType: TextInputType.number,
-                        decoration: _inputDecoration(hint: 'Enter amount'),
+                        decoration: _inputDecoration(hint: tr('Enter amount')),
                       ),
                     ),
                     const SizedBox(height: 16),
                     _Field(
-                      label: 'Payment method',
+                      label: tr('Payment method'),
                       child: DropdownButtonFormField<String>(
                         initialValue: _method,
                         items: const ['Cash', 'Mobile Money', 'Bank Transfer']
-                            .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                            .map((m) => DropdownMenuItem(value: m, child: Text(tr(m))))
                             .toList(),
                         onChanged: (v) => setState(() => _method = v ?? 'Cash'),
                         decoration: _inputDecoration(),
@@ -140,7 +142,7 @@ class _GroupExpenseScreenState extends State<GroupExpenseScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white),
                         )
                       : Text(
-                          'Save expense',
+                          tr('Save expense'),
                           style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.white),
                         ),
                 ),
@@ -186,7 +188,7 @@ class _Field extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.ink700)),
+        Text(tr(label), style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.ink700)),
         const SizedBox(height: 6),
         child,
       ],

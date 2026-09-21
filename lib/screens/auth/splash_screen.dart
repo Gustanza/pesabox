@@ -6,6 +6,8 @@ import '../../theme/app_theme.dart';
 import '../../router/app_router.dart';
 import 'auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 /// App entry point. Before showing the "Get started" welcome UI, this tries
 /// to restore a previously persisted session (see [AppState.restore]) so a
 /// restarted app doesn't force the user through phone+OTP again — if a
@@ -62,7 +64,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 const BrandMark(size: 88, radius: 24, fontSize: 40),
                 const SizedBox(height: 22),
                 Text(
-                  'PesaBox',
+                  tr('PesaBox'),
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 26,
                     fontWeight: FontWeight.w800,
@@ -71,7 +73,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Manage your group,\nsecure your future.',
+                  tr('Manage your group,\nsecure your future.'),
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
                     fontSize: 13.5,
@@ -94,7 +96,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   )
                 else ...[
                   PrimaryButton(
-                    text: 'Get started',
+                    text: tr('Get started'),
                     onPressed: () =>
                         Navigator.pushNamed(context, AppRouter.login),
                   ),

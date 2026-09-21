@@ -5,6 +5,8 @@ import '../../router/app_router.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class FinancialFeaturesScreen extends StatelessWidget {
   const FinancialFeaturesScreen({super.key});
 
@@ -22,7 +24,7 @@ class FinancialFeaturesScreen extends StatelessWidget {
                   const ScreenBackButton(),
                   const SizedBox(width: 12),
                   Text(
-                    'Financial Services',
+                    tr('Financial Services'),
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -39,57 +41,57 @@ class FinancialFeaturesScreen extends StatelessWidget {
                 children: [
                   _FeatureRow(
                     icon: Icons.savings_rounded,
-                    title: 'Savings',
-                    description: 'Track member savings contributions',
+                    title: tr('Savings'),
+                    description: tr('Track member savings contributions'),
                     isOn: true,
                   ),
                   const SizedBox(height: 12),
                   _FeatureRow(
                     icon: Icons.pie_chart_rounded,
-                    title: 'Shares',
-                    description: 'Manage group shares and dividends',
+                    title: tr('Shares'),
+                    description: tr('Manage group shares and dividends'),
                     isOn: true,
                   ),
                   const SizedBox(height: 12),
                   _FeatureRow(
                     icon: Icons.favorite_rounded,
-                    title: 'Social Fund',
-                    description: 'Emergency and welfare fund',
+                    title: tr('Social Fund'),
+                    description: tr('Emergency and welfare fund'),
                     isOn: true,
                   ),
                   const SizedBox(height: 12),
                   _FeatureRow(
                     icon: Icons.request_quote_rounded,
-                    title: 'Loans',
-                    description: 'Loan disbursement and tracking',
+                    title: tr('Loans'),
+                    description: tr('Loan disbursement and tracking'),
                     isOn: false,
                   ),
                   const SizedBox(height: 12),
                   _FeatureRow(
                     icon: Icons.gavel_rounded,
-                    title: 'Fines',
-                    description: 'Track and manage fines',
+                    title: tr('Fines'),
+                    description: tr('Track and manage fines'),
                     isOn: false,
                   ),
                   const SizedBox(height: 12),
                   _FeatureRow(
                     icon: Icons.card_membership_rounded,
-                    title: 'Membership Fee',
-                    description: 'One-time registration fees',
+                    title: tr('Membership Fee'),
+                    description: tr('One-time registration fees'),
                     isOn: false,
                   ),
                   const SizedBox(height: 12),
                   _FeatureRow(
                     icon: Icons.handshake_rounded,
-                    title: 'Other Contributions',
-                    description: 'Custom contribution types',
+                    title: tr('Other Contributions'),
+                    description: tr('Custom contribution types'),
                     isOn: false,
                   ),
                   const SizedBox(height: 12),
                   _FeatureRow(
                     icon: Icons.receipt_long_rounded,
-                    title: 'Group Expenses',
-                    description: 'Track group operational costs',
+                    title: tr('Group Expenses'),
+                    description: tr('Track group operational costs'),
                     isOn: true,
                   ),
                 ],
@@ -113,7 +115,7 @@ class FinancialFeaturesScreen extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      'Next',
+                      tr('Next'),
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -169,7 +171,7 @@ class _FeatureRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  tr(title),
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -178,7 +180,7 @@ class _FeatureRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  description,
+                  tr(description),
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: AppColors.ink400,

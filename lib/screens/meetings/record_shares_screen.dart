@@ -5,6 +5,8 @@ import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class RecordSharesScreen extends StatefulWidget {
   const RecordSharesScreen({super.key, this.meetingId = '12'});
 
@@ -60,7 +62,7 @@ class _RecordSharesScreenState extends State<RecordSharesScreen> {
   String get _meetingTitle {
     final m = _meeting;
     if (m?['title']?.toString().isNotEmpty == true) return m!['title'].toString();
-    return 'Meeting #${m?['meetingNumber'] ?? widget.meetingId}';
+    return tr('Meeting #{0}', [m?['meetingNumber'] ?? widget.meetingId]);
   }
 
   int get _shareCount => int.tryParse(_sharesController.text.trim()) ?? 0;
@@ -72,11 +74,11 @@ class _RecordSharesScreenState extends State<RecordSharesScreen> {
     final memberId = _memberId;
     final count = _shareCount;
     if (memberId == null) {
-      _showError('Select a member');
+      _showError(tr('Select a member'));
       return;
     }
     if (count <= 0) {
-      _showError('Enter the number of shares purchased');
+      _showError(tr('Enter the number of shares purchased'));
       return;
     }
     setState(() => _submitting = true);
@@ -99,7 +101,7 @@ class _RecordSharesScreenState extends State<RecordSharesScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+      SnackBar(content: Text(tr(message)), behavior: SnackBarBehavior.floating),
     );
   }
 
@@ -119,7 +121,7 @@ class _RecordSharesScreenState extends State<RecordSharesScreen> {
             children: [
               const SizedBox(height: 16),
               AuthHeader(
-                title: 'Record Shares',
+                title: tr('Record Shares'),
                 subtitle: _meetingTitle,
                 onBack: () => Navigator.of(context).maybePop(),
               ),
@@ -131,13 +133,13 @@ class _RecordSharesScreenState extends State<RecordSharesScreen> {
                 )
               else ...[
                 _SectionCard(
-                  title: 'Shares details',
+                  title: tr('Shares details'),
                   children: [
                     _Field(
-                      label: 'Member',
+                      label: tr('Member'),
                       child: _members.isEmpty
                           ? Text(
-                              'No members in this group yet.',
+                              tr('No members in this group yet.'),
                               style: GoogleFonts.inter(
                                   fontSize: 13, color: AppColors.ink400),
                             )
@@ -146,7 +148,7 @@ class _RecordSharesScreenState extends State<RecordSharesScreen> {
                               items: _members
                                   .map((m) => DropdownMenuItem(
                                         value: m['id']?.toString(),
-                                        child: Text(_memberName(m)),
+                                        child: Text(tr(_memberName(m))),
                                       ))
                                   .toList(),
                               onChanged: (v) => setState(() => _memberId = v),
@@ -155,11 +157,11 @@ class _RecordSharesScreenState extends State<RecordSharesScreen> {
                     ),
                     const SizedBox(height: 16),
                     _Field(
-                      label: 'Shares purchased (min ${state.minShares}, max ${state.maxShares} per meeting)',
+                      label: tr('Shares purchased (min {0}, max {1} per meeting)', [state.minShares, state.maxShares]),
                       child: TextField(
                         controller: _sharesController,
                         keyboardType: TextInputType.number,
-                        decoration: _inputDecoration(hint: 'Enter number of shares'),
+                        decoration: _inputDecoration(hint: tr('Enter number of shares')),
                       ),
                     ),
                   ],
@@ -175,10 +177,10 @@ class _RecordSharesScreenState extends State<RecordSharesScreen> {
                   ),
                   child: Column(
                     children: [
-                      _KVRow(label: 'Share value', value: state.money(shareValue)),
-                      _KVRow(label: 'Total value', value: state.money(totalValue)),
+                      _KVRow(label: tr('Share value'), value: state.money(shareValue)),
+                      _KVRow(label: tr('Total value'), value: state.money(totalValue)),
                       _KVRow(
-                        label: 'New cumulative',
+                        label: tr('New cumulative'),
                         value: '${_currentShares + _shareCount} shares',
                       ),
                     ],
@@ -186,11 +188,11 @@ class _RecordSharesScreenState extends State<RecordSharesScreen> {
                 ),
                 const SizedBox(height: 12),
                 _Field(
-                  label: 'Payment method',
+                  label: tr('Payment method'),
                   child: DropdownButtonFormField<String>(
                     initialValue: _method,
                     items: const ['Cash', 'Mobile Money', 'Bank Transfer']
-                        .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                        .map((m) => DropdownMenuItem(value: m, child: Text(tr(m))))
                         .toList(),
                     onChanged: (v) => setState(() => _method = v ?? 'Cash'),
                     decoration: _inputDecoration(),
@@ -216,7 +218,7 @@ class _RecordSharesScreenState extends State<RecordSharesScreen> {
                                 strokeWidth: 2, color: AppColors.white),
                           )
                         : Text(
-                            'Save shares',
+                            tr('Save shares'),
                             style: GoogleFonts.inter(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
@@ -276,7 +278,7 @@ class _SectionCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            title,
+            tr(title),
             style: GoogleFonts.plusJakartaSans(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -304,9 +306,9 @@ class _KVRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600)),
+          Text(tr(label), style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600)),
           Text(
-            value,
+            tr(value),
             style: GoogleFonts.inter(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -331,7 +333,7 @@ class _Field extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          tr(label),
           style: GoogleFonts.inter(
             fontSize: 12.5,
             fontWeight: FontWeight.w700,

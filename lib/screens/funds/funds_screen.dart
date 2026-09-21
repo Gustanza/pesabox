@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class FundsScreen extends StatelessWidget {
   const FundsScreen({super.key});
 
@@ -18,13 +20,13 @@ class FundsScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-              const AuthHeader(title: 'Funds'),
+              AuthHeader(title: tr('Funds')),
               const SizedBox(height: 20),
-              const Row(
+              Row(
                 children: [
                   Expanded(
                     child: _StatBox(
-                      label: 'Savings fund',
+                      label: tr('Savings fund'),
                       value: 'TZS 1.3M',
                       color: AppColors.teal800,
                     ),
@@ -32,7 +34,7 @@ class FundsScreen extends StatelessWidget {
                   SizedBox(width: 10),
                   Expanded(
                     child: _StatBox(
-                      label: 'Share fund',
+                      label: tr('Share fund'),
                       value: 'TZS 480K',
                       color: AppColors.blue,
                     ),
@@ -40,11 +42,11 @@ class FundsScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 10),
-              const Row(
+              Row(
                 children: [
                   Expanded(
                     child: _StatBox(
-                      label: 'Social Fund',
+                      label: tr('Social Fund'),
                       value: 'TZS 120K',
                       color: AppColors.gold500,
                     ),
@@ -52,7 +54,7 @@ class FundsScreen extends StatelessWidget {
                   SizedBox(width: 10),
                   Expanded(
                     child: _StatBox(
-                      label: 'Loan fund out',
+                      label: tr('Loan fund out'),
                       value: 'TZS 630K',
                       color: AppColors.danger,
                     ),
@@ -61,7 +63,7 @@ class FundsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                'Fund movement this month',
+                tr('Fund movement this month'),
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -77,14 +79,14 @@ class FundsScreen extends StatelessWidget {
                   borderRadius: AppRadius.md,
                   border: Border.all(color: AppColors.line),
                 ),
-                child: const Column(
+                child: Column(
                   children: [
-                    _KVRow(label: 'Total in', value: 'TZS 8,450,000'),
+                    _KVRow(label: tr('Total in'), value: 'TZS 8,450,000'),
                     Divider(height: 24),
-                    _KVRow(label: 'Total out', value: 'TZS 2,310,000'),
+                    _KVRow(label: tr('Total out'), value: 'TZS 2,310,000'),
                     Divider(height: 24),
                     _KVRow(
-                      label: 'Net movement',
+                      label: tr('Net movement'),
                       value: '+TZS 6,140,000',
                       positive: true,
                     ),
@@ -93,7 +95,7 @@ class FundsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                'By fund',
+                tr('By fund'),
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -173,7 +175,7 @@ class _StatBox extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            label,
+            tr(label),
             style: GoogleFonts.inter(
               fontSize: 11,
               fontWeight: FontWeight.w500,
@@ -182,7 +184,7 @@ class _StatBox extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            value,
+            tr(value),
             style: GoogleFonts.inter(
               fontSize: 15,
               fontWeight: FontWeight.w700,
@@ -208,11 +210,11 @@ class _KVRow extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          label,
+          tr(label),
           style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600),
         ),
         Text(
-          value,
+          tr(value),
           style: GoogleFonts.inter(
             fontSize: 13,
             fontWeight: FontWeight.w700,
@@ -258,7 +260,7 @@ class _FundRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  name,
+                  tr(name),
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -267,7 +269,7 @@ class _FundRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  detail,
+                  tr(detail),
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     color: AppColors.ink400,

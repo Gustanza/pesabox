@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../router/app_router.dart';
 import '../../theme/app_theme.dart';
 
+import '../../i18n/i18n.dart';
+
 class GroupReadyScreen extends StatelessWidget {
   const GroupReadyScreen({super.key});
 
@@ -32,7 +34,7 @@ class GroupReadyScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                'Group Created Successfully!',
+                tr('Group Created Successfully!'),
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
@@ -42,7 +44,7 @@ class GroupReadyScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Your group rules have been saved. You can now start adding members and managing your group.',
+                tr('Your group rules have been saved. You can now start adding members and managing your group.'),
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
                   fontSize: 13,
@@ -70,7 +72,7 @@ class GroupReadyScreen extends StatelessWidget {
                       ),
                       child: Center(
                         child: Text(
-                          'KJ',
+                          tr('KJ'),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
@@ -85,7 +87,7 @@ class GroupReadyScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Kijiji Savings Group',
+                            tr('Kijiji Savings Group'),
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -94,7 +96,7 @@ class GroupReadyScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Vikoba (Savings Group) · Arusha Rural',
+                            tr('Vikoba (Savings Group) · Arusha Rural'),
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               color: AppColors.ink400,
@@ -123,7 +125,7 @@ class GroupReadyScreen extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    'Add members',
+                    tr('Add members'),
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -148,7 +150,7 @@ class GroupReadyScreen extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    'View group',
+                    tr('View group'),
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,

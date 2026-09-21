@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import '../i18n/i18n.dart';
 
 /// Resolves the base URL of the PesaBox Go backend.
 ///
@@ -89,7 +90,7 @@ class ApiClient {
       decoded = {'error': 'invalid response', 'status': res.statusCode};
     }
     if (res.statusCode >= 400) {
-      final message = decoded['error'] ?? 'Request failed';
+      final message = decoded['error'] ?? tr('Request failed');
       throw ApiException(res.statusCode, message as String);
     }
     // The API wraps successful payloads in { data: ... }.

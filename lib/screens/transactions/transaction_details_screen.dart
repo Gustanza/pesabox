@@ -5,6 +5,8 @@ import '../../router/app_router.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class TransactionDetailsScreen extends StatelessWidget {
   const TransactionDetailsScreen({super.key, this.transactionId = 'tx1'});
 
@@ -21,7 +23,7 @@ class TransactionDetailsScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-              const AuthHeader(title: 'Transaction Details'),
+              AuthHeader(title: tr('Transaction Details')),
               const SizedBox(height: 20),
               Container(
                 width: double.infinity,
@@ -48,7 +50,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'TZS 10,000',
+                      tr('TZS 10,000'),
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 28,
                         fontWeight: FontWeight.w800,
@@ -57,7 +59,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Mandatory Savings',
+                      tr('Mandatory Savings'),
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         color: AppColors.ink400,
@@ -75,21 +77,21 @@ class TransactionDetailsScreen extends StatelessWidget {
                   borderRadius: AppRadius.md,
                   border: Border.all(color: AppColors.line),
                 ),
-                child: const Column(
+                child: Column(
                   children: [
-                    _KVRow(label: 'Transaction ID', value: 'TX-0042'),
+                    _KVRow(label: tr('Transaction ID'), value: 'TX-0042'),
                     Divider(height: 24),
-                    _KVRow(label: 'Member', value: 'Neema Joseph'),
+                    _KVRow(label: tr('Member'), value: 'Neema Joseph'),
                     Divider(height: 24),
-                    _KVRow(label: 'Meeting', value: 'Meeting #012'),
+                    _KVRow(label: tr('Meeting'), value: 'Meeting #012'),
                     Divider(height: 24),
-                    _KVRow(label: 'Fund', value: 'Savings'),
+                    _KVRow(label: tr('Fund'), value: 'Savings'),
                     Divider(height: 24),
-                    _KVRow(label: 'Payment method', value: 'Cash'),
+                    _KVRow(label: tr('Payment method'), value: 'Cash'),
                     Divider(height: 24),
-                    _KVRow(label: 'Recorded by', value: 'Admin User'),
+                    _KVRow(label: tr('Recorded by'), value: 'Admin User'),
                     Divider(height: 24),
-                    _KVRow(label: 'Date/Time', value: '14 Sep 2026 · 10:12 AM'),
+                    _KVRow(label: tr('Date/Time'), value: '14 Sep 2026 · 10:12 AM'),
                     Divider(height: 24),
                     _StatusRow(),
                   ],
@@ -97,7 +99,7 @@ class TransactionDetailsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               OutlineButton(
-                text: 'Correct / reverse transaction',
+                text: tr('Correct / reverse transaction'),
                 onPressed: () {
                   Navigator.of(context).pushNamed(
                     AppRouter.correctionReversalPath(transactionId),
@@ -125,11 +127,11 @@ class _KVRow extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          label,
+          tr(label),
           style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600),
         ),
         Text(
-          value,
+          tr(value),
           style: GoogleFonts.inter(
             fontSize: 13,
             fontWeight: FontWeight.w600,
@@ -150,7 +152,7 @@ class _StatusRow extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          'Status',
+          tr('Status'),
           style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600),
         ),
         Container(
@@ -160,7 +162,7 @@ class _StatusRow extends StatelessWidget {
             borderRadius: AppRadius.sm,
           ),
           child: Text(
-            'Completed',
+            tr('Completed'),
             style: GoogleFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w600,

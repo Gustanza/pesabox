@@ -5,6 +5,8 @@ import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class RecordContributionScreen extends StatefulWidget {
   const RecordContributionScreen({super.key, this.meetingId = '12'});
 
@@ -50,7 +52,7 @@ class _RecordContributionScreenState extends State<RecordContributionScreen> {
   String get _meetingTitle {
     final m = _meeting;
     if (m?['title']?.toString().isNotEmpty == true) return m!['title'].toString();
-    return 'Meeting #${m?['meetingNumber'] ?? widget.meetingId}';
+    return tr('Meeting #{0}', [m?['meetingNumber'] ?? widget.meetingId]);
   }
 
   @override
@@ -67,11 +69,11 @@ class _RecordContributionScreenState extends State<RecordContributionScreen> {
     final memberId = _memberId;
     final amount = double.tryParse(_amountController.text.trim());
     if (memberId == null) {
-      _showError('Select a member');
+      _showError(tr('Select a member'));
       return;
     }
     if (amount == null || amount <= 0) {
-      _showError('Enter a valid amount');
+      _showError(tr('Enter a valid amount'));
       return;
     }
     setState(() => _submitting = true);
@@ -94,7 +96,7 @@ class _RecordContributionScreenState extends State<RecordContributionScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+      SnackBar(content: Text(tr(message)), behavior: SnackBarBehavior.floating),
     );
   }
 
@@ -112,7 +114,7 @@ class _RecordContributionScreenState extends State<RecordContributionScreen> {
             children: [
               const SizedBox(height: 16),
               AuthHeader(
-                title: 'Record Contribution',
+                title: tr('Record Contribution'),
                 subtitle: _meetingTitle,
                 onBack: () => Navigator.of(context).maybePop(),
               ),
@@ -124,13 +126,13 @@ class _RecordContributionScreenState extends State<RecordContributionScreen> {
                 )
               else ...[
                 _SectionCard(
-                  title: 'Contribution details',
+                  title: tr('Contribution details'),
                   children: [
                     _Field(
-                      label: 'Member',
+                      label: tr('Member'),
                       child: _members.isEmpty
                           ? Text(
-                              'No members in this group yet.',
+                              tr('No members in this group yet.'),
                               style: GoogleFonts.inter(
                                   fontSize: 13, color: AppColors.ink400),
                             )
@@ -139,7 +141,7 @@ class _RecordContributionScreenState extends State<RecordContributionScreen> {
                               items: _members
                                   .map((m) => DropdownMenuItem(
                                         value: m['id']?.toString(),
-                                        child: Text(_memberName(m)),
+                                        child: Text(tr(_memberName(m))),
                                       ))
                                   .toList(),
                               onChanged: (v) => setState(() => _memberId = v),
@@ -149,7 +151,7 @@ class _RecordContributionScreenState extends State<RecordContributionScreen> {
                     if (mandatory > 0) ...[
                       const SizedBox(height: 10),
                       Text(
-                        'Mandatory savings: ${AppState.I.money(mandatory)} per meeting',
+                        tr('Mandatory savings: {0} per meeting', [AppState.I.money(mandatory)]),
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           color: AppColors.ink400,
@@ -158,21 +160,21 @@ class _RecordContributionScreenState extends State<RecordContributionScreen> {
                     ],
                     const SizedBox(height: 16),
                     _Field(
-                      label: 'Amount',
+                      label: tr('Amount'),
                       child: TextField(
                         controller: _amountController,
                         keyboardType: TextInputType.number,
                         decoration:
-                            _inputDecoration(hint: 'Enter amount'),
+                            _inputDecoration(hint: tr('Enter amount')),
                       ),
                     ),
                     const SizedBox(height: 16),
                     _Field(
-                      label: 'Payment method',
+                      label: tr('Payment method'),
                       child: DropdownButtonFormField<String>(
                         initialValue: _method,
                         items: const ['Cash', 'Mobile Money', 'Bank Transfer']
-                            .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                            .map((m) => DropdownMenuItem(value: m, child: Text(tr(m))))
                             .toList(),
                         onChanged: (v) => setState(() => _method = v ?? 'Cash'),
                         decoration: _inputDecoration(),
@@ -200,7 +202,7 @@ class _RecordContributionScreenState extends State<RecordContributionScreen> {
                                 strokeWidth: 2, color: AppColors.white),
                           )
                         : Text(
-                            'Save contribution',
+                            tr('Save contribution'),
                             style: GoogleFonts.inter(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
@@ -260,7 +262,7 @@ class _SectionCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            title,
+            tr(title),
             style: GoogleFonts.plusJakartaSans(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -287,7 +289,7 @@ class _Field extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          tr(label),
           style: GoogleFonts.inter(
             fontSize: 12.5,
             fontWeight: FontWeight.w700,

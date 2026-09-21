@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../router/app_router.dart';
 import '../../theme/app_theme.dart';
 
+import '../../i18n/i18n.dart';
+
 class GroupAssignedScreen extends StatelessWidget {
   const GroupAssignedScreen({super.key});
 
@@ -32,7 +34,7 @@ class GroupAssignedScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Text(
-                'Your group is ready!',
+                tr('Your group is ready!'),
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
@@ -42,7 +44,7 @@ class GroupAssignedScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Your group has been created and assigned to you. Review the details below and set up your financial features.',
+                tr('Your group has been created and assigned to you. Review the details below and set up your financial features.'),
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   color: AppColors.ink600,
@@ -70,7 +72,7 @@ class GroupAssignedScreen extends StatelessWidget {
                       ),
                       child: Center(
                         child: Text(
-                          'KJ',
+                          tr('KJ'),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
@@ -85,7 +87,7 @@ class GroupAssignedScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Kijiji Savings Group',
+                            tr('Kijiji Savings Group'),
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -94,7 +96,7 @@ class GroupAssignedScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Vikoba (Savings Group) · Arusha Rural',
+                            tr('Vikoba (Savings Group) · Arusha Rural'),
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               color: AppColors.ink400,
@@ -117,17 +119,17 @@ class GroupAssignedScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    _KVRow(label: 'Region', value: 'Arusha'),
+                    _KVRow(label: tr('Region'), value: 'Arusha'),
                     const SizedBox(height: 12),
-                    _KVRow(label: 'District', value: 'Arusha Rural'),
+                    _KVRow(label: tr('District'), value: 'Arusha Rural'),
                     const SizedBox(height: 12),
-                    _KVRow(label: 'Ward', value: 'Kijiji'),
+                    _KVRow(label: tr('Ward'), value: 'Kijiji'),
                     const SizedBox(height: 12),
-                    _KVRow(label: 'Village', value: 'Kijiji'),
+                    _KVRow(label: tr('Village'), value: 'Kijiji'),
                     const SizedBox(height: 12),
-                    _KVRow(label: 'Meeting frequency', value: 'Weekly'),
+                    _KVRow(label: tr('Meeting frequency'), value: 'Weekly'),
                     const SizedBox(height: 12),
-                    _KVRow(label: 'Assigned admin', value: 'You (Group Admin)'),
+                    _KVRow(label: tr('Assigned admin'), value: 'You (Group Admin)'),
                   ],
                 ),
               ),
@@ -139,7 +141,7 @@ class GroupAssignedScreen extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'You can edit these details later from the group settings.',
+                      tr('You can edit these details later from the group settings.'),
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         color: AppColors.ink400,
@@ -166,7 +168,7 @@ class GroupAssignedScreen extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    'Set up financial features',
+                    tr('Set up financial features'),
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -196,14 +198,14 @@ class _KVRow extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          label,
+          tr(label),
           style: GoogleFonts.inter(
             fontSize: 13,
             color: AppColors.ink400,
           ),
         ),
         Text(
-          value,
+          tr(value),
           style: GoogleFonts.inter(
             fontSize: 13,
             fontWeight: FontWeight.w600,

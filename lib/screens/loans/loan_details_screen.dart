@@ -6,6 +6,8 @@ import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class LoanDetailsScreen extends StatefulWidget {
   const LoanDetailsScreen({super.key, this.loanId = 'l3'});
 
@@ -47,11 +49,11 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
 
   String get _memberName {
     final m = _member;
-    if (m == null) return 'Unknown member';
+    if (m == null) return tr('Unknown member');
     final name = [m['firstName'], m['lastName']]
         .where((s) => (s ?? '').toString().isNotEmpty)
         .join(' ');
-    return name.isEmpty ? 'Unknown member' : name;
+    return name.isEmpty ? tr('Unknown member') : name;
   }
 
   String get _initials {
@@ -85,11 +87,11 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Loan Details',
+                          tr('Loan Details'),
                           style: GoogleFonts.plusJakartaSans(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.ink900),
                         ),
                         Text(
-                          _loading ? '' : _memberName,
+                          tr(_loading ? '' : _memberName),
                           style: GoogleFonts.inter(fontSize: 12, color: AppColors.ink400),
                         ),
                       ],
@@ -104,7 +106,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
                   child: Center(child: CircularProgressIndicator()),
                 )
               else if (loan == null)
-                Text('Loan not found.', style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600))
+                Text(tr('Loan not found.'), style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600))
               else ...[
                 _AvatarCard(
                   name: _memberName,
@@ -135,7 +137,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
                       shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
                     ),
                     child: Text(
-                      loan['status'] == 'active' ? 'Record repayment' : 'Loan repaid',
+                      loan['status'] == 'active' ? tr('Record repayment') : tr('Loan repaid'),
                       style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.white),
                     ),
                   ),
@@ -180,16 +182,16 @@ class _AvatarCard extends StatelessWidget {
             height: 56,
             decoration: const BoxDecoration(color: AppColors.green600, shape: BoxShape.circle),
             alignment: Alignment.center,
-            child: Text(initials, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.white)),
+            child: Text(tr(initials), style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.white)),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink900)),
+                Text(tr(name), style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink900)),
                 const SizedBox(height: 2),
-                Text('Loan #$loanNumber', style: GoogleFonts.inter(fontSize: 12, color: AppColors.ink400)),
+                Text(tr('Loan #{0}', [loanNumber]), style: GoogleFonts.inter(fontSize: 12, color: AppColors.ink400)),
               ],
             ),
           ),
@@ -200,7 +202,7 @@ class _AvatarCard extends StatelessWidget {
               borderRadius: AppRadius.sm,
             ),
             child: Text(
-              active ? 'Active' : 'Repaid',
+              active ? tr('Active') : tr('Repaid'),
               style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: active ? AppColors.teal800 : AppColors.ink600),
             ),
           ),
@@ -233,25 +235,25 @@ class _KeyValueCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _KVRow(label: 'Principal', value: state.money(amount)),
+          _KVRow(label: tr('Principal'), value: state.money(amount)),
           const Divider(height: 24),
-          _KVRow(label: 'Interest', value: '${(loan['interestRate'] as num?)?.toStringAsFixed(0) ?? '0'}%'),
+          _KVRow(label: tr('Interest'), value: '${(loan['interestRate'] as num?)?.toStringAsFixed(0) ?? '0'}%'),
           const Divider(height: 24),
-          _KVRow(label: 'Duration', value: '${state.maxLoanPeriodMonths} months'),
+          _KVRow(label: tr('Duration'), value: '${state.maxLoanPeriodMonths} months'),
           const Divider(height: 24),
           _KVRow(
-            label: 'Disbursed',
+            label: tr('Disbursed'),
             value: state.shortDate(loan['issuedDate']?.toString().split('T').first),
           ),
           const Divider(height: 24),
-          _KVRow(label: 'Amount repaid', value: state.money(repaid)),
+          _KVRow(label: tr('Amount repaid'), value: state.money(repaid)),
           const Divider(height: 24),
-          _KVRow(label: 'Outstanding', value: state.money(outstanding)),
+          _KVRow(label: tr('Outstanding'), value: state.money(outstanding)),
           const Divider(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Status', style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600)),
+              Text(tr('Status'), style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600)),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
@@ -259,7 +261,7 @@ class _KeyValueCard extends StatelessWidget {
                   borderRadius: AppRadius.sm,
                 ),
                 child: Text(
-                  active ? 'Active' : 'Repaid',
+                  active ? tr('Active') : tr('Repaid'),
                   style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: active ? AppColors.teal800 : AppColors.ink600),
                 ),
               ),
@@ -282,8 +284,8 @@ class _KVRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600)),
-        Text(value, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink900)),
+        Text(tr(label), style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600)),
+        Text(tr(value), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink900)),
       ],
     );
   }

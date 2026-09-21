@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../router/app_router.dart';
 import '../../theme/app_theme.dart';
 
+import '../../i18n/i18n.dart';
+
 class DashboardNavBar extends StatelessWidget {
   final int currentIndex;
 
@@ -40,34 +42,31 @@ class DashboardNavBar extends StatelessWidget {
             children: [
               _NavItem(
                 icon: Icons.home_rounded,
-                label: 'Home',
+                label: tr('Home'),
                 isActive: currentIndex == 0,
                 onTap: () => _switchTab(context, 0),
               ),
-              // Group and Activity tabs are hidden for now — not ready to
-              // be seen yet. Screens/routes are untouched, just not linked
-              // from here.
-              // _NavItem(
-              //   icon: Icons.group_rounded,
-              //   label: 'Group',
-              //   isActive: currentIndex == 1,
-              //   onTap: () => _switchTab(context, 1),
-              // ),
+              _NavItem(
+                icon: Icons.group_rounded,
+                label: tr('Group'),
+                isActive: currentIndex == 1,
+                onTap: () => _switchTab(context, 1),
+              ),
               _NavItem(
                 icon: Icons.event_rounded,
-                label: 'Meetings',
+                label: tr('Meetings'),
                 isActive: currentIndex == 2,
                 onTap: () => _switchTab(context, 2),
               ),
-              // _NavItem(
-              //   icon: Icons.notifications_rounded,
-              //   label: 'Activity',
-              //   isActive: currentIndex == 3,
-              //   onTap: () => _switchTab(context, 3),
-              // ),
+              _NavItem(
+                icon: Icons.notifications_rounded,
+                label: tr('Activity'),
+                isActive: currentIndex == 3,
+                onTap: () => _switchTab(context, 3),
+              ),
               _NavItem(
                 icon: Icons.person_rounded,
-                label: 'Profile',
+                label: tr('Profile'),
                 isActive: currentIndex == 4,
                 onTap: () => _switchTab(context, 4),
               ),
@@ -106,7 +105,7 @@ class _NavItem extends StatelessWidget {
             Icon(icon, size: 24, color: color),
             const SizedBox(height: 2),
             Text(
-              label,
+              tr(label),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,

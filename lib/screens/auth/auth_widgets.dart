@@ -4,6 +4,8 @@ import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 
 import '../../theme/app_theme.dart';
 
+import '../../i18n/i18n.dart';
+
 class BrandMark extends StatelessWidget {
   final double size;
   final double radius;
@@ -31,7 +33,7 @@ class BrandMark extends StatelessWidget {
       ),
       alignment: Alignment.center,
       child: Text(
-        'P',
+        tr('P'),
         style: GoogleFonts.plusJakartaSans(
           fontSize: fontSize,
           fontWeight: FontWeight.w800,
@@ -66,7 +68,7 @@ class PrimaryButton extends StatelessWidget {
           ),
         ),
         child: Text(
-          text,
+          tr(text),
           style: GoogleFonts.inter(
             fontSize: 15,
             fontWeight: FontWeight.w700,
@@ -101,7 +103,7 @@ class OutlineButton extends StatelessWidget {
           ),
         ),
         child: Text(
-          text,
+          tr(text),
           style: GoogleFonts.inter(
             fontSize: 15,
             fontWeight: FontWeight.w700,
@@ -171,7 +173,7 @@ class AuthHeader extends StatelessWidget {
               children: [
                 if (title != null)
                   Text(
-                    title!,
+                    tr(title!),
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 17,
                       fontWeight: FontWeight.w800,
@@ -181,7 +183,7 @@ class AuthHeader extends StatelessWidget {
                 if (subtitle != null) ...[
                   const SizedBox(height: 1),
                   Text(
-                    subtitle!,
+                    tr(subtitle!),
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       color: AppColors.ink400,
@@ -347,7 +349,7 @@ class PhoneInputField extends StatelessWidget {
           selectorTextStyle:
               GoogleFonts.inter(fontSize: 14, color: AppColors.ink900),
           inputDecoration: InputDecoration(
-            hintText: 'Phone number',
+            hintText: tr('Phone number'),
             hintStyle: GoogleFonts.inter(fontSize: 14, color: AppColors.ink400),
             filled: true,
             fillColor: AppColors.white,

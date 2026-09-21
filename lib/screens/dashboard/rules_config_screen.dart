@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class RulesConfigScreen extends StatelessWidget {
   const RulesConfigScreen({super.key});
 
@@ -21,7 +23,7 @@ class RulesConfigScreen extends StatelessWidget {
                   const ScreenBackButton(),
                   const SizedBox(width: 12),
                   Text(
-                    'Set Group Rules',
+                    tr('Set Group Rules'),
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -41,7 +43,7 @@ class RulesConfigScreen extends StatelessWidget {
                       const Icon(Icons.construction_rounded, size: 40, color: AppColors.ink400),
                       const SizedBox(height: 12),
                       Text(
-                        'Editing group rules is coming soon.',
+                        tr('Editing group rules is coming soon.'),
                         textAlign: TextAlign.center,
                         style: GoogleFonts.inter(fontSize: 14, color: AppColors.ink600),
                       ),

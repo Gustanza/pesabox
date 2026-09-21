@@ -6,6 +6,8 @@ import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key, this.meetingId = '12'});
 
@@ -64,7 +66,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), behavior: SnackBarBehavior.floating),
+        SnackBar(content: Text(tr(e.toString())), behavior: SnackBarBehavior.floating),
       );
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -94,7 +96,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Attendance',
+                          tr('Attendance'),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 17,
                             fontWeight: FontWeight.w800,
@@ -102,7 +104,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           ),
                         ),
                         Text(
-                          title,
+                          tr(title),
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             color: AppColors.ink400,
@@ -119,13 +121,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  _MiniStat(label: 'Present', value: '${_count('present')}', color: AppColors.green600),
+                  _MiniStat(label: tr('Present'), value: '${_count('present')}', color: AppColors.green600),
                   const SizedBox(width: 8),
-                  _MiniStat(label: 'Late', value: '${_count('late')}', color: AppColors.gold500),
+                  _MiniStat(label: tr('Late'), value: '${_count('late')}', color: AppColors.gold500),
                   const SizedBox(width: 8),
-                  _MiniStat(label: 'Absent', value: '${_count('absent')}', color: AppColors.danger),
+                  _MiniStat(label: tr('Absent'), value: '${_count('absent')}', color: AppColors.danger),
                   const SizedBox(width: 8),
-                  _MiniStat(label: 'Excused', value: '${_count('excused')}', color: AppColors.blue),
+                  _MiniStat(label: tr('Excused'), value: '${_count('excused')}', color: AppColors.blue),
                 ],
               ),
             ),
@@ -148,7 +150,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                 ? Padding(
                                     padding: const EdgeInsets.all(20),
                                     child: Text(
-                                      'No members in this group yet.',
+                                      tr('No members in this group yet.'),
                                       style: GoogleFonts.inter(
                                         fontSize: 13,
                                         color: AppColors.ink400,
@@ -206,7 +208,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           ),
                         )
                       : Text(
-                          'Continue to activities',
+                          tr('Continue to activities'),
                           style: GoogleFonts.inter(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
@@ -247,7 +249,7 @@ class _MiniStat extends StatelessWidget {
         child: Column(
           children: [
             Text(
-              value,
+              tr(value),
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
@@ -256,7 +258,7 @@ class _MiniStat extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              label,
+              tr(label),
               style: GoogleFonts.inter(
                 fontSize: 11,
                 color: AppColors.ink400,
@@ -303,7 +305,7 @@ class _MemberRow extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: Text(
-              _initials,
+              tr(_initials),
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
@@ -314,7 +316,7 @@ class _MemberRow extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              name.isEmpty ? 'Unnamed member' : name,
+              name.isEmpty ? tr('Unnamed member') : name,
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -362,7 +364,7 @@ class _StatusButton extends StatelessWidget {
         ),
         alignment: Alignment.center,
         child: Text(
-          letter,
+          tr(letter),
           style: GoogleFonts.inter(
             fontSize: 12,
             fontWeight: FontWeight.w700,

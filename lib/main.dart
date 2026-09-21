@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'theme/app_theme.dart';
 import 'router/app_router.dart';
+import 'i18n/i18n.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await I18n.load(); // saved language (Swahili by default)
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -29,12 +32,25 @@ class PesaBoxApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'PesaBox',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      initialRoute: AppRouter.splash,
-      onGenerateRoute: AppRouter.generateRoute,
+    // Rebuilding on a language change recreates the app from the splash
+    // screen, so every screen picks up the new language.
+    return ValueListenableBuilder<String>(
+      valueListenable: I18n.locale,
+      builder: (context, code, _) => MaterialApp(
+        key: ValueKey(code),
+        title: 'PesaBox',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light,
+        locale: Locale(code),
+        supportedLocales: const [Locale('sw'), Locale('en')],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        initialRoute: AppRouter.splash,
+        onGenerateRoute: AppRouter.generateRoute,
+      ),
     );
   }
 }

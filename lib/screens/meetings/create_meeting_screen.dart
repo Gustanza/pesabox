@@ -6,6 +6,8 @@ import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class CreateMeetingScreen extends StatefulWidget {
   const CreateMeetingScreen({super.key});
 
@@ -35,9 +37,9 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
   }
 
   String get _dateLabel {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    final months = [
+      tr('Jan'), tr('Feb'), tr('Mar'), tr('Apr'), tr('May'), tr('Jun'),
+      tr('Jul'), tr('Aug'), tr('Sep'), tr('Oct'), tr('Nov'), tr('Dec'),
     ];
     return '${_date.day} ${months[_date.month - 1]} ${_date.year}';
   }
@@ -78,7 +80,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), behavior: SnackBarBehavior.floating),
+        SnackBar(content: Text(tr(e.toString())), behavior: SnackBarBehavior.floating),
       );
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -97,13 +99,13 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
             children: [
               const SizedBox(height: 16),
               AuthHeader(
-                title: 'Create Meeting',
-                subtitle: 'Schedule a new group meeting.',
+                title: tr('Create Meeting'),
+                subtitle: tr('Schedule a new group meeting.'),
                 onBack: () => Navigator.of(context).maybePop(),
               ),
               const SizedBox(height: 28),
               _Field(
-                label: 'Meeting number',
+                label: tr('Meeting number'),
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(
@@ -120,8 +122,8 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                       Expanded(
                         child: Text(
                           _nextNumber == null
-                              ? 'Meeting #…'
-                              : 'Meeting #$_nextNumber',
+                              ? tr('Meeting #…')
+                              : tr('Meeting #{0}', [_nextNumber]),
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -139,7 +141,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                           borderRadius: AppRadius.sm,
                         ),
                         child: Text(
-                          'Auto',
+                          tr('Auto'),
                           style: GoogleFonts.inter(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
@@ -153,7 +155,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
               ),
               const SizedBox(height: 16),
               _Field(
-                label: 'Date',
+                label: tr('Date'),
                 child: _TapField(
                   icon: Icons.calendar_today_outlined,
                   value: _dateLabel,
@@ -162,7 +164,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
               ),
               const SizedBox(height: 16),
               _Field(
-                label: 'Time',
+                label: tr('Time'),
                 child: _TapField(
                   icon: Icons.schedule,
                   value: _time.format(context),
@@ -171,7 +173,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
               ),
               const SizedBox(height: 16),
               _Field(
-                label: 'Meeting agenda',
+                label: tr('Meeting agenda'),
                 child: TextField(
                   controller: _agendaController,
                   style: GoogleFonts.inter(
@@ -180,7 +182,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                   ),
                   maxLines: 4,
                   decoration: InputDecoration(
-                    hintText: 'Add meeting agenda items (optional)',
+                    hintText: tr('Add meeting agenda items (optional)'),
                     hintStyle: GoogleFonts.inter(
                       fontSize: 14,
                       color: AppColors.ink400,
@@ -228,7 +230,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                           ),
                         )
                       : Text(
-                          'Create meeting',
+                          tr('Create meeting'),
                           style: GoogleFonts.inter(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
@@ -258,7 +260,7 @@ class _Field extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          tr(label),
           style: GoogleFonts.inter(
             fontSize: 12.5,
             fontWeight: FontWeight.w700,
@@ -298,7 +300,7 @@ class _TapField extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                value,
+                tr(value),
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,

@@ -6,6 +6,8 @@ import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../dashboard/dashboard_nav_bar.dart';
 
+import '../../i18n/i18n.dart';
+
 class MeetingsListScreen extends StatefulWidget {
   const MeetingsListScreen({super.key});
 
@@ -42,7 +44,7 @@ class _MeetingsListScreenState extends State<MeetingsListScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Meetings',
+                    tr('Meetings'),
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
@@ -126,7 +128,7 @@ class _CycleCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'CYCLE 1',
+                    tr('CYCLE 1'),
                     style: GoogleFonts.inter(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -136,7 +138,7 @@ class _CycleCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '3 Mar 2026 – 2 Mar 2027',
+                    tr('3 Mar 2026 – 2 Mar 2027'),
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
@@ -158,7 +160,7 @@ class _CycleCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'meetings held',
+                    tr('meetings held'),
                     style: GoogleFonts.inter(
                       fontSize: 11,
                       color: AppColors.white.withValues(alpha: 0.7),
@@ -197,7 +199,7 @@ class _CycleCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                '${total - held} meetings remaining',
+                tr('{0} meetings remaining', [total - held]),
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   color: AppColors.white.withValues(alpha: 0.75),
@@ -209,7 +211,7 @@ class _CycleCard extends StatelessWidget {
                   Navigator.of(context).pushNamed(AppRouter.closeCycle);
                 },
                 child: Text(
-                  'Close cycle →',
+                  tr('Close cycle →'),
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -237,10 +239,10 @@ class _SegmentControl extends StatelessWidget {
         color: AppColors.line.withValues(alpha: 0.5),
         borderRadius: AppRadius.md,
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Expanded(child: _Segment(label: 'Upcoming', active: true)),
-          Expanded(child: _Segment(label: 'History', active: false)),
+          Expanded(child: _Segment(label: tr('Upcoming'), active: true)),
+          Expanded(child: _Segment(label: tr('History'), active: false)),
         ],
       ),
     );
@@ -272,7 +274,7 @@ class _Segment extends StatelessWidget {
       ),
       alignment: Alignment.center,
       child: Text(
-        label,
+        tr(label),
         style: GoogleFonts.inter(
           fontSize: 13,
           fontWeight: active ? FontWeight.w600 : FontWeight.w400,
@@ -302,7 +304,7 @@ class _MeetingListCard extends StatelessWidget {
           ? Padding(
               padding: const EdgeInsets.all(20),
               child: Text(
-                'No meetings scheduled yet.',
+                tr('No meetings scheduled yet.'),
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   color: AppColors.ink400,
@@ -315,7 +317,7 @@ class _MeetingListCard extends StatelessWidget {
                   if (i > 0) const Divider(height: 1, indent: 56),
                   _MeetingRow(
                     title: meetings[i]['title']?.toString() ??
-                        'Meeting #${meetings[i]['meetingNumber']}',
+                        tr('Meeting #{0}', [meetings[i]['meetingNumber']]),
                     subtitle: state.meetingSubtitle(meetings[i]),
                     upcoming: meetings[i]['status'] == 'upcoming',
                     onTap: () {
@@ -373,7 +375,7 @@ class _MeetingRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    title,
+                    tr(title),
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -382,7 +384,7 @@ class _MeetingRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    subtitle,
+                    tr(subtitle),
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       color: AppColors.ink400,
@@ -398,7 +400,7 @@ class _MeetingRow extends StatelessWidget {
                 borderRadius: AppRadius.sm,
               ),
               child: Text(
-                upcoming ? 'Upcoming' : 'Closed',
+                upcoming ? tr('Upcoming') : tr('Closed'),
                 style: GoogleFonts.inter(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,

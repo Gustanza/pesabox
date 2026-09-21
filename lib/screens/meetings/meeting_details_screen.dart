@@ -6,6 +6,8 @@ import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class MeetingDetailsScreen extends StatefulWidget {
   const MeetingDetailsScreen({super.key, this.meetingId = '12'});
 
@@ -59,7 +61,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
   String get _title {
     final m = _meeting;
     if (m?['title']?.toString().isNotEmpty == true) return m!['title'].toString();
-    return 'Meeting #${m?['meetingNumber'] ?? widget.meetingId}';
+    return tr('Meeting #{0}', [m?['meetingNumber'] ?? widget.meetingId]);
   }
 
   double _sumType(String type) => _txns
@@ -93,11 +95,11 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _title,
+                          tr(_title),
                           style: GoogleFonts.plusJakartaSans(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.ink900),
                         ),
                         Text(
-                          meeting == null ? '' : state.meetingSubtitle(meeting),
+                          tr(meeting == null ? '' : state.meetingSubtitle(meeting)),
                           style: GoogleFonts.inter(fontSize: 12, color: AppColors.ink400),
                         ),
                       ],
@@ -112,25 +114,25 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                   child: Center(child: CircularProgressIndicator()),
                 )
               else if (meeting == null)
-                Text('Meeting not found.', style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600))
+                Text(tr('Meeting not found.'), style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600))
               else ...[
                 Row(
                   children: [
-                    Expanded(child: _StatBox(label: 'Attendance', value: '$attended/$_memberCount', color: AppColors.teal800)),
+                    Expanded(child: _StatBox(label: tr('Attendance'), value: '$attended/$_memberCount', color: AppColors.teal800)),
                     const SizedBox(width: 10),
-                    Expanded(child: _StatBox(label: 'Savings', value: state.money(_sumType('contribution')), color: AppColors.green600)),
+                    Expanded(child: _StatBox(label: tr('Savings'), value: state.money(_sumType('contribution')), color: AppColors.green600)),
                   ],
                 ),
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    Expanded(child: _StatBox(label: 'Shares', value: state.money(_sumType('share')), color: AppColors.blue)),
+                    Expanded(child: _StatBox(label: tr('Shares'), value: state.money(_sumType('share')), color: AppColors.blue)),
                     const SizedBox(width: 10),
-                    Expanded(child: _StatBox(label: 'Social Fund', value: state.money(_sumType('social_fund')), color: AppColors.gold500)),
+                    Expanded(child: _StatBox(label: tr('Social Fund'), value: state.money(_sumType('social_fund')), color: AppColors.gold500)),
                   ],
                 ),
                 const SizedBox(height: 24),
-                Text('Meeting activity', style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink900)),
+                Text(tr('Meeting activity'), style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink900)),
                 const SizedBox(height: 12),
                 Container(
                   width: double.infinity,
@@ -168,8 +170,8 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                     ),
                     child: Text(
                       status == 'completed'
-                          ? 'Meeting completed'
-                          : (status == 'upcoming' ? 'Start meeting' : 'Continue meeting'),
+                          ? tr('Meeting completed')
+                          : (status == 'upcoming' ? tr('Start meeting') : tr('Continue meeting')),
                       style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.white),
                     ),
                   ),
@@ -199,9 +201,9 @@ class _StatBox extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.ink400)),
+          Text(tr(label), style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.ink400)),
           const SizedBox(height: 6),
-          Text(value, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: color)),
+          Text(tr(value), style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: color)),
         ],
       ),
     );
@@ -236,10 +238,10 @@ class _ActivityRow extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(label, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.ink900)),
+            child: Text(tr(label), style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.ink900)),
           ),
           Text(
-            recorded ? '$count recorded' : 'None yet',
+            recorded ? tr('{0} recorded', [count]) : tr('None yet'),
             style: GoogleFonts.inter(fontSize: 12, color: AppColors.ink400),
           ),
         ],

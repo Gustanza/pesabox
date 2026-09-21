@@ -40,6 +40,7 @@ import '../screens/transactions/correction_reversal_screen.dart';
 import '../screens/funds/funds_screen.dart';
 import '../screens/reports/reports_screen.dart';
 import '../screens/reports/group_statement_screen.dart';
+import '../screens/reports/export_report_screen.dart';
 import '../screens/sms/sms_activity_screen.dart';
 import '../screens/group/group_info_screen.dart';
 import '../screens/group/edit_group_screen.dart';
@@ -100,6 +101,7 @@ class AppRouter {
 
   static const String reports = '/reports';
   static const String groupStatement = '/reports/group-statement';
+  static const String exportReport = '/reports/export';
 
   static const String smsActivity = '/sms';
   static const String groupInfo = '/group/info';
@@ -175,6 +177,8 @@ class AppRouter {
         return _buildRoute(settings, const ReportsScreen());
       case groupStatement:
         return _buildRoute(settings, const GroupStatementScreen());
+      case exportReport:
+        return _buildRoute(settings, const ExportReportScreen());
 
       case smsActivity:
         return _buildRoute(settings, const SmsActivityScreen());

@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -18,10 +20,21 @@ class SettingsScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-              const AuthHeader(title: 'Settings'),
+              AuthHeader(title: tr('Settings')),
               const SizedBox(height: 20),
               Text(
-                'Notifications',
+                tr('Language'),
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.ink900,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const _LanguagePicker(),
+              const SizedBox(height: 24),
+              Text(
+                tr('Notifications'),
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -36,17 +49,17 @@ class SettingsScreen extends StatelessWidget {
                   borderRadius: AppRadius.md,
                   border: Border.all(color: AppColors.line),
                 ),
-                child: const Column(
+                child: Column(
                   children: [
-                    _ToggleRow(title: 'Meeting reminders', on: true),
+                    _ToggleRow(title: tr('Meeting reminders'), on: true),
                     Divider(height: 1, indent: 56),
-                    _ToggleRow(title: 'Transaction SMS', on: true),
+                    _ToggleRow(title: tr('Transaction SMS'), on: true),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
               Text(
-                'Security',
+                tr('Security'),
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -61,19 +74,19 @@ class SettingsScreen extends StatelessWidget {
                   borderRadius: AppRadius.md,
                   border: Border.all(color: AppColors.line),
                 ),
-                child: const Column(
+                child: Column(
                   children: [
-                    _SettingRow(title: 'Change password'),
+                    _SettingRow(title: tr('Change password')),
                     Divider(height: 1, indent: 56),
-                    _SettingRow(title: 'Change PIN'),
+                    _SettingRow(title: tr('Change PIN')),
                     Divider(height: 1, indent: 56),
-                    _SettingRow(title: 'Session timeout', value: '15 min'),
+                    _SettingRow(title: tr('Session timeout'), value: '15 min'),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
               Text(
-                'About',
+                tr('About'),
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -88,11 +101,11 @@ class SettingsScreen extends StatelessWidget {
                   borderRadius: AppRadius.md,
                   border: Border.all(color: AppColors.line),
                 ),
-                child: const Column(
+                child: Column(
                   children: [
-                    _SettingRow(title: 'App version', value: '1.0.0 (MVP)'),
+                    _SettingRow(title: tr('App version'), value: '1.0.0 (MVP)'),
                     Divider(height: 1, indent: 56),
-                    _SettingRow(title: 'SMS sender ID', value: 'PESABOX'),
+                    _SettingRow(title: tr('SMS sender ID'), value: 'PESABOX'),
                   ],
                 ),
               ),
@@ -119,7 +132,7 @@ class _ToggleRow extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              title,
+              tr(title),
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -141,6 +154,58 @@ class _ToggleRow extends StatelessWidget {
   }
 }
 
+/// Swahili / English selector. Changing it restarts the app UI in the new
+/// language (see PesaBoxApp) and is remembered on the device.
+class _LanguagePicker extends StatelessWidget {
+  const _LanguagePicker();
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<String>(
+      valueListenable: I18n.locale,
+      builder: (context, current, _) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: AppRadius.md,
+          border: Border.all(color: AppColors.line),
+        ),
+        child: Row(
+          children: [
+            for (final option in const [('sw', 'Kiswahili'), ('en', 'English')])
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => I18n.set(option.$1),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: current == option.$1
+                          ? AppColors.green600
+                          : Colors.transparent,
+                      borderRadius: AppRadius.md,
+                    ),
+                    child: Text(
+                      option.$2,
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: current == option.$1
+                            ? AppColors.white
+                            : AppColors.ink600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _SettingRow extends StatelessWidget {
   final String title;
   final String? value;
@@ -155,7 +220,7 @@ class _SettingRow extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              title,
+              tr(title),
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -165,7 +230,7 @@ class _SettingRow extends StatelessWidget {
           ),
           if (value != null) ...[
             Text(
-              value!,
+              tr(value!),
               style: GoogleFonts.inter(
                 fontSize: 13,
                 color: AppColors.ink600,

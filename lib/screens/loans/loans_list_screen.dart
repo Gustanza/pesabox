@@ -6,6 +6,8 @@ import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class LoansListScreen extends StatefulWidget {
   const LoansListScreen({super.key});
 
@@ -57,7 +59,7 @@ class _LoansListScreenState extends State<LoansListScreen> {
     final name = [m['firstName'], m['lastName']]
         .where((s) => (s ?? '').toString().isNotEmpty)
         .join(' ');
-    return name.isEmpty ? 'Unknown member' : name;
+    return name.isEmpty ? tr('Unknown member') : name;
   }
 
   String _initials(String name) {
@@ -97,7 +99,7 @@ class _LoansListScreenState extends State<LoansListScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Loans',
+                      tr('Loans'),
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -137,7 +139,7 @@ class _LoansListScreenState extends State<LoansListScreen> {
                   children: [
                     Expanded(
                       child: _StatBox(
-                        label: 'Active loans',
+                        label: tr('Active loans'),
                         value: '${active.length}',
                         color: AppColors.teal800,
                       ),
@@ -145,7 +147,7 @@ class _LoansListScreenState extends State<LoansListScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: _StatBox(
-                        label: 'Outstanding',
+                        label: tr('Outstanding'),
                         value: state.money(outstanding),
                         color: AppColors.danger,
                       ),
@@ -157,7 +159,7 @@ class _LoansListScreenState extends State<LoansListScreen> {
                   children: [
                     Expanded(
                       child: _StatBox(
-                        label: 'Total loaned',
+                        label: tr('Total loaned'),
                         value: state.money(totalLoaned),
                         color: AppColors.blue,
                       ),
@@ -165,7 +167,7 @@ class _LoansListScreenState extends State<LoansListScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: _StatBox(
-                        label: 'Total repaid',
+                        label: tr('Total repaid'),
                         value: state.money(totalRepaid),
                         color: AppColors.green600,
                       ),
@@ -174,7 +176,7 @@ class _LoansListScreenState extends State<LoansListScreen> {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Recent loans',
+                  tr('Recent loans'),
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -193,7 +195,7 @@ class _LoansListScreenState extends State<LoansListScreen> {
                       ? Padding(
                           padding: const EdgeInsets.all(20),
                           child: Text(
-                            'No loans recorded yet.',
+                            tr('No loans recorded yet.'),
                             style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink400),
                           ),
                         )
@@ -251,9 +253,9 @@ class _StatBox extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.ink400)),
+          Text(tr(label), style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.ink400)),
           const SizedBox(height: 6),
-          Text(value, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: color)),
+          Text(tr(value), style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: color)),
         ],
       ),
     );
@@ -293,14 +295,14 @@ class _LoanRow extends StatelessWidget {
               height: 40,
               decoration: BoxDecoration(color: color, shape: BoxShape.circle),
               alignment: Alignment.center,
-              child: Text(initials, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.white)),
+              child: Text(tr(initials), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.white)),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(name, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink900)),
+                  Text(tr(name), style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink900)),
                   const SizedBox(height: 2),
                   Text('$amount · $months', style: GoogleFonts.inter(fontSize: 12, color: AppColors.ink400)),
                 ],
@@ -313,7 +315,7 @@ class _LoanRow extends StatelessWidget {
                 borderRadius: AppRadius.sm,
               ),
               child: Text(
-                active ? 'Active' : 'Repaid',
+                active ? tr('Active') : tr('Repaid'),
                 style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: active ? AppColors.teal800 : AppColors.ink600),
               ),
             ),

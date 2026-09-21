@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class AnnouncementsScreen extends StatelessWidget {
   const AnnouncementsScreen({super.key});
 
@@ -47,7 +49,7 @@ class AnnouncementsScreen extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Announcements',
+                      tr('Announcements'),
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -58,8 +60,8 @@ class AnnouncementsScreen extends StatelessWidget {
                   GestureDetector(
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Compose new announcement'),
+                        SnackBar(
+                          content: Text(tr('Compose new announcement')),
                           behavior: SnackBarBehavior.floating,
                         ),
                       );
@@ -117,11 +119,11 @@ class AnnouncementsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               OutlineButton(
-                text: 'New announcement',
+                text: tr('New announcement'),
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Compose new announcement'),
+                    SnackBar(
+                      content: Text(tr('Compose new announcement')),
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
@@ -177,7 +179,7 @@ class _AnnouncementRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  tr(title),
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -194,7 +196,7 @@ class _AnnouncementRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  body,
+                  tr(body),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(

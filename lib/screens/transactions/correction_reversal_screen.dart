@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class CorrectionReversalScreen extends StatelessWidget {
   const CorrectionReversalScreen({super.key, this.transactionId = 'tx1'});
 
@@ -20,9 +22,9 @@ class CorrectionReversalScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-              const AuthHeader(
-                title: 'Correction / Reversal',
-                subtitle: 'TX-0042',
+              AuthHeader(
+                title: tr('Correction / Reversal'),
+                subtitle: tr('TX-0042'),
               ),
               const SizedBox(height: 20),
               Container(
@@ -43,7 +45,7 @@ class CorrectionReversalScreen extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Use this to fix errors on recorded transactions. The original entry is kept and a correcting entry is added to the records.',
+                        tr('Use this to fix errors on recorded transactions. The original entry is kept and a correcting entry is added to the records.'),
                         style: GoogleFonts.inter(
                           fontSize: 13,
                           color: AppColors.teal900,
@@ -66,8 +68,8 @@ class CorrectionReversalScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const _SelectField(
-                      label: 'Action',
+                    _SelectField(
+                      label: tr('Action'),
                       initial: 'Reverse transaction',
                       options: [
                         'Reverse transaction',
@@ -76,21 +78,21 @@ class CorrectionReversalScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    const _Field(
-                      label: 'Corrected amount',
+                    _Field(
+                      label: tr('Corrected amount'),
                       child: TextField(
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          hintText: 'Enter corrected amount',
+                          hintText: tr('Enter corrected amount'),
                         ),
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const _Field(
-                      label: 'Reason',
+                    _Field(
+                      label: tr('Reason'),
                       child: TextField(
                         decoration: InputDecoration(
-                          hintText: 'Explain why this correction is needed',
+                          hintText: tr('Explain why this correction is needed'),
                         ),
                       ),
                     ),
@@ -114,7 +116,7 @@ class CorrectionReversalScreen extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    'Submit correction',
+                    tr('Submit correction'),
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -144,7 +146,7 @@ class _Field extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          tr(label),
           style: GoogleFonts.inter(
             fontSize: 12.5,
             fontWeight: FontWeight.w700,
@@ -175,7 +177,7 @@ class _SelectField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          tr(label),
           style: GoogleFonts.inter(
             fontSize: 12.5,
             fontWeight: FontWeight.w700,
@@ -190,7 +192,7 @@ class _SelectField extends StatelessWidget {
                 (option) => DropdownMenuItem(
                   value: option,
                   child: Text(
-                    option,
+                    tr(option),
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       color: AppColors.ink900,

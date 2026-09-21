@@ -5,6 +5,8 @@ import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class RecordLoanScreen extends StatefulWidget {
   const RecordLoanScreen({super.key});
 
@@ -64,11 +66,11 @@ class _RecordLoanScreenState extends State<RecordLoanScreen> {
     final memberId = _memberId;
     final amount = _amount;
     if (memberId == null) {
-      _showError('Select a member');
+      _showError(tr('Select a member'));
       return;
     }
     if (amount <= 0) {
-      _showError('Enter a valid amount');
+      _showError(tr('Enter a valid amount'));
       return;
     }
     setState(() => _submitting = true);
@@ -90,7 +92,7 @@ class _RecordLoanScreenState extends State<RecordLoanScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+      SnackBar(content: Text(tr(message)), behavior: SnackBarBehavior.floating),
     );
   }
 
@@ -109,7 +111,7 @@ class _RecordLoanScreenState extends State<RecordLoanScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-              const AuthHeader(title: 'Record Loan', subtitle: 'Disburse a new loan.'),
+              AuthHeader(title: tr('Record Loan'), subtitle: tr('Disburse a new loan.')),
               const SizedBox(height: 20),
               if (_loading)
                 const Padding(
@@ -129,10 +131,10 @@ class _RecordLoanScreenState extends State<RecordLoanScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _Field(
-                        label: 'Select member',
+                        label: tr('Select member'),
                         child: _members.isEmpty
                             ? Text(
-                                'No members in this group yet.',
+                                tr('No members in this group yet.'),
                                 style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink400),
                               )
                             : DropdownButtonFormField<String>(
@@ -140,7 +142,7 @@ class _RecordLoanScreenState extends State<RecordLoanScreen> {
                                 items: _members
                                     .map((m) => DropdownMenuItem(
                                           value: m['id']?.toString(),
-                                          child: Text(_memberName(m)),
+                                          child: Text(tr(_memberName(m))),
                                         ))
                                     .toList(),
                                 onChanged: (v) => setState(() => _memberId = v),
@@ -149,25 +151,25 @@ class _RecordLoanScreenState extends State<RecordLoanScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Current savings: ${state.money(currentSavings)}',
+                        tr('Current savings: {0}', [state.money(currentSavings)]),
                         style: GoogleFonts.inter(fontSize: 12, color: AppColors.ink400),
                       ),
                       const SizedBox(height: 16),
                       _Field(
-                        label: 'Requested amount',
+                        label: tr('Requested amount'),
                         child: TextField(
                           controller: _amountController,
                           keyboardType: TextInputType.number,
-                          decoration: _inputDecoration(hint: 'Enter amount (e.g. 120,000)'),
+                          decoration: _inputDecoration(hint: tr('Enter amount (e.g. 120,000)')),
                         ),
                       ),
                       const SizedBox(height: 16),
                       _Field(
-                        label: 'Disbursement method',
+                        label: tr('Disbursement method'),
                         child: DropdownButtonFormField<String>(
                           initialValue: _method,
                           items: const ['Cash', 'Mobile Money', 'Bank Transfer']
-                              .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                              .map((m) => DropdownMenuItem(value: m, child: Text(tr(m))))
                               .toList(),
                           onChanged: (v) => setState(() => _method = v ?? 'Cash'),
                           decoration: _inputDecoration(),
@@ -183,10 +185,10 @@ class _RecordLoanScreenState extends State<RecordLoanScreen> {
                   decoration: BoxDecoration(color: AppColors.green100, borderRadius: AppRadius.md),
                   child: Column(
                     children: [
-                      _EligRow(label: 'Interest rate', value: '${state.loanInterestRate.toStringAsFixed(0)}%'),
+                      _EligRow(label: tr('Interest rate'), value: '${state.loanInterestRate.toStringAsFixed(0)}%'),
                       const Divider(height: 24, color: Color(0xFFC9E8D6)),
                       _EligRow(
-                        label: 'Repayment period',
+                        label: tr('Repayment period'),
                         value: '${state.maxLoanPeriodMonths} months',
                         strong: true,
                       ),
@@ -212,7 +214,7 @@ class _RecordLoanScreenState extends State<RecordLoanScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white),
                           )
                         : Text(
-                            'Disburse loan',
+                            tr('Disburse loan'),
                             style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.white),
                           ),
                   ),
@@ -260,9 +262,9 @@ class _EligRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: GoogleFonts.inter(fontSize: 13, color: AppColors.teal900)),
+        Text(tr(label), style: GoogleFonts.inter(fontSize: 13, color: AppColors.teal900)),
         Text(
-          value,
+          tr(value),
           style: GoogleFonts.inter(
             fontSize: strong ? 16 : 13,
             fontWeight: strong ? FontWeight.w800 : FontWeight.w600,
@@ -285,7 +287,7 @@ class _Field extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.ink700)),
+        Text(tr(label), style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.ink700)),
         const SizedBox(height: 6),
         child,
       ],

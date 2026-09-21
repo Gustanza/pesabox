@@ -6,6 +6,8 @@ import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class StartMeetingScreen extends StatefulWidget {
   const StartMeetingScreen({super.key, this.meetingId = '12'});
 
@@ -46,7 +48,7 @@ class _StartMeetingScreenState extends State<StartMeetingScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), behavior: SnackBarBehavior.floating),
+        SnackBar(content: Text(tr(e.toString())), behavior: SnackBarBehavior.floating),
       );
     } finally {
       if (mounted) setState(() => _starting = false);
@@ -76,7 +78,7 @@ class _StartMeetingScreenState extends State<StartMeetingScreen> {
             children: [
               const SizedBox(height: 16),
               AuthHeader(
-                title: 'Start Meeting',
+                title: tr('Start Meeting'),
                 subtitle: title,
                 onBack: () => Navigator.of(context).maybePop(),
               ),
@@ -96,7 +98,7 @@ class _StartMeetingScreenState extends State<StartMeetingScreen> {
                     border: Border.all(color: AppColors.line),
                   ),
                   child: Text(
-                    'Meeting not found.',
+                    tr('Meeting not found.'),
                     style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600),
                   ),
                 )
@@ -130,7 +132,7 @@ class _StartMeetingScreenState extends State<StartMeetingScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              title,
+                              tr(title),
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
@@ -139,7 +141,7 @@ class _StartMeetingScreenState extends State<StartMeetingScreen> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              subtitle,
+                              tr(subtitle),
                               style: GoogleFonts.inter(
                                 fontSize: 13,
                                 color: AppColors.ink400,
@@ -161,7 +163,7 @@ class _StartMeetingScreenState extends State<StartMeetingScreen> {
                     border: Border.all(color: AppColors.line),
                   ),
                   child: Text(
-                    'Starting this meeting will open the live meeting flow. You will record attendance, contributions, shares, and other member activities for $title.',
+                    tr('Starting this meeting will open the live meeting flow. You will record attendance, contributions, shares, and other member activities for {0}.', [title]),
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       color: AppColors.ink600,
@@ -193,7 +195,7 @@ class _StartMeetingScreenState extends State<StartMeetingScreen> {
                             ),
                           )
                         : Text(
-                            'Start meeting',
+                            tr('Start meeting'),
                             style: GoogleFonts.inter(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,

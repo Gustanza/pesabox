@@ -5,6 +5,8 @@ import '../../router/app_router.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class ReviewRulesScreen extends StatelessWidget {
   const ReviewRulesScreen({super.key});
 
@@ -22,7 +24,7 @@ class ReviewRulesScreen extends StatelessWidget {
                   const ScreenBackButton(),
                   const SizedBox(width: 12),
                   Text(
-                    'Confirm Rules',
+                    tr('Confirm Rules'),
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -48,19 +50,19 @@ class ReviewRulesScreen extends StatelessWidget {
                       ),
                       child: Column(
                         children: [
-                          _ReviewRow(label: 'Share value', value: 'TZS 5,000'),
+                          _ReviewRow(label: tr('Share value'), value: 'TZS 5,000'),
                           const Divider(height: 24),
                           _ReviewRow(
-                              label: 'Mandatory savings', value: 'TZS 5,000'),
+                              label: tr('Mandatory savings'), value: 'TZS 5,000'),
                           const Divider(height: 24),
                           _ReviewRow(
-                              label: 'Social Fund', value: 'TZS 2,000'),
+                              label: tr('Social Fund'), value: 'TZS 2,000'),
                           const Divider(height: 24),
-                          _ReviewRow(label: 'Loan max', value: '3x savings'),
+                          _ReviewRow(label: tr('Loan max'), value: '3x savings'),
                           const Divider(height: 24),
-                          _ReviewRow(label: 'Fines', value: 'TZS 1,000 late · TZS 5,000 absent'),
+                          _ReviewRow(label: tr('Fines'), value: 'TZS 1,000 late · TZS 5,000 absent'),
                           const Divider(height: 24),
-                          _ReviewRow(label: 'Repayment', value: '10% interest'),
+                          _ReviewRow(label: tr('Repayment'), value: '10% interest'),
                         ],
                       ),
                     ),
@@ -90,7 +92,7 @@ class ReviewRulesScreen extends StatelessWidget {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'These rules will apply to all members once the group is active.',
+                              tr('These rules will apply to all members once the group is active.'),
                               style: GoogleFonts.inter(
                                 fontSize: 13,
                                 color: AppColors.teal900,
@@ -123,7 +125,7 @@ class ReviewRulesScreen extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    'Create group',
+                    tr('Create group'),
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -152,14 +154,14 @@ class _ReviewRow extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          label,
+          tr(label),
           style: GoogleFonts.inter(
             fontSize: 13,
             color: AppColors.ink600,
           ),
         ),
         Text(
-          value,
+          tr(value),
           style: GoogleFonts.inter(
             fontSize: 13,
             fontWeight: FontWeight.w600,

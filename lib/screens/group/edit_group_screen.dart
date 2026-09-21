@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class EditGroupScreen extends StatelessWidget {
   const EditGroupScreen({super.key});
 
@@ -18,9 +20,9 @@ class EditGroupScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-              const AuthHeader(
-                title: 'Group Information',
-                subtitle: 'Set by your Super Admin',
+              AuthHeader(
+                title: tr('Group Information'),
+                subtitle: tr('Set by your Super Admin'),
               ),
               const SizedBox(height: 20),
               Container(
@@ -41,7 +43,7 @@ class EditGroupScreen extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Your group details are managed by your Super Admin. If anything needs updating, request a change below.',
+                        tr('Your group details are managed by your Super Admin. If anything needs updating, request a change below.'),
                         style: GoogleFonts.inter(
                           fontSize: 13,
                           color: AppColors.teal900,
@@ -61,30 +63,30 @@ class EditGroupScreen extends StatelessWidget {
                   borderRadius: AppRadius.md,
                   border: Border.all(color: AppColors.line),
                 ),
-                child: const Column(
+                child: Column(
                   children: [
                     _ReadOnlyField(
-                      label: 'Group name',
+                      label: tr('Group name'),
                       value: 'Kijiji Savings Group',
                     ),
                     SizedBox(height: 16),
-                    _ReadOnlyField(label: 'Region', value: 'Arusha'),
+                    _ReadOnlyField(label: tr('Region'), value: 'Arusha'),
                     SizedBox(height: 16),
-                    _ReadOnlyField(label: 'District', value: 'Arusha Rural'),
+                    _ReadOnlyField(label: tr('District'), value: 'Arusha Rural'),
                     SizedBox(height: 16),
-                    _ReadOnlyField(label: 'Ward', value: 'Kimnyaki'),
+                    _ReadOnlyField(label: tr('Ward'), value: 'Kimnyaki'),
                     SizedBox(height: 16),
-                    _ReadOnlyField(label: 'Village', value: 'Kijiji'),
+                    _ReadOnlyField(label: tr('Village'), value: 'Kijiji'),
                     SizedBox(height: 16),
                     _ReadOnlyField(
-                      label: 'Meeting frequency',
+                      label: tr('Meeting frequency'),
                       value: 'Weekly · Mon 10:00 AM',
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
-              const OutlineButton(text: 'Request a change'),
+              OutlineButton(text: tr('Request a change')),
               const SizedBox(height: 32),
             ],
           ),
@@ -106,7 +108,7 @@ class _ReadOnlyField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          tr(label),
           style: GoogleFonts.inter(
             fontSize: 12.5,
             fontWeight: FontWeight.w700,
@@ -126,7 +128,7 @@ class _ReadOnlyField extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  value,
+                  tr(value),
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     color: AppColors.ink600,

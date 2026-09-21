@@ -6,6 +6,8 @@ import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class MeetingActivityScreen extends StatefulWidget {
   const MeetingActivityScreen({super.key, this.meetingId = '12'});
 
@@ -50,7 +52,7 @@ class _MeetingActivityScreenState extends State<MeetingActivityScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Meeting Activity',
+                          tr('Meeting Activity'),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 17,
                             fontWeight: FontWeight.w800,
@@ -58,7 +60,7 @@ class _MeetingActivityScreenState extends State<MeetingActivityScreen> {
                           ),
                         ),
                         Text(
-                          title,
+                          tr(title),
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             color: AppColors.ink400,
@@ -88,8 +90,8 @@ class _MeetingActivityScreenState extends State<MeetingActivityScreen> {
                           _ActivityRow(
                             icon: Icons.savings_outlined,
                             color: AppColors.green600,
-                            title: 'Contributions',
-                            subtitle: 'Record member contributions',
+                            title: tr('Contributions'),
+                            subtitle: tr('Record member contributions'),
                             onTap: () {
                               Navigator.of(context).pushNamed(
                                 AppRouter.recordContributionPath(meetingId),
@@ -100,8 +102,8 @@ class _MeetingActivityScreenState extends State<MeetingActivityScreen> {
                           _ActivityRow(
                             icon: Icons.trending_up_rounded,
                             color: AppColors.blue,
-                            title: 'Shares',
-                            subtitle: 'Record share purchases',
+                            title: tr('Shares'),
+                            subtitle: tr('Record share purchases'),
                             onTap: () {
                               Navigator.of(context).pushNamed(
                                 AppRouter.recordSharesPath(meetingId),
@@ -112,8 +114,8 @@ class _MeetingActivityScreenState extends State<MeetingActivityScreen> {
                           _ActivityRow(
                             icon: Icons.people_outline,
                             color: AppColors.gold500,
-                            title: 'Social Fund',
-                            subtitle: 'Record social fund contributions',
+                            title: tr('Social Fund'),
+                            subtitle: tr('Record social fund contributions'),
                             onTap: () {
                               Navigator.of(context).pushNamed(
                                 AppRouter.recordSocialFundPath(meetingId),
@@ -124,8 +126,8 @@ class _MeetingActivityScreenState extends State<MeetingActivityScreen> {
                           _ActivityRow(
                             icon: Icons.account_balance_outlined,
                             color: AppColors.teal800,
-                            title: 'Loans',
-                            subtitle: 'View loans & record repayments',
+                            title: tr('Loans'),
+                            subtitle: tr('View loans & record repayments'),
                             onTap: () {
                               Navigator.of(context).pushNamed(
                                 AppRouter.loansList,
@@ -137,8 +139,8 @@ class _MeetingActivityScreenState extends State<MeetingActivityScreen> {
                           _ActivityRow(
                             icon: Icons.gavel_outlined,
                             color: AppColors.danger,
-                            title: 'Fines',
-                            subtitle: 'View fines & add new',
+                            title: tr('Fines'),
+                            subtitle: tr('View fines & add new'),
                             onTap: () {
                               Navigator.of(context).pushNamed(
                                 AppRouter.finesList,
@@ -150,8 +152,8 @@ class _MeetingActivityScreenState extends State<MeetingActivityScreen> {
                           _ActivityRow(
                             icon: Icons.receipt_long_outlined,
                             color: AppColors.ink600,
-                            title: 'Group expense',
-                            subtitle: 'Record group expenses',
+                            title: tr('Group expense'),
+                            subtitle: tr('Record group expenses'),
                             onTap: () {
                               Navigator.of(context).pushNamed(
                                 AppRouter.groupExpense,
@@ -186,7 +188,7 @@ class _MeetingActivityScreenState extends State<MeetingActivityScreen> {
                     ),
                   ),
                   child: Text(
-                    'Review & close meeting',
+                    tr('Review & close meeting'),
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -241,7 +243,7 @@ class _ActivityRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    title,
+                    tr(title),
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -250,7 +252,7 @@ class _ActivityRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    subtitle,
+                    tr(subtitle),
                     style: GoogleFonts.inter(
                       fontSize: 11,
                       color: AppColors.ink400,

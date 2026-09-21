@@ -6,6 +6,8 @@ import '../../theme/app_theme.dart';
 import '../../router/app_router.dart';
 import 'auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 /// The only way in: a phone number, then an OTP. There's no separate
 /// "create account" screen — the backend creates the account automatically
 /// the first time someone verifies a code for a phone number it hasn't seen
@@ -24,7 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _continue() async {
     final phone = _phone.trim();
     if (phone.isEmpty) {
-      _toast('Enter your phone number.');
+      _toast(tr('Enter your phone number.'));
       return;
     }
     setState(() => _loading = true);
@@ -33,13 +35,13 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       if (!sent) {
         setState(() => _loading = false);
-        _toast('Unable to send a code right now.');
+        _toast(tr('Unable to send a code right now.'));
         return;
       }
       Navigator.of(context).pushNamed(AppRouter.otp, arguments: phone);
     } catch (_) {
       if (!mounted) return;
-      _toast('Could not reach the server. Check your connection.');
+      _toast(tr('Could not reach the server. Check your connection.'));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -47,7 +49,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _toast(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      SnackBar(content: Text(tr(message))),
     );
   }
 
@@ -72,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const BrandMark(size: 64, radius: 18, fontSize: 28),
                 const SizedBox(height: 18),
                 Text(
-                  'Welcome to PesaBox',
+                  tr('Welcome to PesaBox'),
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
@@ -81,7 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  "Enter your phone number and we'll text you a code.",
+                  tr("Enter your phone number and we'll text you a code."),
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     height: 1.5,
@@ -94,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 22),
                 PrimaryButton(
-                  text: _loading ? 'Sending code…' : 'Continue',
+                  text: _loading ? tr('Sending code…') : tr('Continue'),
                   onPressed: _loading ? null : _continue,
                 ),
               ],

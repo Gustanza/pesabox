@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_client.dart' hide resolveApiBaseUrl;
 import 'graphql_client.dart';
+import '../i18n/i18n.dart';
 
 /// Application-wide state: auth session + cached group data fetched from the
 /// Go backend. Screens read from here instead of the hardcoded mock file.
@@ -391,7 +392,7 @@ class AppState {
   }) async {
     final groupId = group?['id'] as String?;
     if (groupId == null) {
-      throw const GraphQLException('No group to add a member to');
+      throw GraphQLException(tr('No group to add a member to'));
     }
     final created = await _restPost('/api/members', {
       'groupId': groupId,
@@ -439,7 +440,8 @@ class AppState {
         decoded is Map ? Map<String, dynamic>.from(decoded) : <String, dynamic>{};
     if (res.statusCode >= 400) {
       throw GraphQLException(
-        (data['error'] as String?) ?? 'Request failed (${res.statusCode})',
+        (data['error'] as String?) ??
+            tr('Request failed ({0})', [res.statusCode]),
       );
     }
     return data;
@@ -772,7 +774,7 @@ class AppState {
     final decoded = jsonDecode(res.body);
     if (res.statusCode >= 400) {
       final message = (decoded is Map ? decoded['error'] as String? : null) ??
-          'Request failed (${res.statusCode})';
+          tr('Request failed ({0})', [res.statusCode]);
       throw GraphQLException(message);
     }
     return decoded;
@@ -871,23 +873,23 @@ class AppState {
   String txnTypeLabel(String type) {
     switch (type) {
       case 'contribution':
-        return 'Contribution';
+        return tr('Contribution');
       case 'share':
-        return 'Share purchase';
+        return tr('Share purchase');
       case 'loan_disbursement':
-        return 'Loan disbursement';
+        return tr('Loan disbursement');
       case 'loan_repayment':
-        return 'Loan repayment';
+        return tr('Loan repayment');
       case 'fine':
-        return 'Fine payment';
+        return tr('Fine payment');
       case 'social_fund':
-        return 'Social fund';
+        return tr('Social fund');
       case 'expense':
-        return 'Group expense';
+        return tr('Group expense');
       case 'withdrawal':
-        return 'Withdrawal';
+        return tr('Withdrawal');
       default:
-        return type.isEmpty ? 'Transaction' : type;
+        return type.isEmpty ? tr('Transaction') : type;
     }
   }
 

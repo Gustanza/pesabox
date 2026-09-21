@@ -10,6 +10,8 @@ import '../../services/graphql_client.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class AddMemberScreen extends StatefulWidget {
   const AddMemberScreen({super.key});
 
@@ -49,7 +51,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
           f.phone.trim().isEmpty ||
           f.gender == null) {
         setState(() => _error =
-            'Fill in name, phone and gender for member ${i + 1}.');
+            tr('Fill in name, phone and gender for member {0}.', [i + 1]));
         return;
       }
     }
@@ -67,8 +69,9 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
 
         final verified = await _verifyPhone(phone, memberNumber: i + 1);
         if (!verified) {
-          setState(() => _error ??= 'Phone not verified — member ${i + 1} '
-              'was not added.${addedAny ? ' Earlier members were.' : ''}');
+          setState(() => _error ??= tr(
+                  'Phone not verified — member {0} was not added.', [i + 1]) +
+              (addedAny ? tr(' Earlier members were.') : ''));
           return;
         }
 
@@ -93,7 +96,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
       if (mounted) setState(() => _error = e.message);
     } catch (_) {
       if (mounted) {
-        setState(() => _error = 'Could not save members. Check your connection.');
+        setState(() => _error = tr('Could not save members. Check your connection.'));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -111,7 +114,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
     } catch (_) {
       if (mounted) {
         setState(
-          () => _error = 'Could not send the code. Check your connection.',
+          () => _error = tr('Could not send the code. Check your connection.'),
         );
       }
       return false;
@@ -140,8 +143,8 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
             children: [
               const SizedBox(height: 16),
               AuthHeader(
-                title: 'Add Members',
-                subtitle: 'Enter member details manually.',
+                title: tr('Add Members'),
+                subtitle: tr('Enter member details manually.'),
                 onBack: () => Navigator.of(context).maybePop(),
               ),
               const SizedBox(height: 28),
@@ -163,7 +166,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Add another member',
+                      tr('Add another member'),
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -176,7 +179,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
               if (_error != null) ...[
                 const SizedBox(height: 16),
                 Text(
-                  _error!,
+                  tr(_error!),
                   style: GoogleFonts.inter(
                     fontSize: 12.5,
                     color: AppColors.danger,
@@ -185,7 +188,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
               ],
               const SizedBox(height: 32),
               PrimaryButton(
-                text: _saving ? 'Saving…' : 'Save members',
+                text: _saving ? tr('Saving…') : tr('Save members'),
                 onPressed: _saving ? null : _save,
               ),
               const SizedBox(height: 20),
@@ -207,7 +210,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        "We'll text each member a code to confirm their number before they're added.",
+                        tr("We'll text each member a code to confirm their number before they're added."),
                         style: GoogleFonts.inter(
                           fontSize: 12.5,
                           color: AppColors.ink700,
@@ -244,7 +247,7 @@ class _MemberFormState extends State<_MemberForm> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Member ${widget.memberNumber}',
+          tr('Member {0}', [widget.memberNumber]),
           style: GoogleFonts.plusJakartaSans(
             fontSize: 15,
             fontWeight: FontWeight.w700,
@@ -253,8 +256,8 @@ class _MemberFormState extends State<_MemberForm> {
         ),
         const SizedBox(height: 12),
         AuthTextField(
-          label: 'Full name',
-          hint: 'Enter full name',
+          label: tr('Full name'),
+          hint: tr('Enter full name'),
           controller: widget.data.nameController,
         ),
         const SizedBox(height: 18),
@@ -268,8 +271,8 @@ class _MemberFormState extends State<_MemberForm> {
         ),
         const SizedBox(height: 18),
         AuthTextField(
-          label: 'Member number',
-          hint: 'e.g. 001',
+          label: tr('Member number'),
+          hint: tr('e.g. 001'),
           requiredField: false,
           controller: widget.data.numberController,
         ),
@@ -292,7 +295,7 @@ class _GenderDropdown extends StatelessWidget {
       children: [
         Text.rich(
           TextSpan(
-            text: 'Gender',
+            text: tr('Gender'),
             style: GoogleFonts.inter(
               fontSize: 12.5,
               fontWeight: FontWeight.w700,
@@ -310,15 +313,15 @@ class _GenderDropdown extends StatelessWidget {
         DropdownButtonFormField<String>(
           initialValue: value,
           hint: Text(
-            'Select gender',
+            tr('Select gender'),
             style: GoogleFonts.inter(
               fontSize: 14,
               color: AppColors.ink400,
             ),
           ),
-          items: const [
-            DropdownMenuItem(value: 'Male', child: Text('Male')),
-            DropdownMenuItem(value: 'Female', child: Text('Female')),
+          items: [
+            DropdownMenuItem(value: 'Male', child: Text(tr('Male'))),
+            DropdownMenuItem(value: 'Female', child: Text(tr('Female'))),
           ],
           onChanged: onChanged,
           style: GoogleFonts.inter(fontSize: 14, color: AppColors.ink900),
@@ -389,7 +392,7 @@ class _MemberOtpSheetState extends State<_MemberOtpSheet> {
     } on GraphQLException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } catch (_) {
-      if (mounted) setState(() => _error = 'Could not resend the code.');
+      if (mounted) setState(() => _error = tr('Could not resend the code.'));
     } finally {
       if (mounted) setState(() => _resending = false);
     }
@@ -397,7 +400,7 @@ class _MemberOtpSheetState extends State<_MemberOtpSheet> {
 
   Future<void> _verify() async {
     if (_code.length < _memberOtpLength) {
-      setState(() => _error = 'Enter the $_memberOtpLength-digit code');
+      setState(() => _error = tr('Enter the {0}-digit code', [_memberOtpLength]));
       return;
     }
     setState(() {
@@ -410,7 +413,7 @@ class _MemberOtpSheetState extends State<_MemberOtpSheet> {
     } on GraphQLException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } catch (_) {
-      if (mounted) setState(() => _error = 'Invalid or expired code');
+      if (mounted) setState(() => _error = tr('Invalid or expired code'));
     } finally {
       if (mounted) setState(() => _verifying = false);
     }
@@ -444,7 +447,7 @@ class _MemberOtpSheetState extends State<_MemberOtpSheet> {
             ),
             const SizedBox(height: 18),
             Text(
-              'Verify member ${widget.memberNumber}\'s phone',
+              tr('Verify member {0}\'s phone', [widget.memberNumber]),
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 17,
                 fontWeight: FontWeight.w800,
@@ -454,7 +457,7 @@ class _MemberOtpSheetState extends State<_MemberOtpSheet> {
             const SizedBox(height: 6),
             Text.rich(
               TextSpan(
-                text: "We've texted a $_memberOtpLength-digit code to\n",
+                text: tr("We've texted a {0}-digit code to\n", [_memberOtpLength]),
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   height: 1.5,
@@ -533,7 +536,7 @@ class _MemberOtpSheetState extends State<_MemberOtpSheet> {
                 child: Padding(
                   padding: const EdgeInsets.all(4),
                   child: Text(
-                    _resending ? 'Resending…' : 'Resend code',
+                    _resending ? tr('Resending…') : tr('Resend code'),
                     style: GoogleFonts.inter(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,
@@ -547,7 +550,7 @@ class _MemberOtpSheetState extends State<_MemberOtpSheet> {
               const SizedBox(height: 8),
               Center(
                 child: Text(
-                  _error!,
+                  tr(_error!),
                   style: GoogleFonts.inter(
                     fontSize: 12.5,
                     color: AppColors.danger,
@@ -570,7 +573,7 @@ class _MemberOtpSheetState extends State<_MemberOtpSheet> {
                       ),
                     ),
                     child: Text(
-                      'Cancel',
+                      tr('Cancel'),
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -582,7 +585,7 @@ class _MemberOtpSheetState extends State<_MemberOtpSheet> {
                 Expanded(
                   flex: 2,
                   child: PrimaryButton(
-                    text: _verifying ? 'Verifying…' : 'Verify',
+                    text: _verifying ? tr('Verifying…') : tr('Verify'),
                     onPressed: _verifying ? null : _verify,
                   ),
                 ),

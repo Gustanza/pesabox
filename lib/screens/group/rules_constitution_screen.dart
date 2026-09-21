@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class RulesConstitutionScreen extends StatelessWidget {
   const RulesConstitutionScreen({super.key});
 
@@ -19,13 +21,13 @@ class RulesConstitutionScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 16),
               AuthHeader(
-                title: 'Rules & Constitution',
+                title: tr('Rules & Constitution'),
                 onBack: () => Navigator.of(context).maybePop(),
               ),
-              const Expanded(
+              Expanded(
                 child: Center(
                   child: _ComingSoon(
-                    message: 'Rules & Constitution is coming soon.',
+                    message: tr('Rules & Constitution is coming soon.'),
                   ),
                 ),
               ),
@@ -50,7 +52,7 @@ class _ComingSoon extends StatelessWidget {
         const Icon(Icons.construction_rounded, size: 40, color: AppColors.ink400),
         const SizedBox(height: 12),
         Text(
-          message,
+          tr(message),
           textAlign: TextAlign.center,
           style: GoogleFonts.inter(fontSize: 14, color: AppColors.ink600),
         ),

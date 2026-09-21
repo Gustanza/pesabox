@@ -6,6 +6,8 @@ import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class MeetingReviewScreen extends StatefulWidget {
   const MeetingReviewScreen({super.key, this.meetingId = '12'});
 
@@ -56,7 +58,7 @@ class _MeetingReviewScreenState extends State<MeetingReviewScreen> {
   String get _meetingTitle {
     final m = _meeting;
     if (m?['title']?.toString().isNotEmpty == true) return m!['title'].toString();
-    return 'Meeting #${m?['meetingNumber'] ?? widget.meetingId}';
+    return tr('Meeting #{0}', [m?['meetingNumber'] ?? widget.meetingId]);
   }
 
   Future<void> _close() async {
@@ -71,7 +73,7 @@ class _MeetingReviewScreenState extends State<MeetingReviewScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), behavior: SnackBarBehavior.floating),
+        SnackBar(content: Text(tr(e.toString())), behavior: SnackBarBehavior.floating),
       );
     } finally {
       if (mounted) setState(() => _closing = false);
@@ -92,7 +94,7 @@ class _MeetingReviewScreenState extends State<MeetingReviewScreen> {
             children: [
               const SizedBox(height: 16),
               AuthHeader(
-                title: 'Review & Close',
+                title: tr('Review & Close'),
                 subtitle: _meetingTitle,
                 onBack: () => Navigator.of(context).maybePop(),
               ),
@@ -104,38 +106,38 @@ class _MeetingReviewScreenState extends State<MeetingReviewScreen> {
                 )
               else ...[
                 _SectionCard(
-                  title: 'Attendance',
+                  title: tr('Attendance'),
                   children: [
-                    _KVRow(label: 'Present', value: '${_attendanceCount('present')}'),
-                    _KVRow(label: 'Late', value: '${_attendanceCount('late')}'),
-                    _KVRow(label: 'Absent', value: '${_attendanceCount('absent')}'),
-                    _KVRow(label: 'Excused', value: '${_attendanceCount('excused')}'),
+                    _KVRow(label: tr('Present'), value: '${_attendanceCount('present')}'),
+                    _KVRow(label: tr('Late'), value: '${_attendanceCount('late')}'),
+                    _KVRow(label: tr('Absent'), value: '${_attendanceCount('absent')}'),
+                    _KVRow(label: tr('Excused'), value: '${_attendanceCount('excused')}'),
                   ],
                 ),
                 const SizedBox(height: 12),
                 _SectionCard(
-                  title: 'Money received',
+                  title: tr('Money received'),
                   children: [
-                    _KVRow(label: 'Savings', value: state.money(_sumType(['contribution']))),
-                    _KVRow(label: 'Shares', value: state.money(_sumType(['share']))),
-                    _KVRow(label: 'Social Fund', value: state.money(_sumType(['social_fund']))),
-                    _KVRow(label: 'Fines', value: state.money(_sumType(['fine']))),
+                    _KVRow(label: tr('Savings'), value: state.money(_sumType(['contribution']))),
+                    _KVRow(label: tr('Shares'), value: state.money(_sumType(['share']))),
+                    _KVRow(label: tr('Social Fund'), value: state.money(_sumType(['social_fund']))),
+                    _KVRow(label: tr('Fines'), value: state.money(_sumType(['fine']))),
                   ],
                 ),
                 const SizedBox(height: 12),
                 _SectionCard(
-                  title: 'Loans',
+                  title: tr('Loans'),
                   children: [
-                    _KVRow(label: 'Disbursed', value: state.money(_sumType(['loan_disbursement']))),
-                    _KVRow(label: 'Repaid', value: state.money(_sumType(['loan_repayment']))),
+                    _KVRow(label: tr('Disbursed'), value: state.money(_sumType(['loan_disbursement']))),
+                    _KVRow(label: tr('Repaid'), value: state.money(_sumType(['loan_repayment']))),
                   ],
                 ),
                 const SizedBox(height: 12),
                 _SectionCard(
-                  title: 'Expenses',
+                  title: tr('Expenses'),
                   children: [
                     _KVRow(
-                      label: 'Total expenses',
+                      label: tr('Total expenses'),
                       value: state.money(_sumType(['expense'])),
                       valueColor: AppColors.danger,
                     ),
@@ -160,7 +162,7 @@ class _MeetingReviewScreenState extends State<MeetingReviewScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white),
                           )
                         : Text(
-                            'Confirm & close meeting',
+                            tr('Confirm & close meeting'),
                             style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.white),
                           ),
                   ),
@@ -195,7 +197,7 @@ class _SectionCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            title,
+            tr(title),
             style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.ink900),
           ),
           const SizedBox(height: 12),
@@ -220,9 +222,9 @@ class _KVRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600)),
+          Text(tr(label), style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600)),
           Text(
-            value,
+            tr(value),
             style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: valueColor ?? AppColors.ink900),
           ),
         ],

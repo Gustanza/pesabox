@@ -6,6 +6,8 @@ import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class FinesListScreen extends StatefulWidget {
   const FinesListScreen({super.key});
 
@@ -51,7 +53,7 @@ class _FinesListScreenState extends State<FinesListScreen> {
     final name = [m['firstName'], m['lastName']]
         .where((s) => (s ?? '').toString().isNotEmpty)
         .join(' ');
-    return name.isEmpty ? 'Unknown member' : name;
+    return name.isEmpty ? tr('Unknown member') : name;
   }
 
   String _initials(String name) {
@@ -70,15 +72,15 @@ class _FinesListScreenState extends State<FinesListScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Pay fine'),
+        title: Text(tr('Pay fine')),
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Amount paid'),
+          decoration: InputDecoration(labelText: tr('Amount paid')),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Pay')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(tr('Cancel'))),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(tr('Pay'))),
         ],
       ),
     );
@@ -95,7 +97,7 @@ class _FinesListScreenState extends State<FinesListScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), behavior: SnackBarBehavior.floating),
+        SnackBar(content: Text(tr(e.toString())), behavior: SnackBarBehavior.floating),
       );
     }
   }
@@ -123,7 +125,7 @@ class _FinesListScreenState extends State<FinesListScreen> {
                   const ScreenBackButton(),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text('Fines', style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.ink900)),
+                    child: Text(tr('Fines'), style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.ink900)),
                   ),
                   GestureDetector(
                     onTap: () async {
@@ -145,13 +147,13 @@ class _FinesListScreenState extends State<FinesListScreen> {
               else ...[
                 Row(
                   children: [
-                    Expanded(child: _StatBox(label: 'Total fines', value: state.money(total), color: AppColors.teal800)),
+                    Expanded(child: _StatBox(label: tr('Total fines'), value: state.money(total), color: AppColors.teal800)),
                     const SizedBox(width: 10),
-                    Expanded(child: _StatBox(label: 'Unpaid', value: state.money(unpaid), color: AppColors.danger)),
+                    Expanded(child: _StatBox(label: tr('Unpaid'), value: state.money(unpaid), color: AppColors.danger)),
                   ],
                 ),
                 const SizedBox(height: 24),
-                Text('Recent fines', style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink900)),
+                Text(tr('Recent fines'), style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink900)),
                 const SizedBox(height: 12),
                 Container(
                   width: double.infinity,
@@ -159,7 +161,7 @@ class _FinesListScreenState extends State<FinesListScreen> {
                   child: _fines.isEmpty
                       ? Padding(
                           padding: const EdgeInsets.all(20),
-                          child: Text('No fines recorded yet.', style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink400)),
+                          child: Text(tr('No fines recorded yet.'), style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink400)),
                         )
                       : Column(
                           children: [
@@ -194,7 +196,7 @@ class _FinesListScreenState extends State<FinesListScreen> {
                       elevation: 0,
                       shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
                     ),
-                    child: Text('Record a fine', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.white)),
+                    child: Text(tr('Record a fine'), style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.white)),
                   ),
                 ),
               const SizedBox(height: 32),
@@ -221,9 +223,9 @@ class _StatBox extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.ink400)),
+          Text(tr(label), style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.ink400)),
           const SizedBox(height: 6),
-          Text(value, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: color)),
+          Text(tr(value), style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: color)),
         ],
       ),
     );
@@ -262,14 +264,14 @@ class _FineRow extends StatelessWidget {
               height: 40,
               decoration: BoxDecoration(shape: BoxShape.circle, color: paid ? AppColors.green100 : AppColors.danger100),
               alignment: Alignment.center,
-              child: Text(initials, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: paid ? AppColors.teal800 : AppColors.danger)),
+              child: Text(tr(initials), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: paid ? AppColors.teal800 : AppColors.danger)),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(name, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink900)),
+                  Text(tr(name), style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink900)),
                   const SizedBox(height: 2),
                   Text('$reason · $amount', style: GoogleFonts.inter(fontSize: 12, color: AppColors.ink400)),
                 ],
@@ -279,7 +281,7 @@ class _FineRow extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(color: paid ? AppColors.green100 : AppColors.danger100, borderRadius: AppRadius.sm),
               child: Text(
-                waived ? 'Waived' : (paid ? 'Paid' : 'Unpaid'),
+                waived ? tr('Waived') : (paid ? 'Paid' : 'Unpaid'),
                 style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: paid ? AppColors.teal800 : AppColors.danger),
               ),
             ),

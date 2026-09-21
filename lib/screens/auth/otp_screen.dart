@@ -10,6 +10,8 @@ import '../../theme/app_theme.dart';
 import '../../router/app_router.dart';
 import 'auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 const int _codeLength = 4;
 
 class OtpScreen extends StatefulWidget {
@@ -95,7 +97,7 @@ class _OtpScreenState extends State<OtpScreen> {
       await AuthService.requestOtp(_phone!);
       _startTimer();
     } catch (_) {
-      if (mounted) setState(() => _error = 'Could not resend the code.');
+      if (mounted) setState(() => _error = tr('Could not resend the code.'));
     } finally {
       if (mounted) setState(() => _resending = false);
     }
@@ -104,7 +106,7 @@ class _OtpScreenState extends State<OtpScreen> {
   Future<void> _verify() async {
     if (_phone == null) return;
     if (_code.length < _codeLength) {
-      setState(() => _error = 'Enter the $_codeLength-digit code');
+      setState(() => _error = tr('Enter the {0}-digit code', [_codeLength]));
       return;
     }
 
@@ -123,7 +125,7 @@ class _OtpScreenState extends State<OtpScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = 'Invalid or expired code');
+      setState(() => _error = tr('Invalid or expired code'));
     } finally {
       if (mounted) setState(() => _verifying = false);
     }
@@ -142,7 +144,7 @@ class _OtpScreenState extends State<OtpScreen> {
               const AuthHeader(),
               const SizedBox(height: 24),
               Text(
-                'Verify your phone number',
+                tr('Verify your phone number'),
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 19,
                   fontWeight: FontWeight.w800,
@@ -152,7 +154,7 @@ class _OtpScreenState extends State<OtpScreen> {
               const SizedBox(height: 6),
               Text.rich(
                 TextSpan(
-                  text: "We've texted a $_codeLength-digit code to\n",
+                  text: tr("We've texted a {0}-digit code to\n", [_codeLength]),
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     height: 1.5,
@@ -228,7 +230,7 @@ class _OtpScreenState extends State<OtpScreen> {
               Center(
                 child: _secondsRemaining > 0
                     ? Text(
-                        'Resend code (${_format(_secondsRemaining)})',
+                        tr('Resend code ({0})', [_format(_secondsRemaining)]),
                         style: GoogleFonts.inter(
                           fontSize: 12.5,
                           color: AppColors.ink400,
@@ -239,7 +241,7 @@ class _OtpScreenState extends State<OtpScreen> {
                         child: Padding(
                           padding: const EdgeInsets.all(4),
                           child: Text(
-                            _resending ? 'Resending…' : 'Resend code',
+                            _resending ? tr('Resending…') : tr('Resend code'),
                             style: GoogleFonts.inter(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w700,
@@ -253,7 +255,7 @@ class _OtpScreenState extends State<OtpScreen> {
                 const SizedBox(height: 12),
                 Center(
                   child: Text(
-                    _error!,
+                    tr(_error!),
                     style: GoogleFonts.inter(
                       fontSize: 12.5,
                       color: AppColors.danger,
@@ -263,7 +265,7 @@ class _OtpScreenState extends State<OtpScreen> {
               ],
               const SizedBox(height: 24),
               PrimaryButton(
-                text: _verifying ? 'Verifying…' : 'Verify',
+                text: _verifying ? tr('Verifying…') : tr('Verify'),
                 onPressed: _verifying ? null : _verify,
               ),
             ],

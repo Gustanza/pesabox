@@ -6,6 +6,8 @@ import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import 'dashboard_nav_bar.dart';
 
+import '../../i18n/i18n.dart';
+
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -62,7 +64,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Hello, ${AppState.I.userName.split(' ').first}',
+                          tr('Hello, {0}', [AppState.I.userName.split(' ').first]),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
@@ -71,7 +73,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          state.groupName,
+                          tr(state.groupName),
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             color: AppColors.ink400,
@@ -122,7 +124,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Group balance',
+                        tr('Group balance'),
                         style: GoogleFonts.inter(
                           fontSize: 13,
                           color: AppColors.white.withValues(alpha: 0.7),
@@ -130,9 +132,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        state.money(state.groupSavings +
+                        tr(state.money(state.groupSavings +
                             state.groupShares +
-                            state.groupSocialFund),
+                            state.groupSocialFund)),
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 28,
                           fontWeight: FontWeight.w700,
@@ -150,14 +152,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   children: [
                     Expanded(
                       child: _SubCard(
-                        label: 'Savings',
+                        label: tr('Savings'),
                         amount: state.money(state.groupSavings),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: _SubCard(
-                        label: 'Shares',
+                        label: tr('Shares'),
                         amount: state.money(state.groupShares),
                       ),
                     ),
@@ -171,14 +173,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   children: [
                     Expanded(
                       child: _SubCard(
-                        label: 'Social Fund',
+                        label: tr('Social Fund'),
                         amount: state.money(state.groupSocialFund),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: _SubCard(
-                        label: 'Loan fund out',
+                        label: tr('Loan fund out'),
                         amount: state.money(state.groupLoansOut),
                       ),
                     ),
@@ -189,7 +191,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
-                  'Next meeting',
+                  tr('Next meeting'),
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -239,7 +241,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             children: [
                               Text(
                                 upcoming == null
-                                    ? 'No upcoming meeting'
+                                    ? tr('No upcoming meeting')
                                     : (upcoming['title']?.toString() ??
                                         'Meeting #${upcoming['meetingNumber']}'),
                                 style: GoogleFonts.inter(
@@ -251,7 +253,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               const SizedBox(height: 2),
                               Text(
                                 upcoming == null
-                                    ? 'Schedule one to get started'
+                                    ? tr('Schedule one to get started')
                                     : state.meetingSubtitle(upcoming),
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
@@ -269,7 +271,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             borderRadius: AppRadius.sm,
                           ),
                           child: Text(
-                            upcoming == null ? '' : 'Upcoming',
+                            upcoming == null ? '' : tr('Upcoming'),
                             style: GoogleFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
@@ -286,7 +288,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
-                  'Quick actions',
+                  tr('Quick actions'),
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -302,7 +304,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Expanded(
                       child: _QuickAction(
                         icon: Icons.play_arrow_rounded,
-                        label: 'Start meeting',
+                        label: tr('Start meeting'),
                         onTap: () {
                           final id = upcoming?['id']?.toString();
                           if (id == null || id.isEmpty) {
@@ -319,7 +321,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Expanded(
                       child: _QuickAction(
                         icon: Icons.person_add_rounded,
-                        label: 'Add member',
+                        label: tr('Add member'),
                         onTap: () {
                           Navigator.of(context).pushNamed(AppRouter.addMember);
                         },
@@ -329,7 +331,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Expanded(
                       child: _QuickAction(
                         icon: Icons.request_quote_rounded,
-                        label: 'Record loan',
+                        label: tr('Record loan'),
                         onTap: () {
                           Navigator.of(context).pushNamed(AppRouter.recordLoan);
                         },
@@ -339,7 +341,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Expanded(
                       child: _QuickAction(
                         icon: Icons.bar_chart_rounded,
-                        label: 'View reports',
+                        label: tr('View reports'),
                         onTap: () {
                           Navigator.of(context).pushNamed(AppRouter.reports);
                         },
@@ -355,7 +357,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Recent activity',
+                      tr('Recent activity'),
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -373,7 +375,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                       child: Text(
-                        'See all →',
+                        tr('See all →'),
                         style: GoogleFonts.inter(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -400,7 +402,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         Padding(
                           padding: const EdgeInsets.all(20),
                           child: Text(
-                            'No activity yet.',
+                            tr('No activity yet.'),
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               color: AppColors.ink400,
@@ -463,7 +465,7 @@ class _SubCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            label,
+            tr(label),
             style: GoogleFonts.inter(
               fontSize: 12,
               color: AppColors.ink400,
@@ -471,7 +473,7 @@ class _SubCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            amount,
+            tr(amount),
             style: GoogleFonts.plusJakartaSans(
               fontSize: 15,
               fontWeight: FontWeight.w700,
@@ -515,7 +517,7 @@ class _QuickAction extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              label,
+              tr(label),
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
                 fontSize: 11,
@@ -568,7 +570,7 @@ class _ActivityRow extends StatelessWidget {
             ),
             child: Center(
               child: Text(
-                initials,
+                tr(initials),
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -583,7 +585,7 @@ class _ActivityRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  name,
+                  tr(name),
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -592,7 +594,7 @@ class _ActivityRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 1),
                 Text(
-                  detail,
+                  tr(detail),
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     color: AppColors.ink400,
@@ -602,7 +604,7 @@ class _ActivityRow extends StatelessWidget {
             ),
           ),
           Text(
-            amount,
+            tr(amount),
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w600,

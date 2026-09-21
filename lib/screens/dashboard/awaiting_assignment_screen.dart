@@ -5,6 +5,8 @@ import '../../router/app_router.dart';
 import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 
+import '../../i18n/i18n.dart';
+
 class AwaitingAssignmentScreen extends StatefulWidget {
   const AwaitingAssignmentScreen({super.key});
 
@@ -26,7 +28,7 @@ class _AwaitingAssignmentScreenState extends State<AwaitingAssignmentScreen> {
           .pushNamedAndRemoveUntil(AppRouter.dashboard, (r) => false);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Still no group assigned yet.')),
+        SnackBar(content: Text(tr('Still no group assigned yet.'))),
       );
     }
   }
@@ -43,7 +45,7 @@ class _AwaitingAssignmentScreenState extends State<AwaitingAssignmentScreen> {
             children: [
               const SizedBox(height: 24),
               Text(
-                'Hello, ${AppState.I.userName}',
+                tr('Hello, {0}', [AppState.I.userName]),
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
@@ -52,7 +54,7 @@ class _AwaitingAssignmentScreenState extends State<AwaitingAssignmentScreen> {
               ),
               const SizedBox(height: 2),
               Text(
-                'Your group is being set up',
+                tr('Your group is being set up'),
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   color: AppColors.ink400,
@@ -77,7 +79,7 @@ class _AwaitingAssignmentScreenState extends State<AwaitingAssignmentScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Waiting for your group',
+                      tr('Waiting for your group'),
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
@@ -86,7 +88,7 @@ class _AwaitingAssignmentScreenState extends State<AwaitingAssignmentScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'A Super Admin will create your group and assign it to you. Once assigned, you can configure financial rules and start managing members.',
+                      tr('A Super Admin will create your group and assign it to you. Once assigned, you can configure financial rules and start managing members.'),
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
                         fontSize: 13,
@@ -99,7 +101,7 @@ class _AwaitingAssignmentScreenState extends State<AwaitingAssignmentScreen> {
               ),
               const SizedBox(height: 32),
               Text(
-                'How it works',
+                tr('How it works'),
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -109,20 +111,20 @@ class _AwaitingAssignmentScreenState extends State<AwaitingAssignmentScreen> {
               const SizedBox(height: 16),
               _TimelineStep(
                 number: 1,
-                title: 'Super Admin creates your group',
-                subtitle: 'Group details are set up in the system',
+                title: tr('Super Admin creates your group'),
+                subtitle: tr('Group details are set up in the system'),
                 isLast: false,
               ),
               _TimelineStep(
                 number: 2,
-                title: 'Group is assigned to you',
-                subtitle: 'You receive a notification',
+                title: tr('Group is assigned to you'),
+                subtitle: tr('You receive a notification'),
                 isLast: false,
               ),
               _TimelineStep(
                 number: 3,
-                title: 'You add members',
-                subtitle: 'Invite members to your group',
+                title: tr('You add members'),
+                subtitle: tr('Invite members to your group'),
                 isLast: true,
               ),
               const SizedBox(height: 24),
@@ -139,7 +141,7 @@ class _AwaitingAssignmentScreenState extends State<AwaitingAssignmentScreen> {
                     ),
                   ),
                   child: Text(
-                    _checking ? 'Checking…' : 'Check again',
+                    _checking ? tr('Checking…') : tr('Check again'),
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -159,7 +161,7 @@ class _AwaitingAssignmentScreenState extends State<AwaitingAssignmentScreen> {
                     );
                   },
                   child: Text(
-                    'Log out',
+                    tr('Log out'),
                     style: GoogleFonts.inter(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w600,
@@ -231,7 +233,7 @@ class _TimelineStep extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  tr(title),
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -240,7 +242,7 @@ class _TimelineStep extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  subtitle,
+                  tr(subtitle),
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: AppColors.ink400,

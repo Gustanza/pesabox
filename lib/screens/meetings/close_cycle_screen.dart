@@ -5,6 +5,8 @@ import '../../router/app_router.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class CloseCycleScreen extends StatelessWidget {
   const CloseCycleScreen({super.key});
 
@@ -24,7 +26,7 @@ class CloseCycleScreen extends StatelessWidget {
                   const ScreenBackButton(),
                   const SizedBox(width: 12),
                   Text(
-                    'Close Cycle',
+                    tr('Close Cycle'),
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -59,7 +61,7 @@ class CloseCycleScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Are you sure you want to close this cycle?',
+                      tr('Are you sure you want to close this cycle?'),
                       textAlign: TextAlign.center,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 17,
@@ -69,7 +71,7 @@ class CloseCycleScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Closing the cycle will freeze all member accounts and generate a final financial summary. This action cannot be undone.',
+                      tr('Closing the cycle will freeze all member accounts and generate a final financial summary. This action cannot be undone.'),
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
                         fontSize: 13,
@@ -91,12 +93,12 @@ class CloseCycleScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    _KVRow(label: 'Cycle', value: 'Cycle 1'),
-                    _KVRow(label: 'Meetings held', value: '12 of 52'),
-                    _KVRow(label: 'Total savings', value: 'TZS 840,000'),
-                    _KVRow(label: 'Total shares', value: 'TZS 480,000'),
+                    _KVRow(label: tr('Cycle'), value: 'Cycle 1'),
+                    _KVRow(label: tr('Meetings held'), value: '12 of 52'),
+                    _KVRow(label: tr('Total savings'), value: 'TZS 840,000'),
+                    _KVRow(label: tr('Total shares'), value: 'TZS 480,000'),
                     _KVRow(
-                      label: 'Loans outstanding',
+                      label: tr('Loans outstanding'),
                       value: 'TZS 500,000',
                       valueColor: AppColors.danger,
                     ),
@@ -123,7 +125,7 @@ class CloseCycleScreen extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    'Confirm & close cycle',
+                    tr('Confirm & close cycle'),
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -147,7 +149,7 @@ class CloseCycleScreen extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    'Cancel',
+                    tr('Cancel'),
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -183,14 +185,14 @@ class _KVRow extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            label,
+            tr(label),
             style: GoogleFonts.inter(
               fontSize: 13,
               color: AppColors.ink600,
             ),
           ),
           Text(
-            value,
+            tr(value),
             style: GoogleFonts.inter(
               fontSize: 13,
               fontWeight: FontWeight.w600,

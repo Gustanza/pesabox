@@ -5,6 +5,8 @@ import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class RecordSocialFundScreen extends StatefulWidget {
   const RecordSocialFundScreen({super.key, this.meetingId = '12'});
 
@@ -61,7 +63,7 @@ class _RecordSocialFundScreenState extends State<RecordSocialFundScreen> {
   String get _meetingTitle {
     final m = _meeting;
     if (m?['title']?.toString().isNotEmpty == true) return m!['title'].toString();
-    return 'Meeting #${m?['meetingNumber'] ?? widget.meetingId}';
+    return tr('Meeting #{0}', [m?['meetingNumber'] ?? widget.meetingId]);
   }
 
   double get _amount => double.tryParse(_amountController.text.trim()) ?? 0;
@@ -70,11 +72,11 @@ class _RecordSocialFundScreenState extends State<RecordSocialFundScreen> {
     final memberId = _memberId;
     final amount = _amount;
     if (memberId == null) {
-      _showError('Select a member');
+      _showError(tr('Select a member'));
       return;
     }
     if (amount <= 0) {
-      _showError('Enter a valid amount');
+      _showError(tr('Enter a valid amount'));
       return;
     }
     setState(() => _submitting = true);
@@ -97,7 +99,7 @@ class _RecordSocialFundScreenState extends State<RecordSocialFundScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+      SnackBar(content: Text(tr(message)), behavior: SnackBarBehavior.floating),
     );
   }
 
@@ -117,7 +119,7 @@ class _RecordSocialFundScreenState extends State<RecordSocialFundScreen> {
             children: [
               const SizedBox(height: 16),
               AuthHeader(
-                title: 'Record Social Fund',
+                title: tr('Record Social Fund'),
                 subtitle: _meetingTitle,
                 onBack: () => Navigator.of(context).maybePop(),
               ),
@@ -129,13 +131,13 @@ class _RecordSocialFundScreenState extends State<RecordSocialFundScreen> {
                 )
               else ...[
                 _SectionCard(
-                  title: 'Contribution details',
+                  title: tr('Contribution details'),
                   children: [
                     _Field(
-                      label: 'Member',
+                      label: tr('Member'),
                       child: _members.isEmpty
                           ? Text(
-                              'No members in this group yet.',
+                              tr('No members in this group yet.'),
                               style: GoogleFonts.inter(
                                   fontSize: 13, color: AppColors.ink400),
                             )
@@ -144,7 +146,7 @@ class _RecordSocialFundScreenState extends State<RecordSocialFundScreen> {
                               items: _members
                                   .map((m) => DropdownMenuItem(
                                         value: m['id']?.toString(),
-                                        child: Text(_memberName(m)),
+                                        child: Text(tr(_memberName(m))),
                                       ))
                                   .toList(),
                               onChanged: (v) => setState(() => _memberId = v),
@@ -153,20 +155,20 @@ class _RecordSocialFundScreenState extends State<RecordSocialFundScreen> {
                     ),
                     const SizedBox(height: 16),
                     _Field(
-                      label: 'Amount',
+                      label: tr('Amount'),
                       child: TextField(
                         controller: _amountController,
                         keyboardType: TextInputType.number,
-                        decoration: _inputDecoration(hint: 'Enter amount'),
+                        decoration: _inputDecoration(hint: tr('Enter amount')),
                       ),
                     ),
                     const SizedBox(height: 16),
                     _Field(
-                      label: 'Payment method',
+                      label: tr('Payment method'),
                       child: DropdownButtonFormField<String>(
                         initialValue: _method,
                         items: const ['Cash', 'Mobile Money', 'Bank Transfer']
-                            .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                            .map((m) => DropdownMenuItem(value: m, child: Text(tr(m))))
                             .toList(),
                         onChanged: (v) => setState(() => _method = v ?? 'Cash'),
                         decoration: _inputDecoration(),
@@ -186,11 +188,11 @@ class _RecordSocialFundScreenState extends State<RecordSocialFundScreen> {
                   child: Column(
                     children: [
                       _KVRow(
-                        label: 'Social Fund balance before',
+                        label: tr('Social Fund balance before'),
                         value: state.money(before),
                       ),
                       _KVRow(
-                        label: 'Balance after',
+                        label: tr('Balance after'),
                         value: state.money(after),
                         valueColor: AppColors.green600,
                       ),
@@ -217,7 +219,7 @@ class _RecordSocialFundScreenState extends State<RecordSocialFundScreen> {
                                 strokeWidth: 2, color: AppColors.white),
                           )
                         : Text(
-                            'Save contribution',
+                            tr('Save contribution'),
                             style: GoogleFonts.inter(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
@@ -277,7 +279,7 @@ class _SectionCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            title,
+            tr(title),
             style: GoogleFonts.plusJakartaSans(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -306,9 +308,9 @@ class _KVRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600)),
+          Text(tr(label), style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600)),
           Text(
-            value,
+            tr(value),
             style: GoogleFonts.inter(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -333,7 +335,7 @@ class _Field extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          tr(label),
           style: GoogleFonts.inter(
             fontSize: 12.5,
             fontWeight: FontWeight.w700,

@@ -6,6 +6,8 @@ import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../dashboard/dashboard_nav_bar.dart';
 
+import '../../i18n/i18n.dart';
+
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
@@ -22,7 +24,7 @@ class ProfileScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 16),
               Text(
-                'My Profile',
+                tr('My Profile'),
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
@@ -42,7 +44,7 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       alignment: Alignment.center,
                       child: Text(
-                        state.initials(state.userName),
+                        tr(state.initials(state.userName)),
                         style: GoogleFonts.inter(
                           fontSize: 28,
                           fontWeight: FontWeight.w800,
@@ -52,7 +54,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      state.userName,
+                      tr(state.userName),
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
@@ -61,7 +63,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Group Admin · ${state.groupName}',
+                      tr('Group Admin · {0}', [state.groupName]),
                       style: GoogleFonts.inter(
                         fontSize: 13,
                         color: AppColors.ink400,
@@ -82,15 +84,15 @@ class ProfileScreen extends StatelessWidget {
                   children: [
                     _InfoRow(
                       icon: Icons.phone_outlined,
-                      label: 'Phone',
+                      label: tr('Phone'),
                       value: state.userPhone.isNotEmpty
                           ? state.userPhone
                           : 'Not set',
                     ),
                     const Divider(height: 1, indent: 56),
-                    const _InfoRow(
+                    _InfoRow(
                       icon: Icons.event_outlined,
-                      label: 'Member since',
+                      label: tr('Member since'),
                       value: 'Mar 2026',
                     ),
                   ],
@@ -98,7 +100,7 @@ class ProfileScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                'Account',
+                tr('Account'),
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -117,7 +119,7 @@ class ProfileScreen extends StatelessWidget {
                   children: [
                     _AccountRow(
                       icon: Icons.group_outlined,
-                      title: 'Group info',
+                      title: tr('Group info'),
                       color: AppColors.teal800,
                       onTap: () {
                         Navigator.of(context).pushNamed(AppRouter.groupInfo);
@@ -126,7 +128,7 @@ class ProfileScreen extends StatelessWidget {
                     const Divider(height: 1, indent: 56),
                     _AccountRow(
                       icon: Icons.notifications_outlined,
-                      title: 'Notifications',
+                      title: tr('Notifications'),
                       color: AppColors.gold500,
                       onTap: () {
                         Navigator.of(context).pushNamed(AppRouter.settings);
@@ -135,7 +137,7 @@ class ProfileScreen extends StatelessWidget {
                     const Divider(height: 1, indent: 56),
                     _AccountRow(
                       icon: Icons.lock_outline_rounded,
-                      title: 'Security',
+                      title: tr('Security'),
                       color: AppColors.green600,
                       onTap: () {
                         Navigator.of(context).pushNamed(AppRouter.settings);
@@ -144,13 +146,13 @@ class ProfileScreen extends StatelessWidget {
                     const Divider(height: 1, indent: 56),
                     _AccountRow(
                       icon: Icons.help_outline_rounded,
-                      title: 'Help',
+                      title: tr('Help'),
                       color: AppColors.blue,
                     ),
                     const Divider(height: 1, indent: 56),
                     _AccountRow(
                       icon: Icons.settings_outlined,
-                      title: 'Settings',
+                      title: tr('Settings'),
                       color: AppColors.ink600,
                       onTap: () {
                         Navigator.of(context).pushNamed(AppRouter.settings);
@@ -181,7 +183,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    'Log out',
+                    tr('Log out'),
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -229,7 +231,7 @@ class _InfoRow extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              label,
+              tr(label),
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -238,7 +240,7 @@ class _InfoRow extends StatelessWidget {
             ),
           ),
           Text(
-            value,
+            tr(value),
             style: GoogleFonts.inter(
               fontSize: 13,
               color: AppColors.ink600,
@@ -283,7 +285,7 @@ class _AccountRow extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                title,
+                tr(title),
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,

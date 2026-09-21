@@ -1,5 +1,6 @@
 import 'app_data.dart';
 import 'graphql_client.dart';
+import '../i18n/i18n.dart';
 
 /// Registration and login are the same flow against the real backend: enter
 /// a phone number (requestOtp), verify the code that comes back (verifyOtp).
@@ -57,10 +58,10 @@ class AuthService {
 
     final user = data['login'] as Map<String, dynamic>?;
     if (user == null) {
-      throw const GraphQLException('Invalid or expired code');
+      throw GraphQLException(tr('Invalid or expired code'));
     }
     if (user['accessToken'] == null) {
-      throw const GraphQLException('Login succeeded but no session was issued');
+      throw GraphQLException(tr('Login succeeded but no session was issued'));
     }
 
     await AppState.I.setSession(user);

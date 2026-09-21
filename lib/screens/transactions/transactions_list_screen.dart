@@ -6,6 +6,8 @@ import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../dashboard/dashboard_nav_bar.dart';
 
+import '../../i18n/i18n.dart';
+
 class TransactionsListScreen extends StatefulWidget {
   const TransactionsListScreen({super.key});
 
@@ -53,7 +55,7 @@ class _TransactionsListScreenState extends State<TransactionsListScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Activity',
+                    tr('Activity'),
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
@@ -100,7 +102,7 @@ class _TransactionsListScreenState extends State<TransactionsListScreen> {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'More',
+                      tr('More'),
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -112,7 +114,7 @@ class _TransactionsListScreenState extends State<TransactionsListScreen> {
                       children: [
                         _MoreItem(
                           icon: Icons.schema_rounded,
-                          label: 'Reports',
+                          label: tr('Reports'),
                           onTap: () {
                             Navigator.of(context).pushNamed(AppRouter.reports);
                           },
@@ -120,7 +122,7 @@ class _TransactionsListScreenState extends State<TransactionsListScreen> {
                         const SizedBox(width: 10),
                         _MoreItem(
                           icon: Icons.sms_outlined,
-                          label: 'SMS log',
+                          label: tr('SMS log'),
                           onTap: () {
                             Navigator.of(context)
                                 .pushNamed(AppRouter.smsActivity);
@@ -129,7 +131,7 @@ class _TransactionsListScreenState extends State<TransactionsListScreen> {
                         const SizedBox(width: 10),
                         _MoreItem(
                           icon: Icons.account_balance_wallet_outlined,
-                          label: 'Funds',
+                          label: tr('Funds'),
                           onTap: () {
                             Navigator.of(context).pushNamed(AppRouter.funds);
                           },
@@ -138,7 +140,7 @@ class _TransactionsListScreenState extends State<TransactionsListScreen> {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'Latest',
+                      tr('Latest'),
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -157,7 +159,7 @@ class _TransactionsListScreenState extends State<TransactionsListScreen> {
                           ? Padding(
                               padding: const EdgeInsets.all(20),
                               child: Text(
-                                'No transactions recorded yet.',
+                                tr('No transactions recorded yet.'),
                                 style: GoogleFonts.inter(
                                   fontSize: 13,
                                   color: AppColors.ink400,
@@ -216,7 +218,7 @@ class _Chip extends StatelessWidget {
       ),
       child: Center(
         child: Text(
-          label,
+          tr(label),
           style: GoogleFonts.inter(
             fontSize: 13,
             fontWeight: FontWeight.w600,
@@ -264,7 +266,7 @@ class _MoreItem extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                label,
+                tr(label),
                 style: GoogleFonts.inter(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
@@ -380,7 +382,7 @@ class _TxRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    title,
+                    tr(title),
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -389,7 +391,7 @@ class _TxRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    subtitle,
+                    tr(subtitle),
                     style: GoogleFonts.inter(
                       fontSize: 11,
                       color: AppColors.ink400,
@@ -399,7 +401,7 @@ class _TxRow extends StatelessWidget {
               ),
             ),
             Text(
-              amount,
+              tr(amount),
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,

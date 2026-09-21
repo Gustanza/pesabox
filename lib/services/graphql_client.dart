@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'app_data.dart';
+import '../i18n/i18n.dart';
 
 /// Resolves the base URL of the PesaBox Go backend.
 ///
@@ -74,7 +75,7 @@ class GraphQLClient {
     final errors = decoded['errors'] as List?;
     if (errors != null && errors.isNotEmpty) {
       final message = (errors.first as Map)['message'] as String? ??
-          'Request failed';
+          tr('Request failed');
       throw GraphQLException(message);
     }
     final singleError = decoded['error'];

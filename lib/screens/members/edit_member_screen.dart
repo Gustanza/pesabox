@@ -6,6 +6,8 @@ import '../../router/app_router.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class EditMemberScreen extends StatelessWidget {
   const EditMemberScreen({super.key, this.memberId = 'm1'});
 
@@ -30,12 +32,12 @@ class EditMemberScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 16),
               AuthHeader(
-                title: 'Edit Member',
+                title: tr('Edit Member'),
                 onBack: () => Navigator.of(context).maybePop(),
               ),
               const SizedBox(height: 28),
               _EditField(
-                label: 'Full name',
+                label: tr('Full name'),
                 value: member.fullName,
               ),
               const SizedBox(height: 18),
@@ -45,24 +47,24 @@ class EditMemberScreen extends StatelessWidget {
               ),
               const SizedBox(height: 18),
               _EditDropdown(
-                label: 'Gender',
+                label: tr('Gender'),
                 value: 'Female',
                 items: const ['Male', 'Female'],
               ),
               const SizedBox(height: 18),
               _EditField(
-                label: 'Member number',
+                label: tr('Member number'),
                 value: memberNum,
               ),
               const SizedBox(height: 18),
               _EditDropdown(
-                label: 'Status',
+                label: tr('Status'),
                 value: 'Active',
                 items: const ['Active', 'Inactive', 'Suspended'],
               ),
               const SizedBox(height: 32),
               PrimaryButton(
-                text: 'Save changes',
+                text: tr('Save changes'),
                 onPressed: () {
                   Navigator.of(context).pushNamed(
                     AppRouter.memberDetailsPath(member.id),
@@ -90,7 +92,7 @@ class EditMemberScreen extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    'Deactivate member',
+                    tr('Deactivate member'),
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -120,7 +122,7 @@ class _EditField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          tr(label),
           style: GoogleFonts.inter(
             fontSize: 12.5,
             fontWeight: FontWeight.w700,
@@ -170,7 +172,7 @@ class _EditDropdown extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          tr(label),
           style: GoogleFonts.inter(
             fontSize: 12.5,
             fontWeight: FontWeight.w700,
@@ -181,7 +183,7 @@ class _EditDropdown extends StatelessWidget {
         DropdownButtonFormField<String>(
           initialValue: value,
           items: items
-              .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+              .map((e) => DropdownMenuItem(value: e, child: Text(tr(e))))
               .toList(),
           onChanged: (_) {},
           style: GoogleFonts.inter(fontSize: 14, color: AppColors.ink900),

@@ -7,6 +7,8 @@ import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class MembersListScreen extends StatefulWidget {
   const MembersListScreen({super.key});
 
@@ -52,7 +54,7 @@ class _MembersListScreenState extends State<MembersListScreen> {
             children: [
               const SizedBox(height: 16),
               AuthHeader(
-                title: 'Members',
+                title: tr('Members'),
                 onBack: () => Navigator.of(context).maybePop(),
               ),
               const SizedBox(height: 20),
@@ -64,7 +66,7 @@ class _MembersListScreenState extends State<MembersListScreen> {
                   color: AppColors.ink900,
                 ),
                 decoration: InputDecoration(
-                  hintText: 'Search members...',
+                  hintText: tr('Search members...'),
                   hintStyle: GoogleFonts.inter(
                     fontSize: 14,
                     color: AppColors.ink400,
@@ -109,7 +111,7 @@ class _MembersListScreenState extends State<MembersListScreen> {
                   child: _members.isEmpty
                       ? Center(
                           child: Text(
-                            'No members yet.',
+                            tr('No members yet.'),
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               color: AppColors.ink400,
@@ -199,7 +201,7 @@ class _StatsCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'TOTAL MEMBERS',
+            tr('TOTAL MEMBERS'),
             style: GoogleFonts.inter(
               fontSize: 11,
               fontWeight: FontWeight.w600,
@@ -250,7 +252,7 @@ class _MemberRow extends StatelessWidget {
               ),
               alignment: Alignment.center,
               child: Text(
-                member.initials,
+                tr(member.initials),
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
@@ -264,7 +266,7 @@ class _MemberRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    member.fullName,
+                    tr(member.fullName),
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -273,7 +275,7 @@ class _MemberRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    member.phone,
+                    tr(member.phone),
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       color: AppColors.ink400,
@@ -289,7 +291,7 @@ class _MemberRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
-                'Active',
+                tr('Active'),
                 style: GoogleFonts.inter(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,

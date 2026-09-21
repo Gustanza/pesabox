@@ -6,6 +6,8 @@ import '../../models/models.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class MemberStatementScreen extends StatelessWidget {
   const MemberStatementScreen({super.key, this.memberId = 'm1'});
 
@@ -45,7 +47,7 @@ class MemberStatementScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 16),
               AuthHeader(
-                title: 'Member Statement',
+                title: tr('Member Statement'),
                 subtitle: member.fullName,
                 onBack: () => Navigator.of(context).maybePop(),
               ),
@@ -59,7 +61,7 @@ class MemberStatementScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Text(
-                'Transaction history',
+                tr('Transaction history'),
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -77,7 +79,7 @@ class MemberStatementScreen extends StatelessWidget {
                     border: Border.all(color: AppColors.line),
                   ),
                   child: Text(
-                    'No transactions yet.',
+                    tr('No transactions yet.'),
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       color: AppColors.ink400,
@@ -91,11 +93,11 @@ class MemberStatementScreen extends StatelessWidget {
                 ),
               const SizedBox(height: 20),
               OutlineButton(
-                text: 'Share statement',
+                text: tr('Share statement'),
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Statement shared via SMS'),
+                    SnackBar(
+                      content: Text(tr('Statement shared via SMS')),
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
@@ -139,32 +141,32 @@ class _StatementSummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _KVRow(
-            label: 'Member since',
+            label: tr('Member since'),
             value: _formatDate(member.joinedAt),
           ),
           _KVRow(
-            label: 'Total savings',
+            label: tr('Total savings'),
             value: 'TZS ${_formatNum(member.savingsBalance)}',
           ),
           _KVRow(
-            label: 'Total shares',
+            label: tr('Total shares'),
             value: 'TZS ${_formatNum(totalShareValue)}',
           ),
           _KVRow(
-            label: 'Social Fund',
+            label: tr('Social Fund'),
             value: 'TZS ${_formatNum(member.socialFundBalance)}',
           ),
           _KVRow(
-            label: 'Loans taken',
+            label: tr('Loans taken'),
             value: 'TZS ${_formatNum(loansTaken)}',
           ),
           _KVRow(
-            label: 'Loan balance',
+            label: tr('Loan balance'),
             value: 'TZS ${_formatNum(loanBalance)}',
             valueColor: loanBalance > 0 ? AppColors.danger : AppColors.ink900,
           ),
           _KVRow(
-            label: 'Fines',
+            label: tr('Fines'),
             value: finesOutstanding > 0
                 ? 'TZS ${_formatNum(finesOutstanding)}'
                 : 'TZS 0',
@@ -184,9 +186,9 @@ class _StatementSummaryCard extends StatelessWidget {
   }
 
   static String _formatDate(DateTime date) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    final months = [
+      tr('Jan'), tr('Feb'), tr('Mar'), tr('Apr'), tr('May'), tr('Jun'),
+      tr('Jul'), tr('Aug'), tr('Sep'), tr('Oct'), tr('Nov'), tr('Dec')
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
@@ -211,14 +213,14 @@ class _KVRow extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            label,
+            tr(label),
             style: GoogleFonts.inter(
               fontSize: 13,
               color: AppColors.ink600,
             ),
           ),
           Text(
-            value,
+            tr(value),
             style: GoogleFonts.inter(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -262,7 +264,7 @@ class _StatementTransactionRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _typeName,
+                  tr(_typeName),
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -271,7 +273,7 @@ class _StatementTransactionRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  _formatDate(transaction.date),
+                  tr(_formatDate(transaction.date)),
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     color: AppColors.ink400,
@@ -281,7 +283,7 @@ class _StatementTransactionRow extends StatelessWidget {
             ),
           ),
           Text(
-            'TZS ${transaction.amount.toInt().toString().replaceAll(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), ',')}',
+            tr('TZS {0}', [transaction.amount.toInt().toString().replaceAll(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), ',')]),
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -330,26 +332,26 @@ class _StatementTransactionRow extends StatelessWidget {
   String get _typeName {
     switch (transaction.type) {
       case TransactionType.contribution:
-        return 'Contribution';
+        return tr('Contribution');
       case TransactionType.loanDisbursement:
-        return 'Loan Disbursement';
+        return tr('Loan Disbursement');
       case TransactionType.loanRepayment:
-        return 'Loan Repayment';
+        return tr('Loan Repayment');
       case TransactionType.fine:
-        return 'Fine';
+        return tr('Fine');
       case TransactionType.socialFund:
-        return 'Social Fund';
+        return tr('Social Fund');
       case TransactionType.expense:
-        return 'Expense';
+        return tr('Expense');
       default:
-        return 'Transaction';
+        return tr('Transaction');
     }
   }
 
   String _formatDate(DateTime date) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    final months = [
+      tr('Jan'), tr('Feb'), tr('Mar'), tr('Apr'), tr('May'), tr('Jun'),
+      tr('Jul'), tr('Aug'), tr('Sep'), tr('Oct'), tr('Nov'), tr('Dec')
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }

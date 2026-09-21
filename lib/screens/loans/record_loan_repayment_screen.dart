@@ -5,6 +5,8 @@ import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class RecordLoanRepaymentScreen extends StatefulWidget {
   const RecordLoanRepaymentScreen({super.key, this.loanId = 'l3'});
 
@@ -66,11 +68,11 @@ class _RecordLoanRepaymentScreenState extends State<RecordLoanRepaymentScreen> {
 
   String get _memberName {
     final m = _member;
-    if (m == null) return 'Unknown member';
+    if (m == null) return tr('Unknown member');
     final name = [m['firstName'], m['lastName']]
         .where((s) => (s ?? '').toString().isNotEmpty)
         .join(' ');
-    return name.isEmpty ? 'Unknown member' : name;
+    return name.isEmpty ? tr('Unknown member') : name;
   }
 
   String get _initials {
@@ -84,11 +86,11 @@ class _RecordLoanRepaymentScreenState extends State<RecordLoanRepaymentScreen> {
   Future<void> _submit() async {
     final amount = _amount;
     if (amount <= 0) {
-      _showError('Enter a valid amount');
+      _showError(tr('Enter a valid amount'));
       return;
     }
     if (amount > _outstanding) {
-      _showError('Repayment exceeds the remaining balance');
+      _showError(tr('Repayment exceeds the remaining balance'));
       return;
     }
     setState(() => _submitting = true);
@@ -110,7 +112,7 @@ class _RecordLoanRepaymentScreenState extends State<RecordLoanRepaymentScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+      SnackBar(content: Text(tr(message)), behavior: SnackBarBehavior.floating),
     );
   }
 
@@ -128,7 +130,7 @@ class _RecordLoanRepaymentScreenState extends State<RecordLoanRepaymentScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-              const AuthHeader(title: 'Record Repayment'),
+              AuthHeader(title: tr('Record Repayment')),
               const SizedBox(height: 20),
               if (_loading)
                 const Padding(
@@ -137,7 +139,7 @@ class _RecordLoanRepaymentScreenState extends State<RecordLoanRepaymentScreen> {
                 )
               else if (_loan == null)
                 Text(
-                  'Loan not found.',
+                  tr('Loan not found.'),
                   style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600),
                 )
               else ...[
@@ -155,7 +157,7 @@ class _RecordLoanRepaymentScreenState extends State<RecordLoanRepaymentScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _Field(
-                        label: 'Amount paid',
+                        label: tr('Amount paid'),
                         child: TextField(
                           controller: _amountController,
                           keyboardType: TextInputType.number,
@@ -164,11 +166,11 @@ class _RecordLoanRepaymentScreenState extends State<RecordLoanRepaymentScreen> {
                       ),
                       const SizedBox(height: 16),
                       _Field(
-                        label: 'Payment method',
+                        label: tr('Payment method'),
                         child: DropdownButtonFormField<String>(
                           initialValue: _method,
                           items: const ['Cash', 'Mobile Money', 'Bank Transfer']
-                              .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                              .map((m) => DropdownMenuItem(value: m, child: Text(tr(m))))
                               .toList(),
                           onChanged: (v) => setState(() => _method = v ?? 'Cash'),
                           decoration: _inputDecoration(),
@@ -188,9 +190,9 @@ class _RecordLoanRepaymentScreenState extends State<RecordLoanRepaymentScreen> {
                   ),
                   child: Column(
                     children: [
-                      _KVRow(label: 'Balance before', value: state.money(_outstanding)),
+                      _KVRow(label: tr('Balance before'), value: state.money(_outstanding)),
                       const Divider(height: 24),
-                      _KVRow(label: 'Balance after', value: state.money(after), strong: true),
+                      _KVRow(label: tr('Balance after'), value: state.money(after), strong: true),
                     ],
                   ),
                 ),
@@ -213,7 +215,7 @@ class _RecordLoanRepaymentScreenState extends State<RecordLoanRepaymentScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white),
                           )
                         : Text(
-                            'Save repayment',
+                            tr('Save repayment'),
                             style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.white),
                           ),
                   ),
@@ -273,16 +275,16 @@ class _AvatarCard extends StatelessWidget {
             height: 56,
             decoration: const BoxDecoration(color: AppColors.green600, shape: BoxShape.circle),
             alignment: Alignment.center,
-            child: Text(initials, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.white)),
+            child: Text(tr(initials), style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.white)),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink900)),
+                Text(tr(name), style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink900)),
                 const SizedBox(height: 2),
-                Text('Outstanding: $outstanding', style: GoogleFonts.inter(fontSize: 12, color: AppColors.ink400)),
+                Text(tr('Outstanding: {0}', [outstanding]), style: GoogleFonts.inter(fontSize: 12, color: AppColors.ink400)),
               ],
             ),
           ),
@@ -304,9 +306,9 @@ class _KVRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600)),
+        Text(tr(label), style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600)),
         Text(
-          value,
+          tr(value),
           style: GoogleFonts.inter(
             fontSize: strong ? 16 : 13,
             fontWeight: strong ? FontWeight.w800 : FontWeight.w600,
@@ -329,7 +331,7 @@ class _Field extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.ink700)),
+        Text(tr(label), style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.ink700)),
         const SizedBox(height: 6),
         child,
       ],

@@ -5,6 +5,8 @@ import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class RecordFineScreen extends StatefulWidget {
   const RecordFineScreen({super.key});
 
@@ -77,15 +79,15 @@ class _RecordFineScreenState extends State<RecordFineScreen> {
     final reason = _isOther ? _otherReasonController.text.trim() : _reason;
     final amount = double.tryParse(_amountController.text.trim()) ?? 0;
     if (memberId == null) {
-      _showError('Select a member');
+      _showError(tr('Select a member'));
       return;
     }
     if (reason == null || reason.isEmpty) {
-      _showError(_isOther ? 'Describe the reason for this fine' : 'Select a fine type');
+      _showError(_isOther ? tr('Describe the reason for this fine') : tr('Select a fine type'));
       return;
     }
     if (amount <= 0) {
-      _showError('Enter a valid amount');
+      _showError(tr('Enter a valid amount'));
       return;
     }
     setState(() => _submitting = true);
@@ -107,7 +109,7 @@ class _RecordFineScreenState extends State<RecordFineScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+      SnackBar(content: Text(tr(message)), behavior: SnackBarBehavior.floating),
     );
   }
 
@@ -122,7 +124,7 @@ class _RecordFineScreenState extends State<RecordFineScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-              const AuthHeader(title: 'Record Fine'),
+              AuthHeader(title: tr('Record Fine')),
               const SizedBox(height: 20),
               if (_loading)
                 const Padding(
@@ -142,10 +144,10 @@ class _RecordFineScreenState extends State<RecordFineScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _Field(
-                        label: 'Select member',
+                        label: tr('Select member'),
                         child: _members.isEmpty
                             ? Text(
-                                'No members in this group yet.',
+                                tr('No members in this group yet.'),
                                 style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink400),
                               )
                             : DropdownButtonFormField<String>(
@@ -153,7 +155,7 @@ class _RecordFineScreenState extends State<RecordFineScreen> {
                                 items: _members
                                     .map((m) => DropdownMenuItem(
                                           value: m['id']?.toString(),
-                                          child: Text(_memberName(m)),
+                                          child: Text(tr(_memberName(m))),
                                         ))
                                     .toList(),
                                 onChanged: (v) => setState(() => _memberId = v),
@@ -162,13 +164,13 @@ class _RecordFineScreenState extends State<RecordFineScreen> {
                       ),
                       const SizedBox(height: 16),
                       _Field(
-                        label: 'Fine type',
+                        label: tr('Fine type'),
                         child: DropdownButtonFormField<String>(
                           initialValue: _reason,
                           items: _reasons
                               .map((r) => DropdownMenuItem(
                                     value: r['reason']?.toString(),
-                                    child: Text(r['reason']?.toString() ?? ''),
+                                    child: Text(tr(r['reason']?.toString() ?? '')),
                                   ))
                               .toList(),
                           onChanged: (v) => setState(() {
@@ -180,7 +182,7 @@ class _RecordFineScreenState extends State<RecordFineScreen> {
                       ),
                       const SizedBox(height: 16),
                       _Field(
-                        label: 'Amount',
+                        label: tr('Amount'),
                         child: TextField(
                           controller: _amountController,
                           keyboardType: TextInputType.number,
@@ -190,10 +192,10 @@ class _RecordFineScreenState extends State<RecordFineScreen> {
                       if (_isOther) ...[
                         const SizedBox(height: 16),
                         _Field(
-                          label: 'Reason',
+                          label: tr('Reason'),
                           child: TextField(
                             controller: _otherReasonController,
-                            decoration: _inputDecoration(hint: 'Describe the reason'),
+                            decoration: _inputDecoration(hint: tr('Describe the reason')),
                           ),
                         ),
                       ],
@@ -219,7 +221,7 @@ class _RecordFineScreenState extends State<RecordFineScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white),
                           )
                         : Text(
-                            'Record fine',
+                            tr('Record fine'),
                             style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.white),
                           ),
                   ),
@@ -266,7 +268,7 @@ class _Field extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.ink700)),
+        Text(tr(label), style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.ink700)),
         const SizedBox(height: 6),
         child,
       ],

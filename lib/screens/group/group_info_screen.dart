@@ -6,6 +6,8 @@ import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../dashboard/dashboard_nav_bar.dart';
 
+import '../../i18n/i18n.dart';
+
 class GroupInfoScreen extends StatefulWidget {
   const GroupInfoScreen({super.key});
 
@@ -50,7 +52,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          state.groupName,
+                          tr(state.groupName),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
@@ -96,7 +98,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                       children: [
                         Expanded(
                           child: _StatBox(
-                            label: 'Members',
+                            label: tr('Members'),
                             value: '$memberTotal',
                             color: AppColors.teal800,
                           ),
@@ -104,7 +106,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: _StatBox(
-                            label: 'Meetings held',
+                            label: tr('Meetings held'),
                             value: '${state.meetingsHeld}',
                             color: AppColors.green600,
                           ),
@@ -123,7 +125,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                         children: [
                           _MenuRow(
                             icon: Icons.group_outlined,
-                            title: 'Members',
+                            title: tr('Members'),
                             color: AppColors.teal800,
                             onTap: () {
                               Navigator.of(context)
@@ -133,7 +135,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                           const Divider(height: 1, indent: 56),
                           _MenuRow(
                             icon: Icons.event_rounded,
-                            title: 'Meetings',
+                            title: tr('Meetings'),
                             color: AppColors.blue,
                             onTap: () {
                               Navigator.of(context)
@@ -143,7 +145,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                           const Divider(height: 1, indent: 56),
                           _MenuRow(
                             icon: Icons.account_balance_wallet_outlined,
-                            title: 'Funds',
+                            title: tr('Funds'),
                             color: AppColors.gold500,
                             onTap: () {
                               Navigator.of(context).pushNamed(AppRouter.funds);
@@ -152,7 +154,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                           const Divider(height: 1, indent: 56),
                           _MenuRow(
                             icon: Icons.request_quote_outlined,
-                            title: 'Loans',
+                            title: tr('Loans'),
                             color: AppColors.green600,
                             onTap: () {
                               Navigator.of(context).pushNamed(AppRouter.loansList);
@@ -161,7 +163,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                           const Divider(height: 1, indent: 56),
                           _MenuRow(
                             icon: Icons.gavel_outlined,
-                            title: 'Fines',
+                            title: tr('Fines'),
                             color: AppColors.danger,
                             onTap: () {
                               Navigator.of(context).pushNamed(AppRouter.finesList);
@@ -170,7 +172,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                           const Divider(height: 1, indent: 56),
                           _MenuRow(
                             icon: Icons.scale_outlined,
-                            title: 'Rules & constitution',
+                            title: tr('Rules & constitution'),
                             color: AppColors.teal700,
                             onTap: () {
                               Navigator.of(context)
@@ -180,7 +182,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                           const Divider(height: 1, indent: 56),
                           _MenuRow(
                             icon: Icons.campaign_outlined,
-                            title: 'Announcements',
+                            title: tr('Announcements'),
                             color: AppColors.blue,
                             onTap: () {
                               Navigator.of(context)
@@ -190,7 +192,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                           const Divider(height: 1, indent: 56),
                           _MenuRow(
                             icon: Icons.info_outline_rounded,
-                            title: 'Group information',
+                            title: tr('Group information'),
                             color: AppColors.ink600,
                             onTap: () {
                               Navigator.of(context)
@@ -237,7 +239,7 @@ class _StatBox extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            label,
+            tr(label),
             style: GoogleFonts.inter(
               fontSize: 11,
               fontWeight: FontWeight.w500,
@@ -246,7 +248,7 @@ class _StatBox extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            value,
+            tr(value),
             style: GoogleFonts.plusJakartaSans(
               fontSize: 20,
               fontWeight: FontWeight.w800,
@@ -292,7 +294,7 @@ class _MenuRow extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                title,
+                tr(title),
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,

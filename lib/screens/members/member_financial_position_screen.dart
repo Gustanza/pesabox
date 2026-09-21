@@ -6,6 +6,8 @@ import '../../models/models.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class MemberFinancialPositionScreen extends StatelessWidget {
   const MemberFinancialPositionScreen({super.key, this.memberId = 'm1'});
 
@@ -40,86 +42,86 @@ class MemberFinancialPositionScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 16),
               AuthHeader(
-                title: 'Financial Position',
+                title: tr('Financial Position'),
                 subtitle: member.fullName,
                 onBack: () => Navigator.of(context).maybePop(),
               ),
               const SizedBox(height: 20),
               _SectionCard(
-                title: 'Savings',
+                title: tr('Savings'),
                 children: [
                   _KVRow(
-                      label: 'Total savings',
+                      label: tr('Total savings'),
                       value: 'TZS ${_formatNum(member.savingsBalance)}'),
                   _KVRow(
-                      label: 'Mandatory',
+                      label: tr('Mandatory'),
                       value: 'TZS ${_formatNum(mandatorySavings)}'),
                   _KVRow(
-                      label: 'Voluntary',
+                      label: tr('Voluntary'),
                       value: 'TZS ${_formatNum(voluntarySavings)}'),
                 ],
               ),
               const SizedBox(height: 12),
               _SectionCard(
-                title: 'Shares',
+                title: tr('Shares'),
                 children: [
                   _KVRow(
-                      label: 'Shares held',
+                      label: tr('Shares held'),
                       value: '${member.shareCount}'),
                   _KVRow(
-                      label: 'Share value',
+                      label: tr('Share value'),
                       value: 'TZS ${_formatNum(shareValue)}'),
                   _KVRow(
-                      label: 'Total share value',
+                      label: tr('Total share value'),
                       value: 'TZS ${_formatNum(totalShareValue)}'),
                 ],
               ),
               const SizedBox(height: 12),
               _SectionCard(
-                title: 'Social Fund',
+                title: tr('Social Fund'),
                 children: [
                   _KVRow(
-                      label: 'Contributed',
+                      label: tr('Contributed'),
                       value: 'TZS ${_formatNum(member.socialFundBalance)}'),
                 ],
               ),
               const SizedBox(height: 12),
               _SectionCard(
-                title: 'Loan',
+                title: tr('Loan'),
                 children: [
                   _KVRow(
-                    label: 'Principal',
+                    label: tr('Principal'),
                     value: loan != null
                         ? 'TZS ${_formatNum(loan.amount)}'
                         : 'TZS 0',
                   ),
                   _KVRow(
-                    label: 'Repaid',
+                    label: tr('Repaid'),
                     value: loan != null
                         ? 'TZS ${_formatNum(loan.amountRepaid)}'
                         : 'TZS 0',
                   ),
                   _KVRow(
-                    label: 'Outstanding',
+                    label: tr('Outstanding'),
                     value: 'TZS ${_formatNum(member.outstandingLoan)}',
                     valueColor: AppColors.danger,
                   ),
                   if (loan != null)
                     _KVRow(
-                      label: 'Next repayment',
+                      label: tr('Next repayment'),
                       value: _formatDate(loan.dueDate),
                     ),
                 ],
               ),
               const SizedBox(height: 12),
               _SectionCard(
-                title: 'Fines',
+                title: tr('Fines'),
                 children: [
                   _KVRow(
-                      label: 'Charged',
+                      label: tr('Charged'),
                       value: 'TZS ${_formatNum(finesCharged)}'),
                   _KVRow(
-                      label: 'Paid',
+                      label: tr('Paid'),
                       value: 'TZS ${_formatNum(finesPaid)}'),
                 ],
               ),
@@ -139,9 +141,9 @@ class MemberFinancialPositionScreen extends StatelessWidget {
   }
 
   static String _formatDate(DateTime date) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    final months = [
+      tr('Jan'), tr('Feb'), tr('Mar'), tr('Apr'), tr('May'), tr('Jun'),
+      tr('Jul'), tr('Aug'), tr('Sep'), tr('Oct'), tr('Nov'), tr('Dec')
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
@@ -167,7 +169,7 @@ class _SectionCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            title,
+            tr(title),
             style: GoogleFonts.plusJakartaSans(
               fontSize: 15,
               fontWeight: FontWeight.w700,
@@ -201,14 +203,14 @@ class _KVRow extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            label,
+            tr(label),
             style: GoogleFonts.inter(
               fontSize: 13,
               color: AppColors.ink600,
             ),
           ),
           Text(
-            value,
+            tr(value),
             style: GoogleFonts.inter(
               fontSize: 13,
               fontWeight: FontWeight.w600,

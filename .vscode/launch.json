@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "PesaBox - LOCAL server (Chrome / Windows / iOS sim)",
+      "request": "launch",
+      "type": "dart",
+      "args": ["--dart-define=API_BASE_URL=http://localhost:8090"]
+    },
+    {
+      "name": "PesaBox - LOCAL server (Android emulator)",
+      "request": "launch",
+      "type": "dart",
+      "args": ["--dart-define=API_BASE_URL=http://10.0.2.2:8090"]
+    },
+    {
+      "name": "PesaBox - LIVE server (161.97.99.40)",
+      "request": "launch",
+      "type": "dart"
+    }
+  ]
+}

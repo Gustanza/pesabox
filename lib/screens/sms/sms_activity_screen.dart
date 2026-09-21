@@ -5,6 +5,8 @@ import '../../data/mock_data.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
+import '../../i18n/i18n.dart';
+
 class SmsActivityScreen extends StatelessWidget {
   const SmsActivityScreen({super.key});
 
@@ -26,16 +28,16 @@ class SmsActivityScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-              const AuthHeader(
-                title: 'SMS Activity',
-                subtitle: 'Sender ID: PESABOX',
+              AuthHeader(
+                title: tr('SMS Activity'),
+                subtitle: tr('Sender ID: PESABOX'),
               ),
               const SizedBox(height: 20),
-              const Row(
+              Row(
                 children: [
                   Expanded(
                     child: _StatBox(
-                      label: 'Delivered',
+                      label: tr('Delivered'),
                       value: '312',
                       color: AppColors.green600,
                     ),
@@ -43,7 +45,7 @@ class SmsActivityScreen extends StatelessWidget {
                   SizedBox(width: 10),
                   Expanded(
                     child: _StatBox(
-                      label: 'Pending/Failed',
+                      label: tr('Pending/Failed'),
                       value: '3',
                       color: AppColors.danger,
                     ),
@@ -52,7 +54,7 @@ class SmsActivityScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                'Recent messages',
+                tr('Recent messages'),
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -103,7 +105,7 @@ class _StatBox extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            label,
+            tr(label),
             style: GoogleFonts.inter(
               fontSize: 11,
               fontWeight: FontWeight.w500,
@@ -112,7 +114,7 @@ class _StatBox extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            value,
+            tr(value),
             style: GoogleFonts.plusJakartaSans(
               fontSize: 20,
               fontWeight: FontWeight.w800,
@@ -164,7 +166,7 @@ class _SmsCard extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  'P',
+                  tr('P'),
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
@@ -178,7 +180,7 @@ class _SmsCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'PESABOX · $_typeLabel',
+                      tr('PESABOX · {0}', [_typeLabel]),
                       style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -187,7 +189,7 @@ class _SmsCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      _timeLabel,
+                      tr(_timeLabel),
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         color: AppColors.ink400,
@@ -204,7 +206,7 @@ class _SmsCard extends StatelessWidget {
                   borderRadius: AppRadius.sm,
                 ),
                 child: Text(
-                  delivered ? 'Delivered' : 'Pending',
+                  delivered ? tr('Delivered') : tr('Pending'),
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -223,7 +225,7 @@ class _SmsCard extends StatelessWidget {
               borderRadius: AppRadius.md,
             ),
             child: Text(
-              sms.message,
+              tr(sms.message),
               style: GoogleFonts.inter(
                 fontSize: 13,
                 height: 1.4,
@@ -239,20 +241,20 @@ class _SmsCard extends StatelessWidget {
   String get _typeLabel {
     switch (sms.type) {
       case 'payment_reminder':
-        return 'Payment Reminder';
+        return tr('Payment Reminder');
       case 'fine_notice':
-        return 'Fine Notice';
+        return tr('Fine Notice');
       case 'announcement':
-        return 'Announcement';
+        return tr('Announcement');
       default:
-        return 'Meeting Reminder';
+        return tr('Meeting Reminder');
     }
   }
 
   String get _timeLabel {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    final months = [
+      tr('Jan'), tr('Feb'), tr('Mar'), tr('Apr'), tr('May'), tr('Jun'),
+      tr('Jul'), tr('Aug'), tr('Sep'), tr('Oct'), tr('Nov'), tr('Dec'),
     ];
     final d = sms.sentAt as DateTime;
     return '${d.day} ${months[d.month - 1]} ${d.year}';
