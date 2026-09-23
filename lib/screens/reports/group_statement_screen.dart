@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../i18n/i18n.dart';
 import '../../services/app_data.dart';
 import '../../services/report_service.dart';
+import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
@@ -18,7 +19,8 @@ class GroupStatementScreen extends StatefulWidget {
   State<GroupStatementScreen> createState() => _GroupStatementScreenState();
 }
 
-class _GroupStatementScreenState extends State<GroupStatementScreen> {
+class _GroupStatementScreenState extends State<GroupStatementScreen>
+    with AutoRefreshOnPop {
   late final ReportService _service = widget.service ?? LocalReportService();
 
   bool _loading = true;
@@ -32,6 +34,9 @@ class _GroupStatementScreenState extends State<GroupStatementScreen> {
     super.initState();
     _load();
   }
+
+  @override
+  void onReturnedToScreen() => _load();
 
   Future<void> _load() async {
     final app = AppState.I;

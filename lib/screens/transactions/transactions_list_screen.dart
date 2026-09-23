@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../router/app_router.dart';
 import '../../services/app_data.dart';
+import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
 import '../dashboard/dashboard_nav_bar.dart';
 
@@ -24,7 +25,8 @@ class TransactionsListScreen extends StatefulWidget {
   State<TransactionsListScreen> createState() => _TransactionsListScreenState();
 }
 
-class _TransactionsListScreenState extends State<TransactionsListScreen> {
+class _TransactionsListScreenState extends State<TransactionsListScreen>
+    with AutoRefreshOnPop {
   List<Map<String, dynamic>> _transactions = [];
 
   @override
@@ -33,8 +35,11 @@ class _TransactionsListScreenState extends State<TransactionsListScreen> {
     _load();
   }
 
+  @override
+  void onReturnedToScreen() => _load();
+
   Future<void> _load() async {
-    final list = await AppState.I.fetchTransactions();
+    final list = await AppState.I.fetchTransactions(refresh: true);
     if (mounted) setState(() => _transactions = list);
   }
 
@@ -306,10 +311,12 @@ class _TxRow extends StatelessWidget {
     VoidCallback? onTap,
   }) {
     final type = txn['type']?.toString() ?? '';
-    final member = txn['member']?.toString() ?? '';
-    final date = state.txnDateLabel(txn['date']);
+    final member = txn['fullName']?.toString() ??
+        txn['memberName']?.toString() ??
+        '';
+    final date = state.isoDate(txn['createdAt']);
     return _TxRow(
-      title: txn['title']?.toString() ?? state.txnTypeLabel(type),
+      title: state.txnTypeLabel(type),
       subtitle: [member, date].where((s) => s.isNotEmpty).join(' · '),
       amount: state.amountLabel(txn),
       positive: state.isCredit(txn),

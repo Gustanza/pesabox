@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../screens/auth/splash_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/otp_screen.dart';
+import '../screens/auth/complete_profile_screen.dart';
 import '../screens/dashboard/awaiting_assignment_screen.dart';
 import '../screens/dashboard/group_assigned_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
@@ -46,7 +47,10 @@ import '../screens/group/group_info_screen.dart';
 import '../screens/group/edit_group_screen.dart';
 import '../screens/group/rules_constitution_screen.dart';
 import '../screens/group/announcements_screen.dart';
+import '../screens/group/officers_screen.dart';
+import '../screens/loans/gov_loans_screen.dart';
 import '../screens/profile/profile_screen.dart';
+import '../screens/profile/edit_profile_screen.dart';
 import '../screens/profile/settings_screen.dart';
 
 class AppRouter {
@@ -55,6 +59,7 @@ class AppRouter {
   static const String splash = '/';
   static const String login = '/login';
   static const String otp = '/otp';
+  static const String completeProfile = '/complete-profile';
   static const String awaitingAssignment = '/awaiting-assignment';
   static const String groupAssigned = '/group-assigned';
 
@@ -108,8 +113,11 @@ class AppRouter {
   static const String editGroup = '/group/edit';
   static const String rulesConstitution = '/group/rules';
   static const String announcements = '/announcements';
+  static const String officers = '/group/officers';
+  static const String govLoans = '/group/gov-loans';
 
   static const String profile = '/profile';
+  static const String editProfile = '/profile/edit';
   static const String settings = '/settings';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -126,6 +134,8 @@ class AppRouter {
         return _buildRoute(settings, const LoginScreen());
       case otp:
         return _buildRoute(settings, const OtpScreen());
+      case completeProfile:
+        return _buildRoute(settings, const CompleteProfileScreen());
       case awaitingAssignment:
         return _buildRoute(settings, const AwaitingAssignmentScreen());
       case groupAssigned:
@@ -190,9 +200,15 @@ class AppRouter {
         return _buildRoute(settings, const RulesConstitutionScreen());
       case announcements:
         return _buildRoute(settings, const AnnouncementsScreen());
+      case officers:
+        return _buildRoute(settings, const OfficersScreen());
+      case govLoans:
+        return _buildRoute(settings, const GovLoansScreen());
 
       case profile:
         return _buildRoute(settings, const ProfileScreen());
+      case editProfile:
+        return _buildRoute(settings, const EditProfileScreen());
       case AppRouter.settings:
         return _buildRoute(settings, const SettingsScreen());
 

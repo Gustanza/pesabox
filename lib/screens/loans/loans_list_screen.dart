@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../router/app_router.dart';
 import '../../services/app_data.dart';
+import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
@@ -15,7 +16,8 @@ class LoansListScreen extends StatefulWidget {
   State<LoansListScreen> createState() => _LoansListScreenState();
 }
 
-class _LoansListScreenState extends State<LoansListScreen> {
+class _LoansListScreenState extends State<LoansListScreen>
+    with AutoRefreshOnPop {
   static const List<Color> _avatarColors = [
     AppColors.green600,
     AppColors.blue,
@@ -37,6 +39,9 @@ class _LoansListScreenState extends State<LoansListScreen> {
     super.didChangeDependencies();
     _meetingId ??= ModalRoute.of(context)?.settings.arguments as String?;
   }
+
+  @override
+  void onReturnedToScreen() => _load();
 
   Future<void> _load() async {
     final state = AppState.I;
@@ -108,12 +113,11 @@ class _LoansListScreenState extends State<LoansListScreen> {
                     ),
                   ),
                   GestureDetector(
-                    onTap: () async {
-                      await Navigator.of(context).pushNamed(
+                    onTap: () {
+                      Navigator.of(context).pushNamed(
                         AppRouter.recordLoan,
                         arguments: _meetingId,
                       );
-                      _load();
                     },
                     child: Container(
                       width: 38,
@@ -211,13 +215,12 @@ class _LoansListScreenState extends State<LoansListScreen> {
                                 months: '${state.maxLoanPeriodMonths} months',
                                 status: _loans[i]['status']?.toString() ?? 'active',
                                 color: _avatarColors[i % _avatarColors.length],
-                                onTap: () async {
-                                  await Navigator.of(context).pushNamed(
+                                onTap: () {
+                                  Navigator.of(context).pushNamed(
                                     AppRouter.loanDetailsPath(
                                         _loans[i]['id']?.toString() ?? ''),
                                     arguments: _meetingId,
                                   );
-                                  _load();
                                 },
                               ),
                             ],

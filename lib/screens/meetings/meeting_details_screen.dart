@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../router/app_router.dart';
 import '../../services/app_data.dart';
+import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
@@ -17,7 +18,8 @@ class MeetingDetailsScreen extends StatefulWidget {
   State<MeetingDetailsScreen> createState() => _MeetingDetailsScreenState();
 }
 
-class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
+class _MeetingDetailsScreenState extends State<MeetingDetailsScreen>
+    with AutoRefreshOnPop {
   Map<String, dynamic>? _meeting;
   List<Map<String, dynamic>> _attendance = [];
   List<Map<String, dynamic>> _txns = [];
@@ -37,6 +39,9 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
     super.initState();
     _load();
   }
+
+  @override
+  void onReturnedToScreen() => _load();
 
   Future<void> _load() async {
     final state = AppState.I;

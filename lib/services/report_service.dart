@@ -3,6 +3,7 @@ import 'file_saver.dart';
 import 'graphql_client.dart';
 import 'report_data.dart';
 import 'report_files.dart';
+import '../brand.dart';
 
 /// One column of a report dataset.
 class ReportColumn {
@@ -153,14 +154,14 @@ class LocalReportService implements ReportService {
             : '${from.isEmpty ? '...' : from} - ${to.isEmpty ? '...' : to}';
         bytes = await buildPdf(
           sets,
-          groupName: (group == null || '$group'.isEmpty) ? 'PesaBox' : '$group',
+          groupName: (group == null || '$group'.isEmpty) ? kBrandName : '$group',
           period: period,
         );
     }
 
     final now = DateTime.now();
     final stamp = '${now.year}${_two(now.month)}${_two(now.day)}-${_two(now.hour)}${_two(now.minute)}';
-    return ExportedReport(bytes: bytes, filename: 'pesabox-report-$stamp.$ext');
+    return ExportedReport(bytes: bytes, filename: '${kBrandName.toLowerCase()}-report-$stamp.$ext');
   }
 
   @override

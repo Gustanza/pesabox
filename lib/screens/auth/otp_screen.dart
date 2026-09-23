@@ -117,6 +117,14 @@ class _OtpScreenState extends State<OtpScreen> {
 
     try {
       await AuthService.verifyOtp(_phone!, _code);
+      if (!mounted) return;
+      if (AppState.I.needsProfileCompletion) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          AppRouter.completeProfile,
+          (r) => false,
+        );
+        return;
+      }
       final hasGroup = await AppState.I.checkGroupAssignment();
       if (!mounted) return;
       Navigator.of(context).pushNamedAndRemoveUntil(

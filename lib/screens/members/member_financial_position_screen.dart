@@ -1,36 +1,81 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../data/mock_data.dart';
-import '../../models/models.dart';
+import '../../services/app_data.dart';
+import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
-
 import '../../i18n/i18n.dart';
 
-class MemberFinancialPositionScreen extends StatelessWidget {
-  const MemberFinancialPositionScreen({super.key, this.memberId = 'm1'});
+class MemberFinancialPositionScreen extends StatefulWidget {
+  const MemberFinancialPositionScreen({super.key, this.memberId = ''});
 
   final String memberId;
 
   @override
+  State<MemberFinancialPositionScreen> createState() =>
+      _MemberFinancialPositionScreenState();
+}
+
+class _MemberFinancialPositionScreenState
+    extends State<MemberFinancialPositionScreen> with AutoRefreshOnPop {
+  Map<String, dynamic>? _balance;
+  Map<String, dynamic>? _activeLoan;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void onReturnedToScreen() => _load();
+
+  Future<void> _load() async {
+    final state = AppState.I;
+    final results = await Future.wait([
+      state.fetchMemberBalances(refresh: true),
+      state.fetchLoans(refresh: true),
+    ]);
+    if (!mounted) return;
+    final loans = results[1];
+    setState(() {
+      _balance = state.balanceFor(widget.memberId);
+      _activeLoan = loans.cast<Map<String, dynamic>?>().firstWhere(
+            (l) => l?['memberId'] == widget.memberId && l?['status'] == 'active',
+            orElse: () => null,
+          );
+      _loading = false;
+    });
+  }
+
+  String get _fullName {
+    final b = _balance;
+    if (b == null) return '';
+    final name = [b['firstName'], b['lastName']]
+        .where((s) => (s ?? '').toString().isNotEmpty)
+        .join(' ');
+    return name.isEmpty ? tr('Unnamed member') : name;
+  }
+
+  static double _num(Map<String, dynamic>? m, String key) {
+    final v = m?[key];
+    if (v is num) return v.toDouble();
+    return double.tryParse(v?.toString() ?? '') ?? 0;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final member = groupMembers.firstWhere(
-      (m) => m.id == memberId,
-      orElse: () => groupMembers.first,
-    );
+    final state = AppState.I;
+    final balance = _balance;
+    final loan = _activeLoan;
 
-    final loan = loans.where(
-      (l) => l.memberId == memberId && l.status == LoanStatus.active,
-    ).firstOrNull;
-
-    final memberFines = fines.where((f) => f.memberId == memberId);
-    final finesCharged = memberFines.fold(0.0, (sum, f) => sum + f.amount);
-    final finesPaid = memberFines.fold(0.0, (sum, f) => sum + f.amountPaid);
-
-    final mandatorySavings = member.savingsBalance * 0.82;
-    final voluntarySavings = member.savingsBalance - mandatorySavings;
-    final totalShareValue = member.shareCount * shareValue;
+    final finesCharged = _num(balance, 'finesCharged');
+    final finesPaid = _num(balance, 'finesPaid');
+    final shareValue = state.shareValue;
+    final shareCount = (balance?['shareCount'] as num?) ?? 0;
+    final savings = _num(balance, 'savings');
 
     return Scaffold(
       backgroundColor: AppColors.cream,
@@ -43,109 +88,98 @@ class MemberFinancialPositionScreen extends StatelessWidget {
               const SizedBox(height: 16),
               AuthHeader(
                 title: tr('Financial Position'),
-                subtitle: member.fullName,
+                subtitle: _loading ? '' : _fullName,
                 onBack: () => Navigator.of(context).maybePop(),
               ),
               const SizedBox(height: 20),
-              _SectionCard(
-                title: tr('Savings'),
-                children: [
-                  _KVRow(
-                      label: tr('Total savings'),
-                      value: 'TZS ${_formatNum(member.savingsBalance)}'),
-                  _KVRow(
-                      label: tr('Mandatory'),
-                      value: 'TZS ${_formatNum(mandatorySavings)}'),
-                  _KVRow(
-                      label: tr('Voluntary'),
-                      value: 'TZS ${_formatNum(voluntarySavings)}'),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _SectionCard(
-                title: tr('Shares'),
-                children: [
-                  _KVRow(
-                      label: tr('Shares held'),
-                      value: '${member.shareCount}'),
-                  _KVRow(
-                      label: tr('Share value'),
-                      value: 'TZS ${_formatNum(shareValue)}'),
-                  _KVRow(
-                      label: tr('Total share value'),
-                      value: 'TZS ${_formatNum(totalShareValue)}'),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _SectionCard(
-                title: tr('Social Fund'),
-                children: [
-                  _KVRow(
-                      label: tr('Contributed'),
-                      value: 'TZS ${_formatNum(member.socialFundBalance)}'),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _SectionCard(
-                title: tr('Loan'),
-                children: [
-                  _KVRow(
-                    label: tr('Principal'),
-                    value: loan != null
-                        ? 'TZS ${_formatNum(loan.amount)}'
-                        : 'TZS 0',
-                  ),
-                  _KVRow(
-                    label: tr('Repaid'),
-                    value: loan != null
-                        ? 'TZS ${_formatNum(loan.amountRepaid)}'
-                        : 'TZS 0',
-                  ),
-                  _KVRow(
-                    label: tr('Outstanding'),
-                    value: 'TZS ${_formatNum(member.outstandingLoan)}',
-                    valueColor: AppColors.danger,
-                  ),
-                  if (loan != null)
+              if (_loading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (balance == null)
+                Text(
+                  tr('Member not found.'),
+                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600),
+                )
+              else ...[
+                _SectionCard(
+                  title: 'Savings',
+                  children: [
                     _KVRow(
-                      label: tr('Next repayment'),
-                      value: _formatDate(loan.dueDate),
+                        label: 'Total savings',
+                        value: state.money(savings)),
+                    _KVRow(
+                        label: 'Contributions made',
+                        value: '${balance['contributionCount'] ?? 0}'),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _SectionCard(
+                  title: 'Shares',
+                  children: [
+                    _KVRow(label: 'Shares held', value: '$shareCount'),
+                    _KVRow(
+                        label: 'Share value',
+                        value: state.money(shareValue)),
+                    _KVRow(
+                        label: 'Total share value',
+                        value: state.money(_num(balance, 'shares'))),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _SectionCard(
+                  title: 'Social Fund',
+                  children: [
+                    _KVRow(
+                        label: 'Contributed',
+                        value: state.money(_num(balance, 'socialFund'))),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _SectionCard(
+                  title: 'Loan',
+                  children: [
+                    _KVRow(
+                      label: 'Principal',
+                      value: loan != null
+                          ? state.money(_num(loan, 'amount'))
+                          : state.money(0),
                     ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _SectionCard(
-                title: tr('Fines'),
-                children: [
-                  _KVRow(
-                      label: tr('Charged'),
-                      value: 'TZS ${_formatNum(finesCharged)}'),
-                  _KVRow(
-                      label: tr('Paid'),
-                      value: 'TZS ${_formatNum(finesPaid)}'),
-                ],
-              ),
+                    _KVRow(
+                      label: 'Repaid',
+                      value: loan != null
+                          ? state.money(_num(loan, 'amountRepaid'))
+                          : state.money(0),
+                    ),
+                    _KVRow(
+                      label: 'Outstanding',
+                      value: state.money(_num(balance, 'outstanding')),
+                      valueColor: AppColors.danger,
+                    ),
+                    if (loan != null && loan['dueDate'] != null)
+                      _KVRow(
+                        label: 'Due date',
+                        value: state.isoDate(loan['dueDate']),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _SectionCard(
+                  title: 'Fines',
+                  children: [
+                    _KVRow(
+                        label: 'Charged', value: state.money(finesCharged)),
+                    _KVRow(label: 'Paid', value: state.money(finesPaid)),
+                  ],
+                ),
+              ],
               const SizedBox(height: 32),
             ],
           ),
         ),
       ),
     );
-  }
-
-  static String _formatNum(double amount) {
-    return amount
-        .toInt()
-        .toString()
-        .replaceAll(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), ',');
-  }
-
-  static String _formatDate(DateTime date) {
-    final months = [
-      tr('Jan'), tr('Feb'), tr('Mar'), tr('Apr'), tr('May'), tr('Jun'),
-      tr('Jul'), tr('Aug'), tr('Sep'), tr('Oct'), tr('Nov'), tr('Dec')
-    ];
-    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 }
 

@@ -5,6 +5,7 @@ import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import '../../theme/app_theme.dart';
 
 import '../../i18n/i18n.dart';
+import '../../brand.dart';
 
 class BrandMark extends StatelessWidget {
   final double size;
@@ -33,7 +34,7 @@ class BrandMark extends StatelessWidget {
       ),
       alignment: Alignment.center,
       child: Text(
-        tr('P'),
+        kBrandName[0],
         style: GoogleFonts.plusJakartaSans(
           fontSize: fontSize,
           fontWeight: FontWeight.w800,

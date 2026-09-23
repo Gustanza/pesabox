@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../data/mock_data.dart';
+import '../../services/app_data.dart';
+import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
-
 import '../../i18n/i18n.dart';
+import '../../brand.dart';
 
-class SmsActivityScreen extends StatelessWidget {
+class SmsActivityScreen extends StatefulWidget {
   const SmsActivityScreen({super.key});
 
+  @override
+  State<SmsActivityScreen> createState() => _SmsActivityScreenState();
+}
+
+class _SmsActivityScreenState extends State<SmsActivityScreen>
+    with AutoRefreshOnPop {
   static const List<Color> _avatarColors = [
     AppColors.green600,
     AppColors.blue,
@@ -17,8 +24,33 @@ class SmsActivityScreen extends StatelessWidget {
     AppColors.teal800,
   ];
 
+  List<Map<String, dynamic>> _messages = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void onReturnedToScreen() => _load();
+
+  Future<void> _load() async {
+    final list = await AppState.I.fetchSmsActivity(refresh: true);
+    if (mounted) {
+      setState(() {
+        _messages = list;
+        _loading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final sent = _messages.where((m) => m['status'] == 'sent').length;
+    final failed = _messages.where((m) => m['status'] == 'failed').length;
+
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: SafeArea(
@@ -30,48 +62,72 @@ class SmsActivityScreen extends StatelessWidget {
               const SizedBox(height: 16),
               AuthHeader(
                 title: tr('SMS Activity'),
-                subtitle: tr('Sender ID: PESABOX'),
+                subtitle: tr('Messages sent to members by SMS'),
               ),
               const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: _StatBox(
-                      label: tr('Delivered'),
-                      value: '312',
-                      color: AppColors.green600,
+              if (_loading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: _StatBox(
+                        label: 'Delivered',
+                        value: '$sent',
+                        color: AppColors.green600,
+                      ),
                     ),
-                  ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: _StatBox(
-                      label: tr('Pending/Failed'),
-                      value: '3',
-                      color: AppColors.danger,
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _StatBox(
+                        label: 'Failed',
+                        value: '$failed',
+                        color: AppColors.danger,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Text(
-                tr('Recent messages'),
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.ink900,
+                  ],
                 ),
-              ),
-              const SizedBox(height: 12),
-              ...smsActivity.indexed.map(
-                (entry) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _SmsCard(
-                    sms: entry.$2,
-                    color: _avatarColors[entry.$1 % _avatarColors.length],
-                    delivered: entry.$1 != 2,
+                const SizedBox(height: 24),
+                Text(
+                  tr('Recent messages'),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink900,
                   ),
                 ),
-              ),
+                const SizedBox(height: 12),
+                if (_messages.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: AppRadius.md,
+                      border: Border.all(color: AppColors.line),
+                    ),
+                    child: Text(
+                      tr('No messages sent yet.'),
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: AppColors.ink400,
+                      ),
+                    ),
+                  )
+                else
+                  ..._messages.indexed.map(
+                    (entry) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _SmsCard(
+                        sms: entry.$2,
+                        color: _avatarColors[entry.$1 % _avatarColors.length],
+                      ),
+                    ),
+                  ),
+              ],
               const SizedBox(height: 12),
             ],
           ),
@@ -128,18 +184,18 @@ class _StatBox extends StatelessWidget {
 }
 
 class _SmsCard extends StatelessWidget {
-  final dynamic sms;
+  final Map<String, dynamic> sms;
   final Color color;
-  final bool delivered;
 
-  const _SmsCard({
-    required this.sms,
-    required this.color,
-    required this.delivered,
-  });
+  const _SmsCard({required this.sms, required this.color});
+
+  bool get _delivered => sms['status'] == 'sent';
 
   @override
   Widget build(BuildContext context) {
+    final recipient = (sms['memberName'] as String?)?.isNotEmpty == true
+        ? sms['memberName'] as String
+        : (sms['phone']?.toString() ?? 'Unknown');
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -166,7 +222,7 @@ class _SmsCard extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  tr('P'),
+                  kBrandName[0],
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
@@ -180,7 +236,7 @@ class _SmsCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      tr('PESABOX · {0}', [_typeLabel]),
+                      '$recipient · $_typeLabel',
                       style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -189,7 +245,7 @@ class _SmsCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      tr(_timeLabel),
+                      AppState.I.isoDateTime(sms['sentAt']),
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         color: AppColors.ink400,
@@ -202,15 +258,15 @@ class _SmsCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: delivered ? AppColors.green100 : AppColors.danger100,
+                  color: _delivered ? AppColors.green100 : AppColors.danger100,
                   borderRadius: AppRadius.sm,
                 ),
                 child: Text(
-                  delivered ? tr('Delivered') : tr('Pending'),
+                  _delivered ? tr('Delivered') : tr('Failed'),
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: delivered ? AppColors.teal800 : AppColors.danger,
+                    color: _delivered ? AppColors.teal800 : AppColors.danger,
                   ),
                 ),
               ),
@@ -225,7 +281,7 @@ class _SmsCard extends StatelessWidget {
               borderRadius: AppRadius.md,
             ),
             child: Text(
-              tr(sms.message),
+              sms['message']?.toString() ?? '',
               style: GoogleFonts.inter(
                 fontSize: 13,
                 height: 1.4,
@@ -239,24 +295,29 @@ class _SmsCard extends StatelessWidget {
   }
 
   String get _typeLabel {
-    switch (sms.type) {
-      case 'payment_reminder':
-        return tr('Payment Reminder');
-      case 'fine_notice':
+    switch (sms['messageType']) {
+      case 'login_otp':
+        return tr('Login OTP');
+      case 'member_otp':
+        return tr('Member OTP');
+      case 'member_joined':
+        return tr('Member Joined');
+      case 'fine':
         return tr('Fine Notice');
-      case 'announcement':
-        return tr('Announcement');
+      case 'fine_payment':
+        return tr('Fine Payment');
+      case 'contribution':
+        return tr('Contribution');
+      case 'share':
+        return tr('Share Purchase');
+      case 'social_fund':
+        return tr('Social Fund');
+      case 'loan_disbursement':
+        return tr('Loan Disbursement');
+      case 'loan_repayment':
+        return tr('Loan Repayment');
       default:
-        return tr('Meeting Reminder');
+        return tr('Notice');
     }
-  }
-
-  String get _timeLabel {
-    final months = [
-      tr('Jan'), tr('Feb'), tr('Mar'), tr('Apr'), tr('May'), tr('Jun'),
-      tr('Jul'), tr('Aug'), tr('Sep'), tr('Oct'), tr('Nov'), tr('Dec'),
-    ];
-    final d = sms.sentAt as DateTime;
-    return '${d.day} ${months[d.month - 1]} ${d.year}';
   }
 }

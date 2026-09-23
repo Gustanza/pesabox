@@ -1,16 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../services/app_data.dart';
+import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
-
 import '../../i18n/i18n.dart';
 
-class EditGroupScreen extends StatelessWidget {
+/// Read-only: these fields are set by the Super Admin on the web dashboard
+/// when the group is created (see server/database.json's Groups model —
+/// there's no `/api/main/group` update route for the mobile app to call),
+/// so this screen only ever displays [AppState.group], never edits it.
+class EditGroupScreen extends StatefulWidget {
   const EditGroupScreen({super.key});
 
   @override
+  State<EditGroupScreen> createState() => _EditGroupScreenState();
+}
+
+class _EditGroupScreenState extends State<EditGroupScreen>
+    with AutoRefreshOnPop {
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void onReturnedToScreen() => _load();
+
+  Future<void> _load() async {
+    await AppState.I.checkGroupAssignment(refresh: true);
+    if (mounted) setState(() => _loading = false);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final group = AppState.I.group;
+    final frequency = group?['meetingFrequency']?.toString() ?? '';
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: SafeArea(
@@ -55,38 +84,68 @@ class EditGroupScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: AppRadius.md,
-                  border: Border.all(color: AppColors.line),
+              if (_loading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: AppRadius.md,
+                    border: Border.all(color: AppColors.line),
+                  ),
+                  child: Column(
+                    children: [
+                      _ReadOnlyField(
+                        label: 'Group name',
+                        value: group?['name']?.toString() ?? '—',
+                      ),
+                      const SizedBox(height: 16),
+                      _ReadOnlyField(
+                        label: 'Region',
+                        value: group?['region']?.toString() ?? '—',
+                      ),
+                      const SizedBox(height: 16),
+                      _ReadOnlyField(
+                        label: 'District',
+                        value: group?['district']?.toString() ?? '—',
+                      ),
+                      const SizedBox(height: 16),
+                      _ReadOnlyField(
+                        label: 'Ward',
+                        value: group?['ward']?.toString() ?? '—',
+                      ),
+                      const SizedBox(height: 16),
+                      _ReadOnlyField(
+                        label: 'Village',
+                        value: group?['village']?.toString() ?? '—',
+                      ),
+                      const SizedBox(height: 16),
+                      _ReadOnlyField(
+                        label: 'Meeting frequency',
+                        value: frequency.isEmpty ? '—' : frequency,
+                      ),
+                    ],
+                  ),
                 ),
-                child: Column(
-                  children: [
-                    _ReadOnlyField(
-                      label: tr('Group name'),
-                      value: 'Kijiji Savings Group',
-                    ),
-                    SizedBox(height: 16),
-                    _ReadOnlyField(label: tr('Region'), value: 'Arusha'),
-                    SizedBox(height: 16),
-                    _ReadOnlyField(label: tr('District'), value: 'Arusha Rural'),
-                    SizedBox(height: 16),
-                    _ReadOnlyField(label: tr('Ward'), value: 'Kimnyaki'),
-                    SizedBox(height: 16),
-                    _ReadOnlyField(label: tr('Village'), value: 'Kijiji'),
-                    SizedBox(height: 16),
-                    _ReadOnlyField(
-                      label: tr('Meeting frequency'),
-                      value: 'Weekly · Mon 10:00 AM',
-                    ),
-                  ],
-                ),
-              ),
               const SizedBox(height: 24),
-              OutlineButton(text: tr('Request a change')),
+              OutlineButton(
+                text: tr('Request a change'),
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        tr('Contact your Super Admin to request a change.'),
+                      ),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+              ),
               const SizedBox(height: 32),
             ],
           ),

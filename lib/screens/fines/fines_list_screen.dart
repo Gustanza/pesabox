@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../router/app_router.dart';
 import '../../services/app_data.dart';
+import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
@@ -15,7 +16,8 @@ class FinesListScreen extends StatefulWidget {
   State<FinesListScreen> createState() => _FinesListScreenState();
 }
 
-class _FinesListScreenState extends State<FinesListScreen> {
+class _FinesListScreenState extends State<FinesListScreen>
+    with AutoRefreshOnPop {
   List<Map<String, dynamic>> _fines = [];
   bool _loading = true;
   String? _meetingId;
@@ -31,6 +33,9 @@ class _FinesListScreenState extends State<FinesListScreen> {
     super.didChangeDependencies();
     _meetingId ??= ModalRoute.of(context)?.settings.arguments as String?;
   }
+
+  @override
+  void onReturnedToScreen() => _load();
 
   Future<void> _load() async {
     final state = AppState.I;
@@ -128,9 +133,8 @@ class _FinesListScreenState extends State<FinesListScreen> {
                     child: Text(tr('Fines'), style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.ink900)),
                   ),
                   GestureDetector(
-                    onTap: () async {
-                      await Navigator.of(context).pushNamed(AppRouter.recordFine, arguments: _meetingId);
-                      _load();
+                    onTap: () {
+                      Navigator.of(context).pushNamed(AppRouter.recordFine, arguments: _meetingId);
                     },
                     child: Container(
                       width: 38,
@@ -186,9 +190,8 @@ class _FinesListScreenState extends State<FinesListScreen> {
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
-                    onPressed: () async {
-                      await Navigator.of(context).pushNamed(AppRouter.recordFine, arguments: _meetingId);
-                      _load();
+                    onPressed: () {
+                      Navigator.of(context).pushNamed(AppRouter.recordFine, arguments: _meetingId);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.green600,

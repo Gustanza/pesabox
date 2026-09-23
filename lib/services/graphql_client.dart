@@ -20,8 +20,10 @@ String resolveApiBaseUrl() {
 /// Thin GraphQL client for the real PesaBox Go backend. Sessions are carried
 /// as `Authorization: Bearer <accessToken>` rather than cookies — cookies
 /// work fine for a browser but a native/mobile client has no shared cookie
-/// jar the way a browser does, so the backend's login/verifyOtp responses
-/// also hand back the token directly for exactly this case.
+/// jar the way a browser does. The backend only ever sets the session as an
+/// httpOnly `Set-Cookie` (never in the JSON body), so `AuthService.verifyOtp`
+/// pulls the token out of the raw response headers via [extractCookie] and
+/// hands it to `AppState` to carry as a Bearer token from then on.
 class GraphQLClient {
   GraphQLClient({String? baseUrl, this.authEndpoint = false})
       : baseUrl = baseUrl ?? resolveApiBaseUrl();
@@ -32,17 +34,22 @@ class GraphQLClient {
   /// false for the main /graphql endpoint (everything that needs a session).
   final bool authEndpoint;
 
+  /// [onHeaders], if given, receives the raw HTTP response headers — used by
+  /// the login/refresh calls to pull the session token out of `Set-Cookie`
+  /// (see [extractCookie]), since the backend never puts it in the JSON body.
   Future<Map<String, dynamic>> query(
     String query, [
     Map<String, dynamic>? variables,
+    void Function(Map<String, String> headers)? onHeaders,
   ]) async {
-    return _query(query, variables, retrying: false);
+    return _query(query, variables, retrying: false, onHeaders: onHeaders);
   }
 
   Future<Map<String, dynamic>> _query(
     String query,
     Map<String, dynamic>? variables, {
     required bool retrying,
+    void Function(Map<String, String> headers)? onHeaders,
   }) async {
     final path = authEndpoint ? '/graphql/auth' : '/graphql';
     final headers = {'Content-Type': 'application/json'};
@@ -58,6 +65,7 @@ class GraphQLClient {
           body: jsonEncode({'query': query, 'variables': variables ?? {}}),
         )
         .timeout(const Duration(seconds: 15));
+    onHeaders?.call(res.headers);
 
     // The backend's access tokens expire after just 15 minutes. A 401 here
     // (the middleware's own "Token expired" JSON, not a GraphQL error) gets
@@ -93,6 +101,21 @@ class GraphQLException implements Exception {
 
   @override
   String toString() => message;
+}
+
+/// Pulls a cookie's value (e.g. `access_token`) out of a raw `Set-Cookie`
+/// response header. The backend issues the session as httpOnly cookies, and
+/// a plain `http` client has no cookie jar of its own, so this is how the
+/// token gets extracted to carry as a normal Bearer token instead — exactly
+/// the fallback the backend's middleware is documented to accept. Matches
+/// `name=value` up to the next `;` rather than splitting on commas, since
+/// `Set-Cookie` headers can get comma-folded together (e.g. by an
+/// `Expires=Wed, 21 Oct ...` attribute) when multiple cookies are present.
+String? extractCookie(Map<String, String> headers, String name) {
+  final raw = headers['set-cookie'];
+  if (raw == null) return null;
+  final match = RegExp('(?:^|[;, ])$name=([^;]+)').firstMatch(raw);
+  return match?.group(1);
 }
 
 /// /graphql/auth — otp + login/registration (unauthenticated).

@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'theme/app_theme.dart';
 import 'router/app_router.dart';
+import 'brand.dart';
 import 'i18n/i18n.dart';
+import 'services/route_observer.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Fonts ship with the app (pubspec.yaml → google_fonts/); never fetch them.
+  GoogleFonts.config.allowRuntimeFetching = false;
   await I18n.load(); // saved language (Swahili by default)
 
   SystemChrome.setSystemUIOverlayStyle(
@@ -38,7 +43,7 @@ class PesaBoxApp extends StatelessWidget {
       valueListenable: I18n.locale,
       builder: (context, code, _) => MaterialApp(
         key: ValueKey(code),
-        title: 'PesaBox',
+        title: kBrandName,
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
         locale: Locale(code),
@@ -50,6 +55,7 @@ class PesaBoxApp extends StatelessWidget {
         ],
         initialRoute: AppRouter.splash,
         onGenerateRoute: AppRouter.generateRoute,
+        navigatorObservers: [appRouteObserver],
       ),
     );
   }

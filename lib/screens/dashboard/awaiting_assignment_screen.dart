@@ -23,6 +23,11 @@ class _AwaitingAssignmentScreenState extends State<AwaitingAssignmentScreen> {
     final assigned = await AppState.I.checkGroupAssignment(refresh: true);
     if (!mounted) return;
     setState(() => _checking = false);
+    if (!AppState.I.isSignedIn) {
+      Navigator.of(context)
+          .pushNamedAndRemoveUntil(AppRouter.login, (r) => false);
+      return;
+    }
     if (assigned) {
       Navigator.of(context)
           .pushNamedAndRemoveUntil(AppRouter.dashboard, (r) => false);

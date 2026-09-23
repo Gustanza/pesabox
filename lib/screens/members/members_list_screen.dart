@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../models/models.dart';
 import '../../router/app_router.dart';
 import '../../services/app_data.dart';
+import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
@@ -25,7 +26,8 @@ class MembersListScreen extends StatefulWidget {
   State<MembersListScreen> createState() => _MembersListScreenState();
 }
 
-class _MembersListScreenState extends State<MembersListScreen> {
+class _MembersListScreenState extends State<MembersListScreen>
+    with AutoRefreshOnPop {
   List<Member> _members = [];
 
   @override
@@ -33,6 +35,9 @@ class _MembersListScreenState extends State<MembersListScreen> {
     super.initState();
     _load();
   }
+
+  @override
+  void onReturnedToScreen() => _load();
 
   Future<void> _load() async {
     final raw = await AppState.I.fetchMembers(refresh: true);

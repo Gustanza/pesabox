@@ -7,6 +7,7 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../i18n/i18n.dart';
 import 'report_data.dart';
+import '../brand.dart';
 
 /// Most rows one dataset may contribute to a file, so a huge history cannot
 /// freeze the app while the file is built.
@@ -138,13 +139,13 @@ Future<List<int>> buildPdf(
       footer: (ctx) => pw.Align(
         alignment: pw.Alignment.center,
         child: pw.Text(
-          'PesaBox  |  ${sw ? 'Ukurasa' : 'Page'} ${ctx.pageNumber}/${ctx.pagesCount}',
+          '$kBrandName  |  ${sw ? 'Ukurasa' : 'Page'} ${ctx.pageNumber}/${ctx.pagesCount}',
           style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
         ),
       ),
       build: (ctx) => [
         pw.Text(
-          _pdfSafe(sw ? 'Ripoti ya PesaBox' : 'PesaBox Report'),
+          _pdfSafe(sw ? 'Ripoti ya $kBrandName' : '$kBrandName Report'),
           style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: green),
         ),
         pw.SizedBox(height: 4),

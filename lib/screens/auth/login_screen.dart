@@ -7,6 +7,7 @@ import '../../router/app_router.dart';
 import 'auth_widgets.dart';
 
 import '../../i18n/i18n.dart';
+import '../../brand.dart';
 
 /// The only way in: a phone number, then an OTP. There's no separate
 /// "create account" screen — the backend creates the account automatically
@@ -74,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const BrandMark(size: 64, radius: 18, fontSize: 28),
                 const SizedBox(height: 18),
                 Text(
-                  tr('Welcome to PesaBox'),
+                  tr('Welcome to {0}', [kBrandName]),
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,

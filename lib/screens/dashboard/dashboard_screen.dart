@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../router/app_router.dart';
 import '../../services/app_data.dart';
+import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
 import 'dashboard_nav_bar.dart';
 
@@ -15,15 +16,23 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen>
+    with AutoRefreshOnPop {
   @override
   void initState() {
     super.initState();
     _load();
   }
 
-  Future<void> _load() async {
-    final hasGroup = await AppState.I.checkGroupAssignment();
+  // Refetches everything the dashboard shows — including the group's own
+  // balance totals, which the backend computes server-side — whenever this
+  // screen is first shown or becomes visible again after a deeper screen
+  // (meeting activity, record loan, ...) pops back to it.
+  @override
+  void onReturnedToScreen() => _load(refresh: true);
+
+  Future<void> _load({bool refresh = false}) async {
+    final hasGroup = await AppState.I.checkGroupAssignment(refresh: refresh);
     if (!mounted) return;
     if (!hasGroup) {
       // Reachable via the bottom nav's Home tab even without a group (e.g.
@@ -36,8 +45,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return;
     }
     await Future.wait([
-      AppState.I.fetchTransactions(),
-      AppState.I.fetchMeetings(),
+      AppState.I.fetchTransactions(refresh: refresh),
+      AppState.I.fetchMeetings(refresh: refresh),
     ]);
     if (mounted) setState(() {});
   }
@@ -413,9 +422,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         for (var i = 0; i < txns.length; i++) ...[
                           if (i > 0) const Divider(height: 1, indent: 60),
                           _ActivityRow(
-                            name: txns[i]['member']?.toString() ?? '',
+                            name: txns[i]['fullName']?.toString() ??
+                                txns[i]['memberName']?.toString() ??
+                                '',
                             initials: state.initials(
-                                txns[i]['member']?.toString() ?? ''),
+                                txns[i]['fullName']?.toString() ??
+                                    txns[i]['memberName']?.toString() ??
+                                    ''),
                             detail: state.txnTypeLabel(
                                 txns[i]['type']?.toString() ?? ''),
                             amount: state.amountLabel(txns[i]),

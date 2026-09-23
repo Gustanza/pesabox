@@ -61,7 +61,9 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '${state.groupType} · ${state.groupLocation}',
+                          [state.positionLabel, state.groupType, state.groupLocation]
+                              .where((s) => s.isNotEmpty)
+                              .join(' · '),
                           style: GoogleFonts.inter(
                             fontSize: 13,
                             color: AppColors.ink400,
@@ -162,6 +164,15 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                           ),
                           const Divider(height: 1, indent: 56),
                           _MenuRow(
+                            icon: Icons.account_balance_outlined,
+                            title: tr('Government loans'),
+                            color: AppColors.teal800,
+                            onTap: () {
+                              Navigator.of(context).pushNamed(AppRouter.govLoans);
+                            },
+                          ),
+                          const Divider(height: 1, indent: 56),
+                          _MenuRow(
                             icon: Icons.gavel_outlined,
                             title: tr('Fines'),
                             color: AppColors.danger,
@@ -187,6 +198,15 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                             onTap: () {
                               Navigator.of(context)
                                   .pushNamed(AppRouter.announcements);
+                            },
+                          ),
+                          const Divider(height: 1, indent: 56),
+                          _MenuRow(
+                            icon: Icons.badge_outlined,
+                            title: tr('Group officers'),
+                            color: AppColors.gold500,
+                            onTap: () {
+                              Navigator.of(context).pushNamed(AppRouter.officers);
                             },
                           ),
                           const Divider(height: 1, indent: 56),

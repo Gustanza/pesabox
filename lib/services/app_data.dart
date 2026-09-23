@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'api_client.dart' hide resolveApiBaseUrl;
 import 'graphql_client.dart';
 import '../i18n/i18n.dart';
+import '../brand.dart';
 
 /// Application-wide state: auth session + cached group data fetched from the
 /// Go backend. Screens read from here instead of the hardcoded mock file.
@@ -33,6 +34,13 @@ class AppState {
   Map<String, dynamic>? user;
 
   bool get isLoggedIn => token != null;
+
+  /// True right after a first-time OTP login: the backend auto-creates the
+  /// account with an empty firstName, which is the documented signal that
+  /// the "complete your profile" screen (POST /api/me) needs to run before
+  /// the app proceeds.
+  bool get needsProfileCompletion =>
+      ((user?['firstName'] as String?) ?? '').trim().isEmpty;
   String get userId => (user?['id'] as String?) ?? '';
   // The backend stores the normalized login identifier under `username`
   // (not `phone` — that field comes back empty for OTP/phone accounts), so
@@ -71,9 +79,16 @@ class AppState {
   static const _kUser = 'session.user';
 
   /// Sets the session after a successful OTP verification and persists it.
-  Future<void> setSession(Map<String, dynamic> loggedInUser) async {
-    token = loggedInUser['accessToken'] as String?;
-    refreshToken = loggedInUser['refreshToken'] as String?;
+  /// [accessToken]/[refreshToken] come from the login response's
+  /// `Set-Cookie` header (see [AuthService.verifyOtp]) — the JSON body never
+  /// carries them.
+  Future<void> setSession(
+    Map<String, dynamic> loggedInUser,
+    String accessToken,
+    String? refreshTokenValue,
+  ) async {
+    token = accessToken;
+    refreshToken = refreshTokenValue;
     user = loggedInUser;
     await _persist();
   }
@@ -116,12 +131,22 @@ class AppState {
         headers: {'Accept': 'application/json', 'X-Refresh-Token': rt},
       ).timeout(const Duration(seconds: 15));
       if (res.statusCode != 200) return false;
-      final decoded = jsonDecode(res.body);
-      if (decoded is! Map) return false;
-      final newAccess = decoded['accessToken'] as String?;
+
+      // Like login, this may only set the new pair as Set-Cookie headers
+      // rather than echoing them in the JSON body — check the cookie first
+      // and fall back to the body for a server that does return it there.
+      String? newAccess = extractCookie(res.headers, 'access_token');
+      String? newRefresh = extractCookie(res.headers, 'refresh_token');
+      if (newAccess == null) {
+        final decoded = jsonDecode(res.body);
+        if (decoded is Map) {
+          newAccess = decoded['accessToken'] as String?;
+          newRefresh ??= decoded['refreshToken'] as String?;
+        }
+      }
       if (newAccess == null || newAccess.isEmpty) return false;
+
       token = newAccess;
-      final newRefresh = decoded['refreshToken'] as String?;
       if (newRefresh != null && newRefresh.isNotEmpty) refreshToken = newRefresh;
       await _persist();
       return true;
@@ -150,11 +175,64 @@ class AppState {
   }
 
   Future<void> signOut() async {
+    // Best-effort: tell the server to drop the session too. Needs the
+    // Accept header or /logout 307-redirects instead of returning JSON.
+    try {
+      final headers = {'Accept': 'application/json'};
+      if (token != null) headers['Authorization'] = 'Bearer $token';
+      await http
+          .get(Uri.parse('${resolveApiBaseUrl()}/logout'), headers: headers)
+          .timeout(const Duration(seconds: 10));
+    } catch (_) {
+      // clear the local session regardless
+    }
     token = null;
     refreshToken = null;
     user = null;
     group = null;
+    groupPosition = '';
+    groupPermissions = {};
     await _persist();
+  }
+
+  /// POSTs the "complete your profile" form (step 3 of the OTP flow, shown
+  /// when [needsProfileCompletion] is true). firstName is required by the
+  /// backend (400 if blank); username/phone can't be changed here — that's
+  /// the OTP login identifier. The backend responds `{"success": true}`
+  /// rather than echoing the profile, so the cached user is updated locally.
+  Future<void> completeProfile({
+    required String firstName,
+    String? lastName,
+    String? email,
+  }) async {
+    await _restPost('/api/me', {
+      'firstName': firstName,
+      if (lastName != null && lastName.isNotEmpty) 'lastName': lastName,
+      if (email != null && email.isNotEmpty) 'email': email,
+    });
+    user = {
+      ...?user,
+      'firstName': firstName,
+      if (lastName != null) 'lastName': lastName,
+      if (email != null) 'email': email,
+    };
+    await _persist();
+  }
+
+  /// GET /me — always a fresh DB read (not decoded token claims), so it
+  /// reflects a [completeProfile] update immediately. Safe to call on app
+  /// resume / session checks; keeps the cached session on failure.
+  Future<Map<String, dynamic>?> fetchMe() async {
+    try {
+      final data = await _restGet('/me');
+      if (data is Map) {
+        user = Map<String, dynamic>.from(data);
+        await _persist();
+      }
+    } catch (_) {
+      // keep whatever was cached
+    }
+    return user;
   }
 
   /// Whether this session has been assigned a group (i.e. a Super Admin has
@@ -162,73 +240,102 @@ class AppState {
   /// [checkGroupAssignment].
   bool get hasGroup => group != null;
 
-  /// Last 9 digits of a phone number (drops any leading `0` or country
-  /// code), used to match a group's admin phone against the logged-in
-  /// user's phone regardless of which format either was typed in — the web
-  /// admin's "Responsible officer" field is free text (e.g. `0650980535`)
-  /// while the backend normalizes an app login to E.164-ish (`255650980535`).
-  static String _phoneTail(String phone) {
-    final digits = phone.replaceAll(RegExp(r'\D'), '');
-    return digits.length > 9 ? digits.substring(digits.length - 9) : digits;
-  }
-
-  /// Looks up the group this user administers, if any: either a group whose
-  /// `createdBy` points at this user's account, or (more commonly, since a
-  /// Super Admin usually assigns a group by phone number before that admin
-  /// has ever logged in) a group whose `adminPhone` matches this user's
-  /// phone. Caches the result in [group].
+  /// Looks up the group this user runs and their position in it, via
+  /// `GET /api/main/group` (server/access_routes.go). The server decides:
+  /// a mwenyekiti/katibu/mweka hazina/committee assignment, otherwise the
+  /// group this user created or whose admin phone is theirs. Caches the group
+  /// in [group] and the user's [groupPosition] / [groupPermissions].
   Future<bool> checkGroupAssignment({bool refresh = false}) async {
     if (group != null && !refresh) return true;
-    final phoneTail = _phoneTail(userPhone);
-    if (userId.isEmpty && phoneTail.isEmpty) return false;
+    if (token == null) return false;
     try {
-      final conditions = <Map<String, dynamic>>[];
-      if (userId.isNotEmpty) {
-        conditions.add({
-          'createdBy': {'equalTo': userId},
-        });
-      }
-      if (phoneTail.isNotEmpty) {
-        // matchesRegex runs through the backend's fuzzy-search helper, which
-        // escapes regex metacharacters and applies no anchors — so this is
-        // effectively a substring ("contains") match, which is what we want
-        // here since phoneTail is just the last 9 digits.
-        conditions.add({
-          'adminPhone': {'matchesRegex': phoneTail},
-        });
-      }
-      final data = await gql.query(
-        r'''
-          query($where: WhereGroupInput){
-            groups(where: $where) {
-              id name region district ward village
-              memberCount femaleMembers maleMembers youthMembers
-              meetingFrequency adminName adminPhone status
-              cycleCurrent cycleTotal
-              shareValue minShares maxShares socialFundContribution
-              mandatorySavingsAmount loanInterestRate maxLoanPeriodMonths
-              lateMeetingFine absenceFine lateLoanRepaymentFine fineReasons
-              totalSavings totalShares totalSocialFund totalLoans
-              totalFines totalExpenses savingsModel enabledServices
-            }
-          }
-        ''',
-        {
-          'where': {'OR': conditions},
-        },
-      );
-      final groups = (data['groups'] as List?) ?? const [];
-      if (groups.isEmpty) {
+      final raw = await _restGet('/api/main/group');
+      final data = raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+      final g = data['group'];
+      if (g is! Map) {
         group = null;
         return false;
       }
-      group = Map<String, dynamic>.from(groups.first as Map);
+      group = Map<String, dynamic>.from(g);
+      groupPosition = (data['position'] as String?) ?? '';
+      groupPermissions = {
+        for (final p in (data['permissions'] as List? ?? const [])) '$p',
+      };
       return true;
-    } catch (_) {
+    } on GraphQLException catch (e) {
+      debugPrint('checkGroupAssignment: ${e.message}');
+      // The session is dead (token expired and the one-time refresh token was
+      // already used/revoked): forget it locally so the app asks for a new
+      // login instead of wrongly saying "no group assigned".
+      if (_isDeadSession(e.message)) {
+        await _clearLocalSession();
+        return false;
+      }
+      // 403 "no group assigned to this account" — genuinely not assigned.
+      if (e.message.contains('no group assigned')) {
+        group = null;
+        groupPosition = '';
+        groupPermissions = {};
+        return false;
+      }
+      return group != null;
+    } catch (e) {
       // Keep whatever was cached; don't flip an assigned group back to
       // "awaiting" just because a single request failed.
+      debugPrint('checkGroupAssignment failed: $e');
       return group != null;
     }
+  }
+
+  static bool _isDeadSession(String message) {
+    final m = message.toLowerCase();
+    return m.contains('token expired') ||
+        m.contains('unauthorized') ||
+        m.contains('revoked') ||
+        m.contains('access token invalid');
+  }
+
+  /// Drops the stored session without calling the server (it already
+  /// rejected it). [isSignedIn] is false afterwards.
+  Future<void> _clearLocalSession() async {
+    token = null;
+    refreshToken = null;
+    user = null;
+    group = null;
+    groupPosition = '';
+    groupPermissions = {};
+    await _persist();
+  }
+
+  bool get isSignedIn => token != null;
+
+  /// This user's position in [group]: mwenyekiti (Group Admin), katibu,
+  /// mweka_hazina or committee (Group Officers).
+  String groupPosition = '';
+
+  /// What this user may do in [group] (server/access.go permissions):
+  /// group.settings, group.officers, group.operate, finance.write, ...
+  Set<String> groupPermissions = {};
+
+  /// Whether the server allows [permission] in this user's group. The server
+  /// re-checks every request; this only decides what the app shows.
+  bool can(String permission) => groupPermissions.contains(permission);
+
+  /// The Mwenyekiti (Group Admin) — may change group settings and officers.
+  bool get isGroupAdmin => can('group.settings');
+
+  String get positionLabel {
+    switch (groupPosition) {
+      case 'mwenyekiti':
+        return tr('Chairperson');
+      case 'katibu':
+        return tr('Secretary');
+      case 'mweka_hazina':
+        return tr('Treasurer');
+      case 'committee':
+        return tr('Committee member');
+    }
+    return isGroupAdmin ? tr('Group Admin') : tr('Group Officer');
   }
 
   // ---------------------------------------------------------------------------
@@ -265,7 +372,7 @@ class AppState {
   // Group
   // ---------------------------------------------------------------------------
 
-  String get groupName => (group?['name'] as String?) ?? 'PesaBox';
+  String get groupName => (group?['name'] as String?) ?? kBrandName;
   String get groupType => (group?['type'] as String?) ?? 'Vikoba';
   String get groupLocation => (group?['location'] as String?) ?? '';
 
@@ -320,13 +427,12 @@ class AppState {
     return _defaultFineReasons;
   }
 
+  /// Just delegates to [checkGroupAssignment] — the real, working source of
+  /// group data (`/graphql`). Kept as a separate name because several
+  /// screens already call it; there is no working `/api/v1/group` endpoint
+  /// on the live backend for the old [api] client this used to call.
   Future<Map<String, dynamic>?> fetchGroup({bool refresh = false}) async {
-    if (group != null && !refresh) return group;
-    try {
-      group = await api.get('/group');
-    } catch (_) {
-      // keep existing cache
-    }
+    await checkGroupAssignment(refresh: refresh);
     return group;
   }
 
@@ -404,6 +510,36 @@ class AppState {
         'memberNumber': memberNumber,
     });
     members = [...members, created];
+  }
+
+  /// Edits an existing member's own fields (not username/phone-as-login —
+  /// Members don't log in themselves, see CLAUDE.md) via `POST
+  /// /api/main/members/:id` — server/main.go's comment says this route was
+  /// built specifically for this screen. Only the fields passed are sent;
+  /// the backend 400s if none are. Patches the local cache in place rather
+  /// than refetching, since the backend only replies `{"success": true}`.
+  Future<void> updateMember(
+    String memberId, {
+    String? firstName,
+    String? lastName,
+    String? phone,
+    String? gender,
+    String? memberNumber,
+    String? status,
+  }) async {
+    final changes = {
+      if (firstName != null) 'firstName': firstName,
+      if (lastName != null) 'lastName': lastName,
+      if (phone != null) 'phone': phone,
+      if (gender != null) 'gender': gender,
+      if (memberNumber != null) 'memberNumber': memberNumber,
+      if (status != null) 'status': status,
+    };
+    await _restPost('/api/main/members/$memberId', changes);
+    final i = members.indexWhere((m) => m['id'] == memberId);
+    if (i != -1) members[i] = {...members[i], ...changes};
+    final bi = memberBalances.indexWhere((m) => m['id'] == memberId);
+    if (bi != -1) memberBalances[bi] = {...memberBalances[bi], ...changes};
   }
 
   /// POSTs JSON to a REST endpoint (not GraphQL) with the session's Bearer
@@ -578,6 +714,25 @@ class AppState {
 
   /// Records a group expense (money out, not tied to a member) — the Group
   /// Expense screen's action.
+  Map<String, dynamic>? _transactionById(String? id) {
+    if (id == null) return null;
+    for (final t in transactions) {
+      if (t['id'] == id) return t;
+    }
+    return null;
+  }
+
+  /// Looks up a transaction by id, refreshing the transactions list once if
+  /// it isn't cached yet.
+  Future<Map<String, dynamic>?> transactionById(String? id) async {
+    final cached = _transactionById(id);
+    if (cached != null) return cached;
+    await fetchTransactions(refresh: transactions.isEmpty);
+    return _transactionById(id);
+  }
+
+  /// Records a group expense (money out, not tied to a member) — the Group
+  /// Expense screen's action.
   Future<Map<String, dynamic>> recordExpense({
     required double amount,
     required String description,
@@ -745,6 +900,22 @@ class AppState {
     return announcements;
   }
 
+  /// Posts a new announcement — the Announcements screen's "New
+  /// announcement" action. [priority] is `'normal'` or `'urgent'`.
+  Future<Map<String, dynamic>> createAnnouncement({
+    required String title,
+    String? body,
+    String priority = 'normal',
+  }) async {
+    final created = await _restPost('/api/main/announcements', {
+      'title': title,
+      if (body != null && body.isNotEmpty) 'body': body,
+      'priority': priority,
+    });
+    announcements = [created, ...announcements];
+    return created;
+  }
+
   Future<List<Map<String, dynamic>>> fetchSmsActivity(
       {bool refresh = false}) async {
     if (smsActivity.isNotEmpty && !refresh) return smsActivity;
@@ -756,9 +927,7 @@ class AppState {
 
   /// GETs a REST endpoint (not GraphQL) with the session's Bearer token —
   /// the read counterpart to [_restPost]. These `/api/main/*` routes (see
-  /// server/main.go) require an authenticated group admin, which the old
-  /// unauthenticated [api] client (pointed at a nonexistent `/api/v1` host)
-  /// could never satisfy, so every list below silently returned empty.
+  /// server/main.go) require an authenticated group admin.
   Future<dynamic> _restGet(String path, {bool retrying = false}) async {
     final headers = {'Content-Type': 'application/json'};
     if (token != null) headers['Authorization'] = 'Bearer $token';
@@ -778,6 +947,113 @@ class AppState {
       throw GraphQLException(message);
     }
     return decoded;
+  }
+
+  /// DELETEs a REST endpoint with the session's Bearer token.
+  Future<void> _restDelete(String path, {bool retrying = false}) async {
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) headers['Authorization'] = 'Bearer $token';
+
+    final res = await http
+        .delete(Uri.parse('${resolveApiBaseUrl()}$path'), headers: headers)
+        .timeout(const Duration(seconds: 15));
+
+    if (res.statusCode == 401 && !retrying && await refreshSession()) {
+      return _restDelete(path, retrying: true);
+    }
+    if (res.statusCode >= 400) {
+      final decoded = jsonDecode(res.body);
+      throw GraphQLException(
+        (decoded is Map ? decoded['error'] as String? : null) ??
+            tr('Request failed ({0})', [res.statusCode]),
+      );
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Group officers (Mwenyekiti manages Katibu / Mweka Hazina / committee)
+  // ---------------------------------------------------------------------------
+
+  Future<List<Map<String, dynamic>>> fetchOfficers() => _list('/officers');
+
+  Future<void> addOfficer({
+    required String phone,
+    required String position,
+    String firstName = '',
+    String lastName = '',
+  }) async {
+    await _restPost('/api/main/officers', {
+      'phone': phone,
+      'position': position,
+      'firstName': firstName,
+      'lastName': lastName,
+    });
+  }
+
+  Future<void> removeOfficer(String assignmentId) =>
+      _restDelete('/api/main/officers/$assignmentId');
+
+  // ---------------------------------------------------------------------------
+  // Government / outside loans to the group (TODO.md §7)
+  // ---------------------------------------------------------------------------
+
+  List<Map<String, dynamic>> govLoans = [];
+
+  Future<List<Map<String, dynamic>>> fetchGovLoans({bool refresh = false}) async {
+    if (govLoans.isNotEmpty && !refresh) return govLoans;
+    try {
+      govLoans = await _list('/gov-loans');
+    } catch (_) {}
+    return govLoans;
+  }
+
+  double get govLoansOutstanding =>
+      govLoans.fold(0.0, (s, l) => s + ((l['outstanding'] as num?)?.toDouble() ?? 0));
+
+  Future<void> recordGovLoan({
+    required String lender,
+    required double amount,
+    String programme = '',
+    String reference = '',
+    double interestRate = 0,
+    int termMonths = 0,
+    String notes = '',
+  }) async {
+    await _restPost('/api/main/gov-loans', {
+      'lender': lender,
+      'amount': amount,
+      'programme': programme,
+      'reference': reference,
+      'interestRate': interestRate,
+      'termMonths': termMonths,
+      'notes': notes,
+    });
+    await fetchGovLoans(refresh: true);
+  }
+
+  Future<void> repayGovLoan(String loanId, double amount,
+      {String method = 'Cash', String reference = ''}) async {
+    await _restPost('/api/main/gov-loans/$loanId/repayments', {
+      'amount': amount,
+      'method': method,
+      'reference': reference,
+    });
+    await fetchGovLoans(refresh: true);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Corrections: financial records are never edited or deleted — a mistake
+  // is undone by reversing the transaction (TODO.md D5 / N4).
+  // ---------------------------------------------------------------------------
+
+  Future<void> reverseTransaction(String transactionId, String reason) async {
+    await _restPost('/api/main/transactions/$transactionId/reverse', {
+      'reason': reason,
+    });
+    await Future.wait([
+      fetchTransactions(refresh: true),
+      checkGroupAssignment(refresh: true),
+    ]);
   }
 
   Future<List<Map<String, dynamic>>> _list(String path) async {
@@ -818,17 +1094,34 @@ class AppState {
     return '${parts[2]} $monthName ${parts[0]}';
   }
 
+  /// Formats a full ISO8601 timestamp (`createdAt`/`sentAt`/... straight off
+  /// the backend, e.g. `2026-09-21T10:24:00Z`) as `21 Sep 2026` — unlike
+  /// [shortDate], which expects a bare `YYYY-MM-DD` date and mangles
+  /// anything with a time component.
+  String isoDate(Object? value) {
+    final dt = DateTime.tryParse(value?.toString() ?? '');
+    if (dt == null) return value?.toString() ?? '';
+    return '${dt.day} ${_months[dt.month]} ${dt.year}';
+  }
+
+  /// Same as [isoDate] but with a local time-of-day suffix:
+  /// `21 Sep 2026 · 10:24 AM`.
+  String isoDateTime(Object? value) {
+    final dt = DateTime.tryParse(value?.toString() ?? '');
+    if (dt == null) return value?.toString() ?? '';
+    final local = dt.toLocal();
+    final hour24 = local.hour;
+    final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
+    final minute = local.minute.toString().padLeft(2, '0');
+    final period = hour24 < 12 ? 'AM' : 'PM';
+    return '${local.day} ${_months[local.month]} ${local.year} · '
+        '$hour12:$minute $period';
+  }
+
   String meetingSubtitle(Map<String, dynamic> meeting) {
     final time = meeting['time'] as String? ?? '';
     final date = shortDate(meeting['date']);
     return [date, time].where((s) => s.isNotEmpty).join(' · ');
-  }
-
-  /// Converts `21 Sep 2026 · 10:24 AM` to a short label like `21 Sep 2026`.
-  String txnDateLabel(Object? value) {
-    final s = value?.toString() ?? '';
-    final sep = s.indexOf('·');
-    return (sep >= 0 ? s.substring(0, sep) : s).trim();
   }
 
   /// `TZS 1,300,000`.

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../router/app_router.dart';
 import '../../services/app_data.dart';
+import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
@@ -17,7 +18,8 @@ class LoanDetailsScreen extends StatefulWidget {
   State<LoanDetailsScreen> createState() => _LoanDetailsScreenState();
 }
 
-class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
+class _LoanDetailsScreenState extends State<LoanDetailsScreen>
+    with AutoRefreshOnPop {
   Map<String, dynamic>? _loan;
   Map<String, dynamic>? _member;
   String? _meetingId;
@@ -35,8 +37,17 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
     _meetingId ??= ModalRoute.of(context)?.settings.arguments as String?;
   }
 
+  @override
+  void onReturnedToScreen() => _load();
+
   Future<void> _load() async {
     final state = AppState.I;
+    // loanById only refetches the whole list when nothing's cached yet, so
+    // force a refresh first — otherwise a repayment recorded on this exact
+    // loan (which _restPost patches into the cache locally already) is
+    // fine, but any other change made elsewhere (a correction/reversal from
+    // another screen) wouldn't be picked up.
+    await state.fetchLoans(refresh: true);
     final loan = await state.loanById(widget.loanId);
     final member = await state.memberById(loan?['memberId']?.toString());
     if (!mounted) return;
@@ -122,12 +133,11 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
                   height: 48,
                   child: ElevatedButton(
                     onPressed: loan['status'] == 'active'
-                        ? () async {
-                            await Navigator.of(context).pushNamed(
+                        ? () {
+                            Navigator.of(context).pushNamed(
                               AppRouter.loanRepaymentPath(widget.loanId),
                               arguments: _meetingId,
                             );
-                            _load();
                           }
                         : null,
                     style: ElevatedButton.styleFrom(

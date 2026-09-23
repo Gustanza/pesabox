@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../router/app_router.dart';
 import '../../services/app_data.dart';
+import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
 import '../dashboard/dashboard_nav_bar.dart';
 
@@ -15,7 +16,8 @@ class MeetingsListScreen extends StatefulWidget {
   State<MeetingsListScreen> createState() => _MeetingsListScreenState();
 }
 
-class _MeetingsListScreenState extends State<MeetingsListScreen> {
+class _MeetingsListScreenState extends State<MeetingsListScreen>
+    with AutoRefreshOnPop {
   List<Map<String, dynamic>> _meetings = [];
 
   @override
@@ -24,8 +26,11 @@ class _MeetingsListScreenState extends State<MeetingsListScreen> {
     _load();
   }
 
+  @override
+  void onReturnedToScreen() => _load();
+
   Future<void> _load() async {
-    final list = await AppState.I.fetchMeetings();
+    final list = await AppState.I.fetchMeetings(refresh: true);
     if (mounted) setState(() => _meetings = list);
   }
 
@@ -80,7 +85,18 @@ class _MeetingsListScreenState extends State<MeetingsListScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _CycleCard(held: state.meetingsHeld),
+                    _CycleCard(
+                      held: state.meetingsHeld,
+                      cycleNumber:
+                          (state.group?['cycleCurrent'] as num?)?.toInt() ?? 1,
+                      total:
+                          (state.group?['cycleTotal'] as num?)?.toInt() ?? 30,
+                      startedLabel: state.group?['formationDate'] == null
+                          ? ''
+                          : tr('Since {0}', [
+                              state.isoDate(state.group?['formationDate']),
+                            ]),
+                    ),
                     const SizedBox(height: 16),
                     const _SegmentControl(),
                     const SizedBox(height: 16),
@@ -100,13 +116,20 @@ class _MeetingsListScreenState extends State<MeetingsListScreen> {
 
 class _CycleCard extends StatelessWidget {
   final int held;
+  final int cycleNumber;
+  final int total;
+  final String startedLabel;
 
-  const _CycleCard({this.held = 0});
+  const _CycleCard({
+    this.held = 0,
+    this.cycleNumber = 1,
+    this.total = 30,
+    this.startedLabel = '',
+  });
 
   @override
   Widget build(BuildContext context) {
-    const total = 52;
-    final progress = held / total;
+    final progress = total > 0 ? (held / total).clamp(0.0, 1.0) : 0.0;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -128,7 +151,7 @@ class _CycleCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    tr('CYCLE 1'),
+                    tr('CYCLE {0}', [cycleNumber]),
                     style: GoogleFonts.inter(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -136,15 +159,17 @@ class _CycleCard extends StatelessWidget {
                       color: AppColors.white.withValues(alpha: 0.7),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    tr('3 Mar 2026 – 2 Mar 2027'),
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.white,
+                  if (startedLabel.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      startedLabel,
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.white,
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
               const Spacer(),
@@ -180,7 +205,9 @@ class _CycleCard extends StatelessWidget {
                     value: progress,
                     minHeight: 8,
                     backgroundColor: const Color(0x33FFFFFF),
-                    valueColor: const AlwaysStoppedAnimation(AppColors.green500),
+                    valueColor: const AlwaysStoppedAnimation(
+                      AppColors.green500,
+                    ),
                   ),
                 ),
               ),
@@ -206,19 +233,21 @@ class _CycleCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              GestureDetector(
-                onTap: () {
-                  Navigator.of(context).pushNamed(AppRouter.closeCycle);
-                },
-                child: Text(
-                  tr('Close cycle →'),
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF8FE3BE),
+              // Closing the cycle is a core group decision — Mwenyekiti only.
+              if (AppState.I.isGroupAdmin)
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).pushNamed(AppRouter.closeCycle);
+                  },
+                  child: Text(
+                    tr('Close cycle →'),
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF8FE3BE),
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ],
@@ -305,10 +334,7 @@ class _MeetingListCard extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               child: Text(
                 tr('No meetings scheduled yet.'),
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  color: AppColors.ink400,
-                ),
+                style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink400),
               ),
             )
           : Column(
@@ -316,7 +342,8 @@ class _MeetingListCard extends StatelessWidget {
                 for (var i = 0; i < meetings.length; i++) ...[
                   if (i > 0) const Divider(height: 1, indent: 56),
                   _MeetingRow(
-                    title: meetings[i]['title']?.toString() ??
+                    title:
+                        meetings[i]['title']?.toString() ??
                         tr('Meeting #{0}', [meetings[i]['meetingNumber']]),
                     subtitle: state.meetingSubtitle(meetings[i]),
                     upcoming: meetings[i]['status'] == 'upcoming',

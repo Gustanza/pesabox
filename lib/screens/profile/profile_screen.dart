@@ -5,11 +5,24 @@ import '../../router/app_router.dart';
 import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../dashboard/dashboard_nav_bar.dart';
-
 import '../../i18n/i18n.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  /// Pushes the edit screen and rebuilds on return so the updated
+  /// name/email (saved via [AppState.completeProfile]) show up immediately
+  /// — this screen reads straight off the [AppState] singleton rather than
+  /// a listenable, so nothing else would trigger that refresh.
+  Future<void> _editProfile() async {
+    await Navigator.of(context).pushNamed(AppRouter.editProfile);
+    if (mounted) setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,13 +36,23 @@ class ProfileScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-              Text(
-                tr('My Profile'),
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.ink900,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    tr('My Profile'),
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.ink900,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: _editProfile,
+                    icon: const Icon(Icons.edit_outlined,
+                        color: AppColors.ink600),
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
               Center(
@@ -63,7 +86,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      tr('Group Admin · {0}', [state.groupName]),
+                      '${state.positionLabel} · ${state.groupName}',
                       style: GoogleFonts.inter(
                         fontSize: 13,
                         color: AppColors.ink400,
@@ -87,7 +110,7 @@ class ProfileScreen extends StatelessWidget {
                       label: tr('Phone'),
                       value: state.userPhone.isNotEmpty
                           ? state.userPhone
-                          : 'Not set',
+                          : tr('Not set'),
                     ),
                     const Divider(height: 1, indent: 56),
                     _InfoRow(
@@ -118,30 +141,10 @@ class ProfileScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     _AccountRow(
-                      icon: Icons.group_outlined,
-                      title: tr('Group info'),
-                      color: AppColors.teal800,
-                      onTap: () {
-                        Navigator.of(context).pushNamed(AppRouter.groupInfo);
-                      },
-                    ),
-                    const Divider(height: 1, indent: 56),
-                    _AccountRow(
-                      icon: Icons.notifications_outlined,
-                      title: tr('Notifications'),
-                      color: AppColors.gold500,
-                      onTap: () {
-                        Navigator.of(context).pushNamed(AppRouter.settings);
-                      },
-                    ),
-                    const Divider(height: 1, indent: 56),
-                    _AccountRow(
-                      icon: Icons.lock_outline_rounded,
-                      title: tr('Security'),
-                      color: AppColors.green600,
-                      onTap: () {
-                        Navigator.of(context).pushNamed(AppRouter.settings);
-                      },
+                      icon: Icons.person_outline,
+                      title: tr('Edit profile'),
+                      color: AppColors.teal900,
+                      onTap: _editProfile,
                     ),
                     const Divider(height: 1, indent: 56),
                     _AccountRow(

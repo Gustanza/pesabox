@@ -7,6 +7,7 @@ import '../../router/app_router.dart';
 import 'auth_widgets.dart';
 
 import '../../i18n/i18n.dart';
+import '../../brand.dart';
 
 /// App entry point. Before showing the "Get started" welcome UI, this tries
 /// to restore a previously persisted session (see [AppState.restore]) so a
@@ -36,8 +37,20 @@ class _SplashScreenState extends State<SplashScreen> {
       setState(() => _checkingSession = false);
       return;
     }
+    if (AppState.I.needsProfileCompletion) {
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRouter.completeProfile,
+        (r) => false,
+      );
+      return;
+    }
     final hasGroup = await AppState.I.checkGroupAssignment();
     if (!mounted) return;
+    if (!AppState.I.isSignedIn) {
+      // The stored session had expired for good — show the login options.
+      setState(() => _checkingSession = false);
+      return;
+    }
     Navigator.of(context).pushNamedAndRemoveUntil(
       hasGroup ? AppRouter.dashboard : AppRouter.awaitingAssignment,
       (r) => false,
@@ -64,7 +77,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 const BrandMark(size: 88, radius: 24, fontSize: 40),
                 const SizedBox(height: 22),
                 Text(
-                  tr('PesaBox'),
+                  kBrandName,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 26,
                     fontWeight: FontWeight.w800,

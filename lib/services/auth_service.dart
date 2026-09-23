@@ -34,14 +34,16 @@ class AuthService {
 
   /// Verifies [code] for [phone]. On success this both logs the user in and
   /// (for a brand-new phone number) creates their account — same call does
-  /// both, there's nothing separate to "register".
+  /// both, there's nothing separate to "register". The response body never
+  /// carries a token (the backend sets it as an httpOnly `Set-Cookie`
+  /// instead), so it's pulled out of the raw response headers here.
   static Future<void> verifyOtp(String phone, String code) async {
+    Map<String, String> headers = const {};
     final data = await gqlAuth.query(
       r'''
         mutation($input: LoginInput!, $type: UsernameIdentifier){
           login(input: $input, type: $type) {
             id username email phone firstName lastName role status isActive
-            accessToken refreshToken
           }
         }
       ''',
@@ -54,16 +56,20 @@ class AuthService {
         },
         'type': _usernameType(phone),
       },
+      (h) => headers = h,
     );
 
     final user = data['login'] as Map<String, dynamic>?;
     if (user == null) {
       throw GraphQLException(tr('Invalid or expired code'));
     }
-    if (user['accessToken'] == null) {
+
+    final accessToken = extractCookie(headers, 'access_token');
+    if (accessToken == null) {
       throw GraphQLException(tr('Login succeeded but no session was issued'));
     }
+    final refreshToken = extractCookie(headers, 'refresh_token');
 
-    await AppState.I.setSession(user);
+    await AppState.I.setSession(user, accessToken, refreshToken);
   }
 }
