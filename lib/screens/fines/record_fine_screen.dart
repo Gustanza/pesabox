@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 
 import '../../i18n/i18n.dart';
@@ -127,10 +128,7 @@ class _RecordFineScreenState extends State<RecordFineScreen> {
               AuthHeader(title: tr('Record Fine')),
               const SizedBox(height: 20),
               if (_loading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(child: CircularProgressIndicator()),
-                )
+                const HxSkeletonList(rows: 6)
               else ...[
                 Container(
                   width: double.infinity,
@@ -159,7 +157,6 @@ class _RecordFineScreenState extends State<RecordFineScreen> {
                                         ))
                                     .toList(),
                                 onChanged: (v) => setState(() => _memberId = v),
-                                decoration: _inputDecoration(),
                               ),
                       ),
                       const SizedBox(height: 16),
@@ -177,7 +174,6 @@ class _RecordFineScreenState extends State<RecordFineScreen> {
                             _reason = v;
                             _amountController.text = _amountFor(v);
                           }),
-                          decoration: _inputDecoration(),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -186,7 +182,7 @@ class _RecordFineScreenState extends State<RecordFineScreen> {
                         child: TextField(
                           controller: _amountController,
                           keyboardType: TextInputType.number,
-                          decoration: _inputDecoration(hint: '1,000'),
+                          decoration: const InputDecoration(hintText: '1,000'),
                         ),
                       ),
                       if (_isOther) ...[
@@ -195,7 +191,8 @@ class _RecordFineScreenState extends State<RecordFineScreen> {
                           label: tr('Reason'),
                           child: TextField(
                             controller: _otherReasonController,
-                            decoration: _inputDecoration(hint: tr('Describe the reason')),
+                            decoration: InputDecoration(
+                                hintText: tr('Describe the reason')),
                           ),
                         ),
                       ],
@@ -203,28 +200,11 @@ class _RecordFineScreenState extends State<RecordFineScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: (_submitting || _members.isEmpty) ? null : _submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.green600,
-                      foregroundColor: AppColors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
-                    ),
-                    child: _submitting
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white),
-                          )
-                        : Text(
-                            tr('Record fine'),
-                            style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.white),
-                          ),
-                  ),
+                HxButton(
+                  text: tr('Record fine'),
+                  loading: _submitting,
+                  onPressed:
+                      (_submitting || _members.isEmpty) ? null : _submit,
                 ),
               ],
               const SizedBox(height: 32),
@@ -234,27 +214,6 @@ class _RecordFineScreenState extends State<RecordFineScreen> {
       ),
     );
   }
-}
-
-InputDecoration _inputDecoration({String? hint}) {
-  return InputDecoration(
-    hintText: hint,
-    filled: true,
-    fillColor: AppColors.white,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: AppColors.line, width: 1.5),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: AppColors.teal900, width: 1.5),
-    ),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: AppColors.line, width: 1.5),
-    ),
-  );
 }
 
 class _Field extends StatelessWidget {

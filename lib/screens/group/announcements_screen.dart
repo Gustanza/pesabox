@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../services/app_data.dart';
 import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 import '../../i18n/i18n.dart';
 
@@ -127,47 +128,17 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen>
                       ),
                     ),
                   ),
-                  GestureDetector(
-                    onTap: _compose,
-                    child: Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.line),
-                      ),
-                      child: const Icon(
-                        Icons.add,
-                        size: 22,
-                        color: AppColors.teal900,
-                      ),
-                    ),
-                  ),
+                  HxIconButton(icon: Icons.add, onPressed: _compose),
                 ],
               ),
               const SizedBox(height: 16),
               if (_loading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(child: CircularProgressIndicator()),
-                )
+                const HxSkeletonList(rows: 4)
               else if (_announcements.isEmpty)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: AppRadius.md,
-                    border: Border.all(color: AppColors.line),
-                  ),
-                  child: Text(
-                    tr('No announcements yet.'),
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      color: AppColors.ink400,
-                    ),
-                  ),
+                HxEmpty(
+                  icon: Icons.campaign_outlined,
+                  title: tr('No announcements yet'),
+                  message: tr('Announcements you post are shared with the whole group.'),
                 )
               else
                 Container(

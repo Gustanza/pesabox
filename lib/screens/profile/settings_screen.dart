@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_theme.dart';
-import '../auth/auth_widgets.dart';
+import '../../ui/ui.dart';
 
 import '../../i18n/i18n.dart';
 import '../../services/app_data.dart';
@@ -16,107 +16,78 @@ class SettingsScreen extends StatelessWidget {
       backgroundColor: AppColors.cream,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.x20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 16),
-              AuthHeader(title: tr('Settings')),
-              const SizedBox(height: 20),
-              Text(
-                tr('Language'),
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.ink900,
-                ),
-              ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpace.x16),
+              HxHeader(title: tr('Settings')),
+              const SizedBox(height: AppSpace.x20),
+              const HxSectionTitle(title: 'Language'),
+              const SizedBox(height: AppSpace.x12),
               const _LanguagePicker(),
-              const SizedBox(height: 24),
-              Text(
-                tr('Notifications'),
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.ink900,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: AppRadius.md,
-                  border: Border.all(color: AppColors.line),
-                ),
-                child: Column(
+              const SizedBox(height: AppSpace.x24),
+              const HxSectionTitle(title: 'Notifications'),
+              const SizedBox(height: AppSpace.x12),
+              HxSurface(
+                padding: EdgeInsets.zero,
+                child: Row(
                   children: [
-                    _ToggleRow(title: tr('Meeting reminders'), on: true),
-                    Divider(height: 1, indent: 56),
-                    _ToggleRow(title: tr('Transaction SMS'), on: true),
+                    Padding(
+                      padding: const EdgeInsets.all(AppSpace.x16),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.teal100,
+                        ),
+                        child: const Icon(
+                          Icons.sms_outlined,
+                          size: 20,
+                          color: AppColors.teal800,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(
+                            right: AppSpace.x16, top: AppSpace.x16, bottom: AppSpace.x16),
+                        child: Text(
+                          tr('SMS alerts are sent automatically to your phone.'),
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            height: 1.5,
+                            color: AppColors.ink600,
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-              Text(
-                tr('Security'),
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.ink900,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: AppRadius.md,
-                  border: Border.all(color: AppColors.line),
-                ),
+              const SizedBox(height: AppSpace.x24),
+              const HxSectionTitle(title: 'About'),
+              const SizedBox(height: AppSpace.x12),
+              HxSurface(
+                padding: EdgeInsets.zero,
                 child: Column(
                   children: [
-                    _SettingRow(title: tr('Change password')),
-                    Divider(height: 1, indent: 56),
-                    _SettingRow(title: tr('Change PIN')),
-                    Divider(height: 1, indent: 56),
-                    _SettingRow(title: tr('Session timeout'), value: '15 min'),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                tr('About'),
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.ink900,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: AppRadius.md,
-                  border: Border.all(color: AppColors.line),
-                ),
-                child: Column(
-                  children: [
-                    _SettingRow(title: tr('App version'), value: '1.0.0 (MVP)'),
-                    Divider(height: 1, indent: 56),
+                    _AboutRow(label: tr('App version'), value: '1.0.0 (MVP)'),
+                    const Divider(height: 1, indent: 56),
+                    // Sender ID comes from the server (BEEM_SENDER_ID or the
+                    // approved default) — never hard-code it here.
                     FutureBuilder<String>(
                       future: AppState.I.fetchSmsSenderId(),
-                      builder: (context, snap) => _SettingRow(
-                        title: tr('SMS sender ID'),
+                      builder: (context, snap) => _AboutRow(
+                        label: tr('SMS sender ID'),
                         value: snap.data ?? '…',
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSpace.x32),
             ],
           ),
         ),
@@ -125,21 +96,22 @@ class SettingsScreen extends StatelessWidget {
   }
 }
 
-class _ToggleRow extends StatelessWidget {
-  final String title;
-  final bool on;
+class _AboutRow extends StatelessWidget {
+  final String label;
+  final String value;
 
-  const _ToggleRow({required this.title, required this.on});
+  const _AboutRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding:
+          const EdgeInsets.symmetric(horizontal: AppSpace.x16, vertical: AppSpace.x12),
       child: Row(
         children: [
           Expanded(
             child: Text(
-              tr(title),
+              tr(label),
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -147,13 +119,12 @@ class _ToggleRow extends StatelessWidget {
               ),
             ),
           ),
-          Switch(
-            value: on,
-            onChanged: (_) {},
-            activeThumbColor: AppColors.white,
-            activeTrackColor: AppColors.green600,
-            inactiveThumbColor: AppColors.white,
-            inactiveTrackColor: AppColors.ink400,
+          Text(
+            tr(value),
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: AppColors.ink600,
+            ),
           ),
         ],
       ),
@@ -170,22 +141,16 @@ class _LanguagePicker extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<String>(
       valueListenable: I18n.locale,
-      builder: (context, current, _) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: AppRadius.md,
-          border: Border.all(color: AppColors.line),
-        ),
+      builder: (context, current, _) => HxSurface(
+        padding: const EdgeInsets.all(AppSpace.x4),
         child: Row(
           children: [
             for (final option in const [('sw', 'Kiswahili'), ('en', 'English')])
               Expanded(
-                child: GestureDetector(
+                child: Pressable(
                   onTap: () => I18n.set(option.$1),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: const EdgeInsets.symmetric(vertical: AppSpace.x12),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: current == option.$1
@@ -208,45 +173,6 @@ class _LanguagePicker extends StatelessWidget {
               ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _SettingRow extends StatelessWidget {
-  final String title;
-  final String? value;
-
-  const _SettingRow({required this.title, this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              tr(title),
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.ink900,
-              ),
-            ),
-          ),
-          if (value != null) ...[
-            Text(
-              tr(value!),
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                color: AppColors.ink600,
-              ),
-            ),
-            const SizedBox(width: 6),
-          ],
-          const Icon(Icons.chevron_right, size: 20, color: AppColors.ink400),
-        ],
       ),
     );
   }

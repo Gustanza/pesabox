@@ -8,6 +8,7 @@ import '../../router/app_router.dart';
 import '../../services/app_data.dart';
 import '../../services/graphql_client.dart';
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 
 import '../../i18n/i18n.dart';
@@ -562,23 +563,10 @@ class _MemberOtpSheetState extends State<_MemberOtpSheet> {
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(
+                  child: HxButton(
+                    text: tr('Cancel'),
+                    variant: HxButtonVariant.secondary,
                     onPressed: () => Navigator.of(context).pop(false),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.ink600,
-                      side: const BorderSide(color: AppColors.line),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      tr('Cancel'),
-                      style: GoogleFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
                   ),
                 ),
                 const SizedBox(width: 12),

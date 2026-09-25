@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../router/app_router.dart';
 import '../../services/app_data.dart';
 import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
-import '../auth/auth_widgets.dart';
+import '../../ui/ui.dart';
 
 import '../../i18n/i18n.dart';
 
@@ -79,69 +79,82 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen>
   Widget build(BuildContext context) {
     final state = AppState.I;
     final meeting = _meeting;
-    final attended = _attendance.where((a) => a['status'] == 'present' || a['status'] == 'late').length;
+    final attended = _attendance
+        .where(
+            (a) => a['status'] == 'present' || a['status'] == 'late')
+        .length;
     final status = meeting?['status']?.toString() ?? 'upcoming';
 
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.x20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  const ScreenBackButton(),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          tr(_title),
-                          style: GoogleFonts.plusJakartaSans(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.ink900),
-                        ),
-                        Text(
-                          tr(meeting == null ? '' : state.meetingSubtitle(meeting)),
-                          style: GoogleFonts.inter(fontSize: 12, color: AppColors.ink400),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              const SizedBox(height: AppSpace.x16),
+              HxHeader(
+                title: _loading ? 'Meeting' : tr(_title),
+                subtitle: meeting == null
+                    ? null
+                    : tr(state.meetingSubtitle(meeting)),
+                onBack: () => Navigator.of(context).maybePop(),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpace.x20),
               if (_loading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(child: CircularProgressIndicator()),
-                )
+                const _LoadingSkeleton()
               else if (meeting == null)
-                Text(tr('Meeting not found.'), style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600))
+                const HxEmpty(
+                  icon: Icons.event_busy_rounded,
+                  title: 'Meeting not found',
+                  message: 'This meeting may have been deleted.',
+                )
               else ...[
                 Row(
                   children: [
-                    Expanded(child: _StatBox(label: tr('Attendance'), value: '$attended/$_memberCount', color: AppColors.teal800)),
-                    const SizedBox(width: 10),
-                    Expanded(child: _StatBox(label: tr('Savings'), value: state.money(_sumType('contribution')), color: AppColors.green600)),
+                    Expanded(
+                      child: HxStat(
+                        label: tr('Attendance'),
+                        value: '$attended/$_memberCount',
+                        valueColor: AppColors.teal800,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpace.x12),
+                    Expanded(
+                      child: HxStat(
+                        label: tr('Savings'),
+                        value: state.money(_sumType('contribution')),
+                        valueColor: AppColors.teal800,
+                      ),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: AppSpace.x12),
                 Row(
                   children: [
-                    Expanded(child: _StatBox(label: tr('Shares'), value: state.money(_sumType('share')), color: AppColors.blue)),
-                    const SizedBox(width: 10),
-                    Expanded(child: _StatBox(label: tr('Social Fund'), value: state.money(_sumType('social_fund')), color: AppColors.gold500)),
+                    Expanded(
+                      child: HxStat(
+                        label: tr('Shares'),
+                        value: state.money(_sumType('share')),
+                        valueColor: AppColors.info,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpace.x12),
+                    Expanded(
+                      child: HxStat(
+                        label: tr('Social Fund'),
+                        value: state.money(_sumType('social_fund')),
+                        valueColor: AppColors.gold500,
+                      ),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 24),
-                Text(tr('Meeting activity'), style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink900)),
-                const SizedBox(height: 12),
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(color: AppColors.white, borderRadius: AppRadius.md, border: Border.all(color: AppColors.line)),
+                const SizedBox(height: AppSpace.x24),
+                const HxSectionTitle(title: 'Meeting activity'),
+                const SizedBox(height: AppSpace.x12),
+                HxSurface(
+                  padding: EdgeInsets.zero,
                   child: Column(
                     children: [
                       for (var i = 0; i < _activities.length; i++) ...[
@@ -149,40 +162,30 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen>
                           label: _activities[i]['label']!,
                           count: _countType(_activities[i]['type']!),
                         ),
-                        if (i < _activities.length - 1) const Divider(height: 1, indent: 48),
+                        if (i < _activities.length - 1)
+                          const Divider(height: 1, indent: 48),
                       ],
                     ],
                   ),
                 ),
-                const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: status == 'completed'
-                        ? null
-                        : () {
-                            final path = status == 'upcoming'
-                                ? AppRouter.startMeetingPath(widget.meetingId)
-                                : AppRouter.attendancePath(widget.meetingId);
-                            Navigator.of(context).pushNamed(path);
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.green600,
-                      foregroundColor: AppColors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
-                    ),
-                    child: Text(
-                      status == 'completed'
-                          ? tr('Meeting completed')
-                          : (status == 'upcoming' ? tr('Start meeting') : tr('Continue meeting')),
-                      style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.white),
-                    ),
-                  ),
+                const SizedBox(height: AppSpace.x32),
+                HxButton(
+                  text: switch (status) {
+                    'completed' => tr('Meeting completed'),
+                    'upcoming' => tr('Start meeting'),
+                    _ => tr('Continue meeting'),
+                  },
+                  onPressed: status == 'completed'
+                      ? null
+                      : () {
+                          final path = status == 'upcoming'
+                              ? AppRouter.startMeetingPath(widget.meetingId)
+                              : AppRouter.attendancePath(widget.meetingId);
+                          Navigator.of(context).pushNamed(path);
+                        },
                 ),
               ],
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSpace.x32),
             ],
           ),
         ),
@@ -191,26 +194,22 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen>
   }
 }
 
-class _StatBox extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-
-  const _StatBox({required this.label, required this.value, required this.color});
+class _LoadingSkeleton extends StatelessWidget {
+  const _LoadingSkeleton();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.line)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(tr(label), style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.ink400)),
-          const SizedBox(height: 6),
-          Text(tr(value), style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: color)),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const HxSkeletonStats(),
+        const SizedBox(height: AppSpace.x12),
+        const HxSkeletonStats(),
+        const SizedBox(height: AppSpace.x20),
+        const HxSkeleton(width: 140, height: 14),
+        const SizedBox(height: AppSpace.x12),
+        const HxSkeletonList(rows: 5),
+      ],
     );
   }
 }
@@ -225,7 +224,7 @@ class _ActivityRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final recorded = count > 0;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpace.x16, vertical: AppSpace.x12),
       child: Row(
         children: [
           Container(
@@ -238,12 +237,19 @@ class _ActivityRow extends StatelessWidget {
             child: Icon(
               recorded ? Icons.check_rounded : Icons.remove_rounded,
               size: 14,
-              color: recorded ? AppColors.green600 : AppColors.ink400,
+              color: recorded ? AppColors.teal800 : AppColors.ink400,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpace.x12),
           Expanded(
-            child: Text(tr(label), style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.ink900)),
+            child: Text(
+              tr(label),
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppColors.ink900,
+              ),
+            ),
           ),
           Text(
             recorded ? tr('{0} recorded', [count]) : tr('None yet'),

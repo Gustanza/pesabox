@@ -5,6 +5,7 @@ import '../../router/app_router.dart';
 import '../../services/app_data.dart';
 import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 import '../dashboard/dashboard_nav_bar.dart';
 
 import '../../i18n/i18n.dart';
@@ -19,6 +20,8 @@ class MeetingsListScreen extends StatefulWidget {
 class _MeetingsListScreenState extends State<MeetingsListScreen>
     with AutoRefreshOnPop {
   List<Map<String, dynamic>> _meetings = [];
+  bool _loading = true;
+  int _view = 0; // 0 = Upcoming, 1 = History
 
   @override
   void initState() {
@@ -31,12 +34,26 @@ class _MeetingsListScreenState extends State<MeetingsListScreen>
 
   Future<void> _load() async {
     final list = await AppState.I.fetchMeetings(refresh: true);
-    if (mounted) setState(() => _meetings = list);
+    if (mounted) {
+      setState(() {
+        _meetings = list;
+        _loading = false;
+      });
+    }
+  }
+
+  List<Map<String, dynamic>> get _visible {
+    if (_view == 0) {
+      return _meetings.where((m) => m['status'] == 'upcoming').toList();
+    }
+    return _meetings.where((m) => m['status'] != 'upcoming').toList();
   }
 
   @override
   Widget build(BuildContext context) {
     final state = AppState.I;
+    final visible = _visible;
+
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: SafeArea(
@@ -44,64 +61,50 @@ class _MeetingsListScreenState extends State<MeetingsListScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpace.x20, AppSpace.x16, 20, 0),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    tr('Meetings'),
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.ink900,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
+                  const Expanded(child: HxPageTitle(title: 'Meetings')),
+                  HxIconButton(
+                    icon: Icons.add_rounded,
+                    tooltip: tr('Create meeting'),
+                    onPressed: () {
                       Navigator.of(context).pushNamed(AppRouter.createMeeting);
                     },
-                    child: Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.line),
-                      ),
-                      child: const Icon(
-                        Icons.add,
-                        size: 22,
-                        color: AppColors.teal900,
-                      ),
-                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpace.x16),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpace.x20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _CycleCard(
                       held: state.meetingsHeld,
-                      cycleNumber:
-                          (state.group?['cycleCurrent'] as num?)?.toInt() ?? 1,
-                      total:
-                          (state.group?['cycleTotal'] as num?)?.toInt() ?? 30,
+                      cycleNumber: (state.group?['cycleCurrent'] as num?)
+                              ?.toInt() ??
+                          1,
+                      total: (state.group?['cycleTotal'] as num?)?.toInt() ??
+                          30,
                       startedLabel: state.group?['formationDate'] == null
                           ? ''
                           : tr('Since {0}', [
                               state.isoDate(state.group?['formationDate']),
                             ]),
                     ),
-                    const SizedBox(height: 16),
-                    const _SegmentControl(),
-                    const SizedBox(height: 16),
-                    _MeetingListCard(meetings: _meetings),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSpace.x16),
+                    HxSegment(
+                      options: [tr('Upcoming'), tr('History')],
+                      selected: _view,
+                      onChanged: (i) => setState(() => _view = i),
+                    ),
+                    const SizedBox(height: AppSpace.x16),
+                    _MeetingList(meetings: visible, loading: _loading),
+                    const SizedBox(height: AppSpace.x24),
                   ],
                 ),
               ),
@@ -132,12 +135,12 @@ class _CycleCard extends StatelessWidget {
     final progress = total > 0 ? (held / total).clamp(0.0, 1.0) : 0.0;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpace.x20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.teal900, AppColors.teal800],
+          colors: [AppColors.ink900, AppColors.teal900],
         ),
         borderRadius: AppRadius.lg,
       ),
@@ -235,7 +238,7 @@ class _CycleCard extends StatelessWidget {
               const Spacer(),
               // Closing the cycle is a core group decision — Mwenyekiti only.
               if (AppState.I.isGroupAdmin)
-                GestureDetector(
+                Pressable(
                   onTap: () {
                     Navigator.of(context).pushNamed(AppRouter.closeCycle);
                   },
@@ -256,189 +259,67 @@ class _CycleCard extends StatelessWidget {
   }
 }
 
-class _SegmentControl extends StatelessWidget {
-  const _SegmentControl();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: AppColors.line.withValues(alpha: 0.5),
-        borderRadius: AppRadius.md,
-      ),
-      child: Row(
-        children: [
-          Expanded(child: _Segment(label: tr('Upcoming'), active: true)),
-          Expanded(child: _Segment(label: tr('History'), active: false)),
-        ],
-      ),
-    );
-  }
-}
-
-class _Segment extends StatelessWidget {
-  final String label;
-  final bool active;
-
-  const _Segment({required this.label, required this.active});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(
-        color: active ? AppColors.white : Colors.transparent,
-        borderRadius: AppRadius.sm,
-        boxShadow: active
-            ? [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
-              ]
-            : null,
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        tr(label),
-        style: GoogleFonts.inter(
-          fontSize: 13,
-          fontWeight: active ? FontWeight.w600 : FontWeight.w400,
-          color: active ? AppColors.ink900 : AppColors.ink400,
-        ),
-      ),
-    );
-  }
-}
-
-class _MeetingListCard extends StatelessWidget {
+class _MeetingList extends StatelessWidget {
   final List<Map<String, dynamic>> meetings;
+  final bool loading;
 
-  const _MeetingListCard({required this.meetings});
+  const _MeetingList({required this.meetings, required this.loading});
 
   @override
   Widget build(BuildContext context) {
+    if (loading) return const HxSkeletonList(rows: 4);
+
+    if (meetings.isEmpty) {
+      return HxEmpty(
+        icon: Icons.event_rounded,
+        title: 'No meetings here',
+        message: 'Schedule a new meeting to see it appear here.',
+      );
+    }
+
     final state = AppState.I;
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: AppRadius.md,
-        border: Border.all(color: AppColors.line),
-      ),
-      child: meetings.isEmpty
-          ? Padding(
-              padding: const EdgeInsets.all(20),
-              child: Text(
-                tr('No meetings scheduled yet.'),
-                style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink400),
-              ),
-            )
-          : Column(
-              children: [
-                for (var i = 0; i < meetings.length; i++) ...[
-                  if (i > 0) const Divider(height: 1, indent: 56),
-                  _MeetingRow(
-                    title:
-                        meetings[i]['title']?.toString() ??
-                        tr('Meeting #{0}', [meetings[i]['meetingNumber']]),
-                    subtitle: state.meetingSubtitle(meetings[i]),
-                    upcoming: meetings[i]['status'] == 'upcoming',
-                    onTap: () {
-                      Navigator.of(context).pushNamed(
-                        AppRouter.meetingDetailsPath(
-                          meetings[i]['id']?.toString() ?? '',
-                        ),
-                      );
-                    },
+    return HxSurface(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          for (var i = 0; i < meetings.length; i++) ...[
+            if (i > 0) const Divider(height: 1, indent: 64),
+            HxRow(
+              onTap: () {
+                Navigator.of(context).pushNamed(
+                  AppRouter.meetingDetailsPath(
+                    meetings[i]['id']?.toString() ?? '',
                   ),
-                ],
-              ],
-            ),
-    );
-  }
-}
-
-class _MeetingRow extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final bool upcoming;
-  final VoidCallback onTap;
-
-  const _MeetingRow({
-    required this.title,
-    required this.subtitle,
-    required this.upcoming,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.green100,
-              ),
-              child: const Icon(
-                Icons.event_rounded,
-                size: 18,
-                color: AppColors.green600,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    tr(title),
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.ink900,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    tr(subtitle),
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: AppColors.ink400,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: upcoming ? AppColors.gold100 : AppColors.cream,
-                borderRadius: AppRadius.sm,
-              ),
-              child: Text(
-                upcoming ? tr('Upcoming') : tr('Closed'),
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: upcoming ? AppColors.gold500 : AppColors.ink600,
+                );
+              },
+              leading: Container(
+                width: 38,
+                height: 38,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.green100,
+                ),
+                child: const Icon(
+                  Icons.event_rounded,
+                  size: 18,
+                  color: AppColors.teal800,
                 ),
               ),
+              title:
+                  meetings[i]['title']?.toString() ??
+                  tr('Meeting #{0}', [meetings[i]['meetingNumber']]),
+              subtitle: state.meetingSubtitle(meetings[i]),
+              trailing: HxPill(
+                text: meetings[i]['status'] == 'upcoming'
+                    ? tr('Upcoming')
+                    : tr('Closed'),
+                tone: meetings[i]['status'] == 'upcoming'
+                    ? HxPillTone.warning
+                    : HxPillTone.neutral,
+              ),
             ),
-            const SizedBox(width: 6),
-            const Icon(Icons.chevron_right, size: 20, color: AppColors.ink400),
           ],
-        ),
+        ],
       ),
     );
   }

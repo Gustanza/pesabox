@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../router/app_router.dart';
 import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 
 import '../../i18n/i18n.dart';
@@ -100,10 +101,7 @@ class _MeetingReviewScreenState extends State<MeetingReviewScreen> {
               ),
               const SizedBox(height: 20),
               if (_loading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(child: CircularProgressIndicator()),
-                )
+                const HxSkeletonList(rows: 7)
               else ...[
                 _SectionCard(
                   title: tr('Attendance'),
@@ -144,28 +142,10 @@ class _MeetingReviewScreenState extends State<MeetingReviewScreen> {
                   ],
                 ),
                 const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: _closing ? null : _close,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.green600,
-                      foregroundColor: AppColors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
-                    ),
-                    child: _closing
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white),
-                          )
-                        : Text(
-                            tr('Confirm & close meeting'),
-                            style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.white),
-                          ),
-                  ),
+                HxButton(
+                  text: tr('Confirm & close meeting'),
+                  loading: _closing,
+                  onPressed: _closing ? null : _close,
                 ),
               ],
               const SizedBox(height: 32),

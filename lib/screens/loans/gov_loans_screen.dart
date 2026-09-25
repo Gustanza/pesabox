@@ -5,6 +5,7 @@ import '../../i18n/i18n.dart';
 import '../../services/app_data.dart';
 import '../../services/graphql_client.dart';
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 
 /// Government / outside loans TO THE GROUP (e.g. council 10% loans for women,
@@ -106,27 +107,12 @@ class _GovLoansScreenState extends State<GovLoansScreen> {
                 ),
                 const SizedBox(height: 16),
                 if (_loading)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 40),
-                    child: Center(child: CircularProgressIndicator()),
-                  )
+                  const HxSkeletonList(rows: 4)
                 else if (loans.isEmpty)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: AppRadius.md,
-                      border: Border.all(color: AppColors.line),
-                    ),
-                    child: Text(
-                      tr('No government loans recorded.'),
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: AppColors.ink400,
-                      ),
-                    ),
+                  HxEmpty(
+                    icon: Icons.account_balance_outlined,
+                    title: tr('No government loans'),
+                    message: tr('Loans the group receives from a bank or NGO will appear here.'),
                   )
                 else
                   for (final l in loans) ...[

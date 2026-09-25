@@ -5,6 +5,7 @@ import '../../router/app_router.dart';
 import '../../services/app_data.dart';
 import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 import 'dashboard_nav_bar.dart';
 
 import '../../i18n/i18n.dart';
@@ -18,6 +19,8 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen>
     with AutoRefreshOnPop {
+  bool _loading = true;
+
   @override
   void initState() {
     super.initState();
@@ -32,6 +35,9 @@ class _DashboardScreenState extends State<DashboardScreen>
   void onReturnedToScreen() => _load(refresh: true);
 
   Future<void> _load({bool refresh = false}) async {
+    if (refresh) {
+      setState(() => _loading = true);
+    }
     final hasGroup = await AppState.I.checkGroupAssignment(refresh: refresh);
     if (!mounted) return;
     if (!hasGroup) {
@@ -48,14 +54,13 @@ class _DashboardScreenState extends State<DashboardScreen>
       AppState.I.fetchTransactions(refresh: refresh),
       AppState.I.fetchMeetings(refresh: refresh),
     ]);
-    if (mounted) setState(() {});
+    if (mounted) setState(() => _loading = false);
   }
 
   @override
   Widget build(BuildContext context) {
     final state = AppState.I;
     final upcoming = state.nextMeeting;
-    final txns = state.transactions.take(3).toList();
 
     return Scaffold(
       backgroundColor: AppColors.cream,
@@ -64,391 +69,30 @@ class _DashboardScreenState extends State<DashboardScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          tr('Hello, {0}', [AppState.I.userName.split(' ').first]),
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.ink900,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          tr(state.groupName),
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            color: AppColors.ink400,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        const Icon(
-                          Icons.notifications_outlined,
-                          size: 24,
-                          color: AppColors.ink900,
-                        ),
-                        Positioned(
-                          right: 0,
-                          top: 0,
-                          child: Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: AppColors.danger,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+              _greeting(state),
+              const SizedBox(height: AppSpace.x20),
+              if (_loading)
+                _loadingBlock()
+              else ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpace.x20),
+                  child: _balanceHero(state),
                 ),
-              ),
-              const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [AppColors.teal900, AppColors.teal800],
-                    ),
-                    borderRadius: AppRadius.lg,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        tr('Group balance'),
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: AppColors.white.withValues(alpha: 0.7),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        tr(state.money(state.groupSavings +
-                            state.groupShares +
-                            state.groupSocialFund)),
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.white,
-                        ),
-                      ),
-                    ],
-                  ),
+                const SizedBox(height: AppSpace.x16),
+                _balanceGrid(state),
+                const SizedBox(height: AppSpace.x24),
+                _nextMeeting(state, upcoming),
+                const SizedBox(height: AppSpace.x24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpace.x20),
+                  child: HxSectionTitle(title: 'Quick actions'),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _SubCard(
-                        label: tr('Savings'),
-                        amount: state.money(state.groupSavings),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _SubCard(
-                        label: tr('Shares'),
-                        amount: state.money(state.groupShares),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _SubCard(
-                        label: tr('Social Fund'),
-                        amount: state.money(state.groupSocialFund),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _SubCard(
-                        label: tr('Loan fund out'),
-                        amount: state.money(state.groupLoansOut),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  tr('Next meeting'),
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.ink900,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: GestureDetector(
-                  onTap: upcoming == null
-                      ? null
-                      : () {
-                          Navigator.of(context)
-                              .pushNamed(AppRouter.meetingDetailsPath(
-                            upcoming['id']?.toString() ?? '',
-                          ));
-                        },
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: AppRadius.md,
-                      border: Border.all(color: AppColors.line),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppColors.green100,
-                          ),
-                          child: const Icon(
-                            Icons.event_rounded,
-                            size: 20,
-                            color: AppColors.green600,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                upcoming == null
-                                    ? tr('No upcoming meeting')
-                                    : (upcoming['title']?.toString() ??
-                                        'Meeting #${upcoming['meetingNumber']}'),
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.ink900,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                upcoming == null
-                                    ? tr('Schedule one to get started')
-                                    : state.meetingSubtitle(upcoming),
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  color: AppColors.ink400,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.gold100,
-                            borderRadius: AppRadius.sm,
-                          ),
-                          child: Text(
-                            upcoming == null ? '' : tr('Upcoming'),
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.gold500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  tr('Quick actions'),
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.ink900,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _QuickAction(
-                        icon: Icons.play_arrow_rounded,
-                        label: tr('Start meeting'),
-                        onTap: () {
-                          final id = upcoming?['id']?.toString();
-                          if (id == null || id.isEmpty) {
-                            Navigator.of(context)
-                                .pushNamed(AppRouter.createMeeting);
-                            return;
-                          }
-                          Navigator.of(context)
-                              .pushNamed(AppRouter.startMeetingPath(id));
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _QuickAction(
-                        icon: Icons.person_add_rounded,
-                        label: tr('Add member'),
-                        onTap: () {
-                          Navigator.of(context).pushNamed(AppRouter.addMember);
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _QuickAction(
-                        icon: Icons.request_quote_rounded,
-                        label: tr('Record loan'),
-                        onTap: () {
-                          Navigator.of(context).pushNamed(AppRouter.recordLoan);
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _QuickAction(
-                        icon: Icons.bar_chart_rounded,
-                        label: tr('View reports'),
-                        onTap: () {
-                          Navigator.of(context).pushNamed(AppRouter.reports);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      tr('Recent activity'),
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.ink900,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context)
-                            .pushNamed(AppRouter.transactionsList);
-                      },
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text(
-                        tr('See all →'),
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.green600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: AppRadius.md,
-                    border: Border.all(color: AppColors.line),
-                  ),
-                  child: Column(
-                    children: [
-                      if (txns.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Text(
-                            tr('No activity yet.'),
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              color: AppColors.ink400,
-                            ),
-                          ),
-                        )
-                      else
-                        for (var i = 0; i < txns.length; i++) ...[
-                          if (i > 0) const Divider(height: 1, indent: 60),
-                          _ActivityRow(
-                            name: txns[i]['fullName']?.toString() ??
-                                txns[i]['memberName']?.toString() ??
-                                '',
-                            initials: state.initials(
-                                txns[i]['fullName']?.toString() ??
-                                    txns[i]['memberName']?.toString() ??
-                                    ''),
-                            detail: state.txnTypeLabel(
-                                txns[i]['type']?.toString() ?? ''),
-                            amount: state.amountLabel(txns[i]),
-                            isPositive: state.isCredit(txns[i]),
-                            isFirst: i == 0,
-                            isLast: i == txns.length - 1,
-                            onTap: () {
-                              Navigator.of(context).pushNamed(
-                                AppRouter.transactionDetailsPath(
-                                  txns[i]['id']?.toString() ?? '',
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: AppSpace.x12),
+                _quickActions(state, upcoming),
+                const SizedBox(height: AppSpace.x24),
+                _recentActivity(state),
+                const SizedBox(height: AppSpace.x24),
+              ],
             ],
           ),
         ),
@@ -456,43 +100,400 @@ class _DashboardScreenState extends State<DashboardScreen>
       bottomNavigationBar: const DashboardNavBar(currentIndex: 0),
     );
   }
+
+  /// Header when data is still in flight.
+  Widget _loadingBlock() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.x20),
+          child: const HxSkeleton(height: 120, radius: AppRadius.lg),
+        ),
+        const SizedBox(height: AppSpace.x16),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: AppSpace.x20),
+          child: HxSkeletonStats(),
+        ),
+        const SizedBox(height: AppSpace.x20),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: AppSpace.x20),
+          child: HxSectionTitle(title: 'Quick actions'),
+        ),
+        const SizedBox(height: AppSpace.x12),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: AppSpace.x20),
+          child: Row(
+            children: [
+              Expanded(child: HxSkeleton(height: 76)),
+              SizedBox(width: AppSpace.x12),
+              Expanded(child: HxSkeleton(height: 76)),
+              SizedBox(width: AppSpace.x12),
+              Expanded(child: HxSkeleton(height: 76)),
+              SizedBox(width: AppSpace.x12),
+              Expanded(child: HxSkeleton(height: 76)),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpace.x20),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: AppSpace.x20),
+          child: HxSectionTitle(title: 'Recent activity'),
+        ),
+        const SizedBox(height: AppSpace.x12),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: AppSpace.x20),
+          child: HxSkeletonList(rows: 3),
+        ),
+      ],
+    );
+  }
+
+  Widget _greeting(AppState state) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpace.x20, AppSpace.x24, 20, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  tr('Hello, {0}', [state.userName.split(' ').first]),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink900,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  tr(state.groupName),
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: AppColors.ink400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Announcements: the one place a "something new happened" affordance
+          // leads somewhere real — never ship a bell that does nothing.
+          HxIconButton(
+            icon: Icons.notifications_outlined,
+            tooltip: tr('Announcements'),
+            onPressed: () =>
+                Navigator.of(context).pushNamed(AppRouter.announcements),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _balanceHero(AppState state) {
+    return HxHero(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                tr('Group balance'),
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: AppColors.white.withValues(alpha: 0.75),
+                ),
+              ),
+            ),
+            const Icon(
+              Icons.verified_rounded,
+              size: 16,
+              color: AppColors.teal100,
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpace.x8),
+        Text(
+          tr(state.money(state.groupSavings +
+              state.groupShares +
+              state.groupSocialFund)),
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 30,
+            fontWeight: FontWeight.w700,
+            color: AppColors.white,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _balanceGrid(AppState state) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpace.x20),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _SubCard(
+                  label: tr('Savings'),
+                  amount: HxMoney(text: state.money(state.groupSavings), fontSize: 15),
+                ),
+              ),
+              const SizedBox(width: AppSpace.x12),
+              Expanded(
+                child: _SubCard(
+                  label: tr('Shares'),
+                  amount: HxMoney(text: state.money(state.groupShares), fontSize: 15),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpace.x12),
+          Row(
+            children: [
+              Expanded(
+                child: _SubCard(
+                  label: tr('Social Fund'),
+                  amount:
+                      HxMoney(text: state.money(state.groupSocialFund), fontSize: 15),
+                ),
+              ),
+              const SizedBox(width: AppSpace.x12),
+              Expanded(
+                child: _SubCard(
+                  label: tr('Loan fund out'),
+                  amount: HxMoney(text: state.money(state.groupLoansOut), fontSize: 15),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _nextMeeting(AppState state, Map<String, dynamic>? upcoming) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.x20),
+          child: HxSectionTitle(title: 'Next meeting'),
+        ),
+        const SizedBox(height: AppSpace.x12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.x20),
+          child: HxSurface(
+            padding: const EdgeInsets.all(AppSpace.x16),
+            onTap: upcoming == null
+                ? null
+                : () => Navigator.of(context).pushNamed(
+                      AppRouter.meetingDetailsPath(
+                        upcoming['id']?.toString() ?? '',
+                      ),
+                    ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.green100,
+                  ),
+                  child: const Icon(
+                    Icons.event_rounded,
+                    size: 20,
+                    color: AppColors.teal800,
+                  ),
+                ),
+                const SizedBox(width: AppSpace.x12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        upcoming == null
+                            ? tr('No upcoming meeting')
+                            : (upcoming['title']?.toString() ??
+                                'Meeting #${upcoming['meetingNumber']}'),
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.ink900,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        upcoming == null
+                            ? tr('Schedule one to get started')
+                            : state.meetingSubtitle(upcoming),
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: AppColors.ink400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (upcoming != null)
+                  const Padding(
+                    padding: EdgeInsets.only(left: AppSpace.x8),
+                    child: HxPill(text: 'Upcoming', tone: HxPillTone.warning),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _quickActions(AppState state, Map<String, dynamic>? upcoming) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpace.x20),
+      child: Row(
+        children: [
+          Expanded(
+            child: _QuickAction(
+              icon: Icons.play_arrow_rounded,
+              label: tr('Start meeting'),
+              onTap: () {
+                final id = upcoming?['id']?.toString();
+                if (id == null || id.isEmpty) {
+                  Navigator.of(context)
+                      .pushNamed(AppRouter.createMeeting);
+                  return;
+                }
+                Navigator.of(context)
+                    .pushNamed(AppRouter.startMeetingPath(id));
+              },
+            ),
+          ),
+          const SizedBox(width: AppSpace.x12),
+          Expanded(
+            child: _QuickAction(
+              icon: Icons.person_add_rounded,
+              label: tr('Add member'),
+              onTap: () {
+                Navigator.of(context).pushNamed(AppRouter.addMember);
+              },
+            ),
+          ),
+          const SizedBox(width: AppSpace.x12),
+          Expanded(
+            child: _QuickAction(
+              icon: Icons.request_quote_rounded,
+              label: tr('Record loan'),
+              onTap: () {
+                Navigator.of(context).pushNamed(AppRouter.recordLoan);
+              },
+            ),
+          ),
+          const SizedBox(width: AppSpace.x12),
+          Expanded(
+            child: _QuickAction(
+              icon: Icons.bar_chart_rounded,
+              label: tr('View reports'),
+              onTap: () {
+                Navigator.of(context).pushNamed(AppRouter.reports);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _recentActivity(AppState state) {
+    final txns = state.transactions.take(3).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.x20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              HxSectionTitle(title: 'Recent activity'),
+              HxLink(
+                text: tr('See all'),
+                onPressed: () =>
+                    Navigator.of(context).pushNamed(AppRouter.transactionsList),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpace.x12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.x20),
+          child: HxSurface(
+            padding: EdgeInsets.zero,
+            child: txns.isEmpty
+                ? HxEmpty(
+                    card: false,
+                    icon: Icons.receipt_long_rounded,
+                    title: 'No activity yet',
+                    message: 'Record your first contribution to get started.',
+                  )
+                : Column(
+                    children: [
+                      for (var i = 0; i < txns.length; i++) ...[
+                        if (i > 0) const Divider(height: 1, indent: 68),
+                        _ActivityRow(
+                          name: txns[i]['fullName']?.toString() ??
+                              txns[i]['memberName']?.toString() ??
+                              '',
+                          initials: state.initials(
+                            txns[i]['fullName']?.toString() ??
+                                txns[i]['memberName']?.toString() ??
+                                '',
+                          ),
+                          detail: state.txnTypeLabel(
+                              txns[i]['type']?.toString() ?? ''),
+                          amount: state.amountLabel(txns[i]),
+                          isPositive: state.isCredit(txns[i]),
+                          onTap: () {
+                            Navigator.of(context).pushNamed(
+                              AppRouter.transactionDetailsPath(
+                                txns[i]['id']?.toString() ?? '',
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ],
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _SubCard extends StatelessWidget {
   final String label;
-  final String amount;
+  final Widget amount;
 
   const _SubCard({required this.label, required this.amount});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.white.withValues(alpha: 0.85),
-        borderRadius: AppRadius.md,
-        border: Border.all(color: AppColors.line),
-      ),
+    return HxSurface(
+      padding: const EdgeInsets.all(AppSpace.x16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             tr(label),
             style: GoogleFonts.inter(
-              fontSize: 12,
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
               color: AppColors.ink400,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            tr(amount),
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: AppColors.ink900,
-            ),
-          ),
+          const SizedBox(height: AppSpace.x8),
+          amount,
         ],
       ),
     );
@@ -508,10 +509,11 @@ class _QuickAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Pressable(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: AppSpace.x16),
         decoration: BoxDecoration(
           color: AppColors.white,
           borderRadius: AppRadius.md,
@@ -526,11 +528,11 @@ class _QuickAction extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: AppColors.green100,
               ),
-              child: Icon(icon, size: 20, color: AppColors.green600),
+              child: Icon(icon, size: 20, color: AppColors.teal800),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpace.x8),
             Text(
-              tr(label),
+              label,
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
                 fontSize: 11,
@@ -551,8 +553,6 @@ class _ActivityRow extends StatelessWidget {
   final String detail;
   final String amount;
   final bool isPositive;
-  final bool isFirst;
-  final bool isLast;
   final VoidCallback? onTap;
 
   const _ActivityRow({
@@ -561,71 +561,20 @@ class _ActivityRow extends StatelessWidget {
     required this.detail,
     required this.amount,
     required this.isPositive,
-    this.isFirst = false,
-    this.isLast = false,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return HxRow(
       onTap: onTap,
-      child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.green100,
-            ),
-            child: Center(
-              child: Text(
-                tr(initials),
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.teal900,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  tr(name),
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.ink900,
-                  ),
-                ),
-                const SizedBox(height: 1),
-                Text(
-                  tr(detail),
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    color: AppColors.ink400,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            tr(amount),
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: isPositive ? AppColors.green600 : AppColors.ink900,
-            ),
-          ),
-        ],
-      ),
+      leading: HxAvatar(initials: tr(initials), size: 36),
+      title: tr(name),
+      subtitle: tr(detail),
+      trailing: HxMoney.signed(
+        text: amount,
+        positive: isPositive,
+        fontSize: 14,
       ),
     );
   }

@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../router/app_router.dart';
 import '../../services/app_data.dart';
 import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
-import '../auth/auth_widgets.dart';
+import '../../ui/ui.dart';
 import '../../i18n/i18n.dart';
 
 class MemberDetailsScreen extends StatefulWidget {
@@ -60,6 +60,12 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen>
     return name.isEmpty ? tr('Unnamed member') : name;
   }
 
+  static double _num(Map<String, dynamic> m, String key) {
+    final v = m[key];
+    if (v is num) return v.toDouble();
+    return double.tryParse(v?.toString() ?? '') ?? 0;
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = AppState.I;
@@ -69,146 +75,91 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen>
       backgroundColor: AppColors.cream,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.x20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  ScreenBackButton(
-                    onPressed: () => Navigator.of(context).maybePop(),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _loading ? '' : _fullName,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.ink900,
-                          ),
-                        ),
-                        Text(
-                          balance?['memberNumber']?.toString().isNotEmpty ==
-                                  true
-                              ? tr('Member #{0}', [balance!['memberNumber']])
-                              : '',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: AppColors.ink400,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
+              const SizedBox(height: AppSpace.x16),
+              HxHeader(
+                title: _loading ? 'Member' : _fullName,
+                subtitle: balance?['memberNumber']?.toString().isNotEmpty == true
+                    ? tr('Member #{0}', [balance!['memberNumber']])
+                    : null,
+                onBack: () => Navigator.of(context).maybePop(),
+                actions: [
+                  HxIconButton(
+                    icon: Icons.edit_outlined,
+                    tooltip: tr('Edit'),
+                    onPressed: () {
                       Navigator.of(context).pushNamed(
                         AppRouter.editMemberPath(widget.memberId),
                       );
                     },
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: AppColors.cream,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.line),
-                      ),
-                      child: const Icon(
-                        Icons.edit_outlined,
-                        size: 18,
-                        color: AppColors.ink700,
-                      ),
-                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpace.x20),
               if (_loading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(child: CircularProgressIndicator()),
-                )
+                _LoadingSkeleton()
               else if (balance == null)
-                Text(
-                  tr('Member not found.'),
-                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600),
+                HxEmpty(
+                  icon: Icons.person_off_outlined,
+                  title: 'Member not found',
+                  message: 'We couldn\'t find this member\'s details.',
                 )
               else ...[
                 _ProfileCard(balance: balance, fullName: _fullName),
-                const SizedBox(height: 20),
-                Text(
-                  tr('Financial position'),
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.ink900,
-                  ),
-                ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpace.x20),
+                const HxSectionTitle(title: 'Financial position'),
+                const SizedBox(height: AppSpace.x12),
                 Row(
                   children: [
                     Expanded(
-                      child: _StatBox(
+                      child: HxStat(
                         label: 'Savings',
                         value: state.money(_num(balance, 'savings')),
-                        color: AppColors.green600,
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: AppSpace.x12),
                     Expanded(
-                      child: _StatBox(
-                        label: tr('Shares {0}', [(balance['shareCount'] as num?) ?? 0]),
+                      child: HxStat(
+                        label: tr('Shares {0}',
+                            [(balance['shareCount'] as num?) ?? 0]),
                         value: state.money(_num(balance, 'shares')),
-                        color: AppColors.blue,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: AppSpace.x12),
                 Row(
                   children: [
                     Expanded(
-                      child: _StatBox(
+                      child: HxStat(
                         label: 'Social Fund',
                         value: state.money(_num(balance, 'socialFund')),
-                        color: AppColors.gold500,
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: AppSpace.x12),
                     Expanded(
-                      child: _StatBox(
+                      child: HxStat(
                         label: 'Outstanding loan',
                         value: state.money(_num(balance, 'outstanding')),
-                        color: AppColors.danger,
+                        valueColor: AppColors.danger,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                GestureDetector(
+                const SizedBox(height: AppSpace.x16),
+                HxSurface(
                   onTap: () {
                     Navigator.of(context).pushNamed(
                       AppRouter.memberFinancialPositionPath(widget.memberId),
                     );
                   },
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.line),
-                    ),
-                    child: Row(
-                      children: [
-                        Text(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
                           tr('View full financial position'),
                           style: GoogleFonts.inter(
                             fontSize: 14,
@@ -216,70 +167,78 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen>
                             color: AppColors.teal900,
                           ),
                         ),
-                        const Spacer(),
-                        const Icon(
-                          Icons.chevron_right,
-                          size: 20,
-                          color: AppColors.teal900,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  tr('Recent transactions'),
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.ink900,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                if (_transactions.isEmpty)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.line),
-                    ),
-                    child: Text(
-                      tr('No transactions yet.'),
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: AppColors.ink400,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        size: 20,
+                        color: AppColors.teal900,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpace.x24),
+                const HxSectionTitle(title: 'Recent transactions'),
+                const SizedBox(height: AppSpace.x12),
+                if (_transactions.isEmpty)
+                  HxEmpty(
+                    icon: Icons.receipt_long_rounded,
+                    title: 'No transactions yet',
+                    message: 'This member hasn\'t recorded any activity yet.',
                   )
                 else
-                  ..._transactions
-                      .take(3)
-                      .map((tx) => _TransactionRow(txn: tx)),
-                const SizedBox(height: 16),
-                OutlineButton(
-                  text: tr('View statement'),
-                  onPressed: () {
-                    Navigator.of(context).pushNamed(
-                      AppRouter.memberStatementPath(widget.memberId),
-                    );
-                  },
-                ),
+                  HxSurface(
+                    padding: EdgeInsets.zero,
+                    child: Column(
+                    children: [
+                      for (var i = 0;
+                          i < _transactions.length && i < 3;
+                          i++) ...[
+                        if (i > 0) const Divider(height: 1, indent: 68),
+                        _TransactionRow(txn: _transactions[i]),
+                      ],
+                    ],
+                  ),
+                  ),
+                const SizedBox(height: AppSpace.x16),
+                if (_transactions.isNotEmpty)
+                  HxButton(
+                    text: tr('View statement'),
+                    onPressed: () {
+                      Navigator.of(context).pushNamed(
+                        AppRouter.memberStatementPath(widget.memberId),
+                      );
+                    },
+                    variant: HxButtonVariant.secondary,
+                  ),
               ],
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSpace.x32),
             ],
           ),
         ),
       ),
     );
   }
+}
 
-  static double _num(Map<String, dynamic> m, String key) {
-    final v = m[key];
-    if (v is num) return v.toDouble();
-    return double.tryParse(v?.toString() ?? '') ?? 0;
+class _LoadingSkeleton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const HxSkeleton(height: 88),
+        const SizedBox(height: AppSpace.x20),
+        const HxSkeleton(width: 130, height: 14),
+        const SizedBox(height: AppSpace.x12),
+        const HxSkeletonStats(),
+        const SizedBox(height: AppSpace.x12),
+        const HxSkeletonStats(),
+        const SizedBox(height: AppSpace.x20),
+        const HxSkeleton(width: 130, height: 14),
+        const SizedBox(height: AppSpace.x12),
+        const HxSkeletonList(rows: 3),
+      ],
+    );
   }
 }
 
@@ -300,34 +259,17 @@ class _ProfileCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final status = balance['status']?.toString() ?? 'Active';
     final active = status == 'Active';
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.line),
-      ),
+    return HxSurface(
+      padding: const EdgeInsets.all(AppSpace.x20),
+      onTap: () {
+        Navigator.of(context).pushNamed(
+          AppRouter.editMemberPath(balance['id']?.toString() ?? ''),
+        );
+      },
       child: Row(
         children: [
-          Container(
-            width: 70,
-            height: 70,
-            decoration: BoxDecoration(
-              color: AppColors.green600,
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              _initials,
-              style: GoogleFonts.inter(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-                color: AppColors.white,
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
+          HxAvatar(initials: _initials, size: 64),
+          const SizedBox(width: AppSpace.x16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -340,7 +282,7 @@ class _ProfileCard extends StatelessWidget {
                     color: AppColors.ink900,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 Text(
                   balance['phone']?.toString() ?? '',
                   style: GoogleFonts.inter(
@@ -348,7 +290,7 @@ class _ProfileCard extends StatelessWidget {
                     color: AppColors.ink400,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 Text(
                   tr('Joined {0}', [AppState.I.isoDate(balance['joinedAt'])]),
                   style: GoogleFonts.inter(
@@ -359,66 +301,9 @@ class _ProfileCard extends StatelessWidget {
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: active ? AppColors.green100 : AppColors.line,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              tr(status),
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: active ? AppColors.teal800 : AppColors.ink600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatBox extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-
-  const _StatBox({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.line),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            tr(label),
-            style: GoogleFonts.inter(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: AppColors.ink400,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            tr(value),
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
+          HxPill(
+            text: tr(status),
+            tone: active ? HxPillTone.success : HxPillTone.neutral,
           ),
         ],
       ),
@@ -434,93 +319,49 @@ class _TransactionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = AppState.I;
     final type = txn['type']?.toString() ?? '';
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.line),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: _typeColor(type).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(_typeIcon(type), size: 18, color: _typeColor(type)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  state.txnTypeLabel(type),
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.ink900,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  state.isoDate(txn['createdAt']),
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    color: AppColors.ink400,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            state.money((txn['amount'] as num?) ?? 0),
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: AppColors.ink900,
-            ),
-          ),
-        ],
+    return HxRow(
+      onTap: () {
+        Navigator.of(context).pushNamed(
+          AppRouter.transactionDetailsPath(txn['id']?.toString() ?? ''),
+        );
+      },
+      leading: _typeTile(type),
+      title: state.txnTypeLabel(type),
+      subtitle: state.isoDate(txn['createdAt']),
+      trailing: HxMoney.signed(
+        text: state.amountLabel(txn),
+        positive: state.isCredit(txn),
       ),
     );
   }
 
-  static Color _typeColor(String type) {
-    switch (type) {
-      case 'contribution':
-        return AppColors.green600;
-      case 'loan_disbursement':
-        return AppColors.blue;
-      case 'loan_repayment':
-        return AppColors.teal700;
-      case 'fine':
-        return AppColors.danger;
-      case 'social_fund':
-        return AppColors.gold500;
-      default:
-        return AppColors.ink400;
-    }
+  static Widget _typeTile(String type) {
+    final (Color color, IconData icon) = _decor(type);
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: AppRadius.sm,
+      ),
+      child: Icon(icon, size: 18, color: color),
+    );
   }
 
-  static IconData _typeIcon(String type) {
+  static (Color, IconData) _decor(String type) {
     switch (type) {
       case 'contribution':
-        return Icons.savings_outlined;
+        return (AppColors.teal800, Icons.savings_outlined);
       case 'loan_disbursement':
-        return Icons.account_balance_outlined;
+        return (AppColors.info, Icons.account_balance_outlined);
       case 'loan_repayment':
-        return Icons.replay_outlined;
+        return (AppColors.teal700, Icons.replay_outlined);
       case 'fine':
-        return Icons.gavel_outlined;
+        return (AppColors.danger, Icons.gavel_outlined);
       case 'social_fund':
-        return Icons.people_outline;
+        return (AppColors.gold500, Icons.people_outline);
       default:
-        return Icons.receipt_long_outlined;
+        return (AppColors.ink400, Icons.receipt_long_outlined);
     }
   }
 }

@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../services/app_data.dart';
 import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
-import '../auth/auth_widgets.dart';
+import '../../ui/ui.dart';
 import '../../i18n/i18n.dart';
 
 class MemberFinancialPositionScreen extends StatefulWidget {
@@ -81,100 +81,114 @@ class _MemberFinancialPositionScreenState
       backgroundColor: AppColors.cream,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.x20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 16),
-              AuthHeader(
+              const SizedBox(height: AppSpace.x16),
+              HxHeader(
                 title: tr('Financial Position'),
-                subtitle: _loading ? '' : _fullName,
+                subtitle: _loading ? null : _fullName,
                 onBack: () => Navigator.of(context).maybePop(),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpace.x20),
               if (_loading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(child: CircularProgressIndicator()),
-                )
+                const _LoadingSkeleton()
               else if (balance == null)
-                Text(
-                  tr('Member not found.'),
-                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600),
+                const HxEmpty(
+                  icon: Icons.person_off_outlined,
+                  title: 'Member not found',
+                  message: 'We couldn\'t find this member\'s details.',
                 )
               else ...[
-                _SectionCard(
-                  title: 'Savings',
-                  children: [
-                    _KVRow(
-                        label: 'Total savings',
-                        value: state.money(savings)),
-                    _KVRow(
-                        label: 'Contributions made',
-                        value: '${balance['contributionCount'] ?? 0}'),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _SectionCard(
-                  title: 'Shares',
-                  children: [
-                    _KVRow(label: 'Shares held', value: '$shareCount'),
-                    _KVRow(
-                        label: 'Share value',
-                        value: state.money(shareValue)),
-                    _KVRow(
-                        label: 'Total share value',
-                        value: state.money(_num(balance, 'shares'))),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _SectionCard(
-                  title: 'Social Fund',
-                  children: [
-                    _KVRow(
-                        label: 'Contributed',
-                        value: state.money(_num(balance, 'socialFund'))),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _SectionCard(
-                  title: 'Loan',
-                  children: [
-                    _KVRow(
-                      label: 'Principal',
-                      value: loan != null
-                          ? state.money(_num(loan, 'amount'))
-                          : state.money(0),
-                    ),
-                    _KVRow(
-                      label: 'Repaid',
-                      value: loan != null
-                          ? state.money(_num(loan, 'amountRepaid'))
-                          : state.money(0),
-                    ),
-                    _KVRow(
-                      label: 'Outstanding',
-                      value: state.money(_num(balance, 'outstanding')),
-                      valueColor: AppColors.danger,
-                    ),
-                    if (loan != null && loan['dueDate'] != null)
+                const HxSectionTitle(title: 'Savings'),
+                const SizedBox(height: AppSpace.x12),
+                HxSurface(
+                  child: Column(
+                    children: [
                       _KVRow(
-                        label: 'Due date',
-                        value: state.isoDate(loan['dueDate']),
-                      ),
-                  ],
+                          label: 'Total savings',
+                          value: state.money(savings)),
+                      _KVRow(
+                          label: 'Contributions made',
+                          value: '${balance['contributionCount'] ?? 0}'),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 12),
-                _SectionCard(
-                  title: 'Fines',
-                  children: [
-                    _KVRow(
-                        label: 'Charged', value: state.money(finesCharged)),
-                    _KVRow(label: 'Paid', value: state.money(finesPaid)),
-                  ],
+                const SizedBox(height: AppSpace.x16),
+                const HxSectionTitle(title: 'Shares'),
+                const SizedBox(height: AppSpace.x12),
+                HxSurface(
+                  child: Column(
+                    children: [
+                      _KVRow(label: 'Shares held', value: '$shareCount'),
+                      _KVRow(label: 'Share value', value: state.money(shareValue)),
+                      _KVRow(
+                          label: 'Total share value',
+                          value: state.money(_num(balance, 'shares'))),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpace.x16),
+                const HxSectionTitle(title: 'Social Fund'),
+                const SizedBox(height: AppSpace.x12),
+                HxSurface(
+                  child: Column(
+                    children: [
+                      _KVRow(
+                          label: 'Contributed',
+                          value: state.money(_num(balance, 'socialFund'))),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpace.x16),
+                const HxSectionTitle(title: 'Loan'),
+                const SizedBox(height: AppSpace.x12),
+                HxSurface(
+                  child: Column(
+                    children: [
+                      _KVRow(
+                        label: 'Principal',
+                        value: loan != null
+                            ? state.money(_num(loan, 'amount'))
+                            : state.money(0),
+                      ),
+                      _KVRow(
+                        label: 'Repaid',
+                        value: loan != null
+                            ? state.money(_num(loan, 'amountRepaid'))
+                            : state.money(0),
+                      ),
+                      _KVRow(
+                        label: 'Outstanding',
+                        value: state.money(_num(balance, 'outstanding')),
+                        negative: _num(balance, 'outstanding') > 0,
+                      ),
+                      if (loan != null && loan['dueDate'] != null)
+                        _KVRow(
+                          label: 'Due date',
+                          value: state.isoDate(loan['dueDate']),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpace.x16),
+                const HxSectionTitle(title: 'Fines'),
+                const SizedBox(height: AppSpace.x12),
+                HxSurface(
+                  child: Column(
+                    children: [
+                      _KVRow(
+                          label: 'Charged',
+                          value: state.money(finesCharged)),
+                      _KVRow(
+                          label: 'Paid',
+                          value: state.money(finesPaid)),
+                    ],
+                  ),
                 ),
               ],
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSpace.x32),
             ],
           ),
         ),
@@ -183,37 +197,26 @@ class _MemberFinancialPositionScreenState
   }
 }
 
-class _SectionCard extends StatelessWidget {
-  final String title;
-  final List<Widget> children;
-
-  const _SectionCard({required this.title, required this.children});
+class _LoadingSkeleton extends StatelessWidget {
+  const _LoadingSkeleton();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.line),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            tr(title),
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: AppColors.ink900,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...children,
-        ],
-      ),
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        HxSkeleton(width: 130, height: 14),
+        SizedBox(height: AppSpace.x12),
+        HxSkeleton(height: 110),
+        SizedBox(height: AppSpace.x16),
+        HxSkeleton(width: 130, height: 14),
+        SizedBox(height: AppSpace.x12),
+        HxSkeleton(height: 140),
+        SizedBox(height: AppSpace.x16),
+        HxSkeleton(width: 130, height: 14),
+        SizedBox(height: AppSpace.x12),
+        HxSkeleton(height: 70),
+      ],
     );
   }
 }
@@ -221,18 +224,18 @@ class _SectionCard extends StatelessWidget {
 class _KVRow extends StatelessWidget {
   final String label;
   final String value;
-  final Color? valueColor;
+  final bool negative;
 
   const _KVRow({
     required this.label,
     required this.value,
-    this.valueColor,
+    this.negative = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: AppSpace.x8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -240,16 +243,15 @@ class _KVRow extends StatelessWidget {
             tr(label),
             style: GoogleFonts.inter(
               fontSize: 13,
-              color: AppColors.ink600,
+              fontWeight: FontWeight.w500,
+              color: AppColors.ink400,
             ),
           ),
-          Text(
-            tr(value),
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: valueColor ?? AppColors.ink900,
-            ),
+          HxMoney(
+            text: value,
+            weight: FontWeight.w600,
+            fontSize: 13,
+            color: negative ? AppColors.negative : AppColors.ink900,
           ),
         ],
       ),

@@ -5,6 +5,7 @@ import '../../router/app_router.dart';
 import '../../services/app_data.dart';
 import '../../services/graphql_client.dart';
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 import '../../i18n/i18n.dart';
 
@@ -157,10 +158,7 @@ class _EditMemberScreenState extends State<EditMemberScreen> {
               ),
               const SizedBox(height: 28),
               if (_loading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(child: CircularProgressIndicator()),
-                )
+                const HxSkeletonList(rows: 6)
               else ...[
                 AuthTextField(
                   label: tr('First name'),
@@ -216,30 +214,13 @@ class _EditMemberScreenState extends State<EditMemberScreen> {
                   onPressed: _saving ? null : _save,
                 ),
                 const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: _deactivating ? null : _deactivate,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.danger,
-                      foregroundColor: AppColors.white,
-                      disabledBackgroundColor: AppColors.ink400,
-                      elevation: 0,
-                      padding: EdgeInsets.zero,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    child: Text(
-                      _deactivating ? tr('Deactivating…') : tr('Deactivate member'),
-                      style: GoogleFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.white,
-                      ),
-                    ),
-                  ),
+                HxButton(
+                  text: _deactivating
+                      ? tr('Deactivating…')
+                      : tr('Deactivate member'),
+                  variant: HxButtonVariant.destructive,
+                  loading: _deactivating,
+                  onPressed: _deactivating ? null : _deactivate,
                 ),
               ],
               const SizedBox(height: 32),

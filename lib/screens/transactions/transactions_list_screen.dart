@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../router/app_router.dart';
 import '../../services/app_data.dart';
 import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 import '../dashboard/dashboard_nav_bar.dart';
 
 import '../../i18n/i18n.dart';
@@ -12,14 +13,7 @@ import '../../i18n/i18n.dart';
 class TransactionsListScreen extends StatefulWidget {
   const TransactionsListScreen({super.key});
 
-  static const List<String> _chips = [
-    'All',
-    'Savings',
-    'Shares',
-    'Loans',
-    'Fines',
-    'Expenses',
-  ];
+  static const List<String> _chips = ['All', 'Savings', 'Shares', 'Loans', 'Fines', 'Expenses'];
 
   @override
   State<TransactionsListScreen> createState() => _TransactionsListScreenState();
@@ -28,6 +22,9 @@ class TransactionsListScreen extends StatefulWidget {
 class _TransactionsListScreenState extends State<TransactionsListScreen>
     with AutoRefreshOnPop {
   List<Map<String, dynamic>> _transactions = [];
+  bool _loading = true;
+  int _selected = 0;
+  String _query = '';
 
   @override
   void initState() {
@@ -40,13 +37,58 @@ class _TransactionsListScreenState extends State<TransactionsListScreen>
 
   Future<void> _load() async {
     final list = await AppState.I.fetchTransactions(refresh: true);
-    if (mounted) setState(() => _transactions = list);
+    if (mounted) {
+      setState(() {
+        _transactions = list;
+        _loading = false;
+      });
+    }
+  }
+
+  List<Map<String, dynamic>> get _visible {
+    var txns = _transactions;
+    // Semantic filter buckets (mirror the dashboard's feature mental model,
+    // not the raw schema).
+    switch (_selected) {
+      case 1: // Savings
+        txns = txns.where((t) => t['type'] == 'contribution').toList();
+      case 2: // Shares
+        txns = txns.where((t) => t['type'] == 'share').toList();
+      case 3: // Loans
+        txns = txns
+            .where((t) =>
+                t['type'] == 'loan_disbursement' ||
+                t['type'] == 'loan_repayment')
+            .toList();
+      case 4: // Fines
+        txns = txns.where((t) => t['type'] == 'fine').toList();
+      case 5: // Expenses
+        txns = txns
+            .where((t) =>
+                t['type'] == 'expense' ||
+                t['type'] == 'withdrawal' ||
+                t['type'] == 'social_fund')
+            .toList();
+    }
+    final q = _query.trim().toLowerCase();
+    if (q.isNotEmpty) {
+      final state = AppState.I;
+      txns = txns.where((t) {
+        final member = t['fullName']?.toString() ??
+            t['memberName']?.toString() ??
+            '';
+        return member.toLowerCase().contains(q) ||
+            state.txnTypeLabel(t['type']?.toString() ?? '')
+                .toLowerCase()
+                .contains(q);
+      }).toList();
+    }
+    return txns;
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = AppState.I;
-    final txns = _transactions;
+    final visible = _visible;
 
     return Scaffold(
       backgroundColor: AppColors.cream,
@@ -55,76 +97,79 @@ class _TransactionsListScreenState extends State<TransactionsListScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              padding: const EdgeInsets.fromLTRB(AppSpace.x20, AppSpace.x16, 20, 0),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    tr('Activity'),
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.ink900,
-                    ),
-                  ),
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.line),
-                    ),
-                    child: const Icon(
-                      Icons.search,
-                      size: 20,
-                      color: AppColors.teal900,
-                    ),
+                  const Expanded(child: HxPageTitle(title: 'Activity')),
+                  HxIconButton(
+                    icon: Icons.search_rounded,
+                    tooltip: tr('Search'),
+                    onPressed: _query.isEmpty
+                        ? null
+                        : () => setState(() => _query = ''),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpace.x16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpace.x20),
+              child: TextField(
+                style: GoogleFonts.inter(fontSize: 14, color: AppColors.ink900),
+                onChanged: (v) => setState(() => _query = v),
+                decoration: InputDecoration(
+                  hintText: tr('Search transactions...'),
+                  isDense: true,
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
+                    color: AppColors.ink400,
+                    size: 20,
+                  ),
+                  prefixIconConstraints:
+                      const BoxConstraints(minWidth: 40, minHeight: 40),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpace.x12),
+            SizedBox(
+              height: 34,
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpace.x20),
+                scrollDirection: Axis.horizontal,
+                itemCount: TransactionsListScreen._chips.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final label = TransactionsListScreen._chips[index];
+                  return HxChip(
+                    label: tr(label),
+                    selected: index == _selected,
+                    onTap: () => setState(() => _selected = index),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: AppSpace.x16),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpace.x20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(
-                      height: 36,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: TransactionsListScreen._chips.length,
-                        separatorBuilder: (_, _) => const SizedBox(width: 8),
-                        itemBuilder: (context, index) {
-                          return _Chip(
-                            label: TransactionsListScreen._chips[index],
-                            active: index == 0,
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      tr('More'),
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.ink900,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
+                    _buildTransactions(visible),
+                    const SizedBox(height: AppSpace.x24),
+                    const HxSectionTitle(title: 'More'),
+                    const SizedBox(height: AppSpace.x12),
                     Row(
                       children: [
                         _MoreItem(
                           icon: Icons.schema_rounded,
                           label: tr('Reports'),
                           onTap: () {
-                            Navigator.of(context).pushNamed(AppRouter.reports);
+                            Navigator.of(context)
+                                .pushNamed(AppRouter.reports);
                           },
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: AppSpace.x12),
                         _MoreItem(
                           icon: Icons.sms_outlined,
                           label: tr('SMS log'),
@@ -133,7 +178,7 @@ class _TransactionsListScreenState extends State<TransactionsListScreen>
                                 .pushNamed(AppRouter.smsActivity);
                           },
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: AppSpace.x12),
                         _MoreItem(
                           icon: Icons.account_balance_wallet_outlined,
                           label: tr('Funds'),
@@ -143,55 +188,7 @@ class _TransactionsListScreenState extends State<TransactionsListScreen>
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
-                    Text(
-                      tr('Latest'),
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.ink900,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: AppRadius.md,
-                        border: Border.all(color: AppColors.line),
-                      ),
-                      child: txns.isEmpty
-                          ? Padding(
-                              padding: const EdgeInsets.all(20),
-                              child: Text(
-                                tr('No transactions recorded yet.'),
-                                style: GoogleFonts.inter(
-                                  fontSize: 13,
-                                  color: AppColors.ink400,
-                                ),
-                              ),
-                            )
-                          : Column(
-                              children: [
-                                for (var i = 0; i < txns.length; i++) ...[
-                                  if (i > 0)
-                                    const Divider(height: 1, indent: 60),
-                                  _TxRow._fromApi(
-                                    state: state,
-                                    txn: txns[i],
-                                    onTap: () {
-                                      Navigator.of(context).pushNamed(
-                                        AppRouter.transactionDetailsPath(
-                                          txns[i]['id']?.toString() ?? '',
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ],
-                            ),
-                    ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSpace.x24),
                   ],
                 ),
               ),
@@ -202,35 +199,101 @@ class _TransactionsListScreenState extends State<TransactionsListScreen>
       bottomNavigationBar: const DashboardNavBar(currentIndex: 3),
     );
   }
+
+  Widget _buildTransactions(List<Map<String, dynamic>> visible) {
+    final state = AppState.I;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            HxSectionTitle(title: 'Latest'),
+          ],
+        ),
+        const SizedBox(height: AppSpace.x12),
+        if (_loading)
+          const HxSkeletonList(rows: 5)
+        else if (visible.isEmpty)
+          HxEmpty(
+            icon: Icons.receipt_long_rounded,
+            title: 'No transactions yet',
+            message: _selected == 0
+                ? 'Record your first contribution to get started.'
+                : 'No ${TransactionsListScreen._chips[_selected].toLowerCase()} transactions yet.',
+          )
+        else
+          HxSurface(
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
+                for (var i = 0; i < visible.length; i++) ...[
+                  if (i > 0) const Divider(height: 1, indent: 68),
+                  HxRow(
+                    onTap: () {
+                      Navigator.of(context).pushNamed(
+                        AppRouter.transactionDetailsPath(
+                          visible[i]['id']?.toString() ?? '',
+                        ),
+                      );
+                    },
+                    leading: _TxIcon(type: visible[i]['type']?.toString() ?? ''),
+                    title: state.txnTypeLabel(
+                        visible[i]['type']?.toString() ?? ''),
+                    subtitle: [
+                      visible[i]['fullName']?.toString() ??
+                          visible[i]['memberName']?.toString() ??
+                          '',
+                      state.isoDate(visible[i]['createdAt']),
+                    ]
+                        .where((s) => s.isNotEmpty)
+                        .join(' · '),
+                    trailing: HxMoney.signed(
+                      text: state.amountLabel(visible[i]),
+                      positive: state.isCredit(visible[i]),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+      ],
+    );
+  }
 }
 
-class _Chip extends StatelessWidget {
-  final String label;
-  final bool active;
-
-  const _Chip({required this.label, required this.active});
+class _TxIcon extends StatelessWidget {
+  final String type;
+  const _TxIcon({required this.type});
 
   @override
   Widget build(BuildContext context) {
+    final color = switch (type) {
+      'loan_disbursement' => AppColors.info,
+      'loan_repayment' => AppColors.teal700,
+      'fine' => AppColors.danger,
+      'share' => AppColors.gold500,
+      'social_fund' => AppColors.gold500,
+      'expense' || 'withdrawal' => AppColors.ink600,
+      _ => AppColors.teal800,
+    };
+    final icon = switch (type) {
+      'loan_disbursement' || 'loan_repayment' => Icons.replay_rounded,
+      'fine' => Icons.gavel_outlined,
+      'share' => Icons.pie_chart_outline_rounded,
+      'social_fund' => Icons.favorite_outline_rounded,
+      'expense' => Icons.receipt_long_outlined,
+      'withdrawal' => Icons.money_off_rounded,
+      _ => Icons.savings_outlined,
+    };
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      width: 44,
+      height: 44,
       decoration: BoxDecoration(
-        color: active ? AppColors.teal900 : AppColors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: active ? AppColors.teal900 : AppColors.line,
-        ),
+        color: color.withValues(alpha: 0.12),
+        borderRadius: AppRadius.sm,
       ),
-      child: Center(
-        child: Text(
-          tr(label),
-          style: GoogleFonts.inter(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: active ? AppColors.white : AppColors.ink600,
-          ),
-        ),
-      ),
+      child: Icon(icon, size: 20, color: color),
     );
   }
 }
@@ -249,10 +312,11 @@ class _MoreItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: GestureDetector(
+      child: Pressable(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: AppSpace.x16),
           decoration: BoxDecoration(
             color: AppColors.white,
             borderRadius: AppRadius.md,
@@ -267,11 +331,11 @@ class _MoreItem extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: AppColors.green100,
                 ),
-                child: Icon(icon, size: 20, color: AppColors.green600),
+                child: Icon(icon, size: 20, color: AppColors.teal800),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpace.x8),
               Text(
-                tr(label),
+                label,
                 style: GoogleFonts.inter(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
@@ -280,142 +344,6 @@ class _MoreItem extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TxRow extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final String amount;
-  final bool positive;
-  final IconData icon;
-  final Color color;
-  final VoidCallback? onTap;
-
-  const _TxRow({
-    required this.title,
-    required this.subtitle,
-    required this.amount,
-    required this.positive,
-    required this.icon,
-    required this.color,
-    this.onTap,
-  });
-
-  factory _TxRow._fromApi({
-    required AppState state,
-    required Map<String, dynamic> txn,
-    VoidCallback? onTap,
-  }) {
-    final type = txn['type']?.toString() ?? '';
-    final member = txn['fullName']?.toString() ??
-        txn['memberName']?.toString() ??
-        '';
-    final date = state.isoDate(txn['createdAt']);
-    return _TxRow(
-      title: state.txnTypeLabel(type),
-      subtitle: [member, date].where((s) => s.isNotEmpty).join(' · '),
-      amount: state.amountLabel(txn),
-      positive: state.isCredit(txn),
-      icon: _txIcon(type),
-      color: _txColor(type, state.isCredit(txn)),
-      onTap: onTap,
-    );
-  }
-
-  static IconData _txIcon(String type) {
-    switch (type) {
-      case 'loan_disbursement':
-      case 'loan_repayment':
-        return Icons.replay_rounded;
-      case 'fine':
-        return Icons.gavel_outlined;
-      case 'share':
-        return Icons.pie_chart_outline_rounded;
-      case 'social_fund':
-        return Icons.favorite_outline_rounded;
-      case 'expense':
-        return Icons.receipt_long_outlined;
-      case 'withdrawal':
-        return Icons.money_off_rounded;
-      default:
-        return Icons.savings_outlined;
-    }
-  }
-
-  static Color _txColor(String type, bool credit) {
-    switch (type) {
-      case 'loan_disbursement':
-        return credit ? AppColors.teal700 : AppColors.blue;
-      case 'loan_repayment':
-        return AppColors.teal700;
-      case 'fine':
-        return AppColors.danger;
-      case 'share':
-        return AppColors.blue;
-      case 'social_fund':
-        return AppColors.gold500;
-      case 'expense':
-      case 'withdrawal':
-        return AppColors.ink600;
-      default:
-        return AppColors.green600;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: AppRadius.sm,
-              ),
-              child: Icon(icon, size: 20, color: color),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    tr(title),
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.ink900,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    tr(subtitle),
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      color: AppColors.ink400,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Text(
-              tr(amount),
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: positive ? AppColors.green600 : AppColors.ink900,
-              ),
-            ),
-          ],
         ),
       ),
     );

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../router/app_router.dart';
@@ -101,7 +101,7 @@ class _MeetingActivityScreenState extends State<MeetingActivityScreen> {
                           const Divider(height: 1, indent: 56),
                           _ActivityRow(
                             icon: Icons.trending_up_rounded,
-                            color: AppColors.blue,
+                            color: AppColors.info,
                             title: tr('Shares'),
                             subtitle: tr('Record share purchases'),
                             onTap: () {

@@ -6,6 +6,7 @@ import '../../services/app_data.dart';
 import '../../services/report_data.dart';
 import '../../services/report_service.dart';
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 
 /// A live report: the group's real data for one dataset (Savings, Loans,
@@ -133,7 +134,10 @@ class _ReportViewScreenState extends State<ReportViewScreen> {
             ),
             Expanded(
               child: _loading
-                  ? const Center(child: CircularProgressIndicator(color: AppColors.teal900))
+                  ? const Padding(
+                      padding: EdgeInsets.all(AppSpace.x20),
+                      child: HxSkeletonList(rows: 8),
+                    )
                   : RefreshIndicator(onRefresh: _load, child: _content()),
             ),
             Container(

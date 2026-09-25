@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../services/app_data.dart';
 import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
-import '../auth/auth_widgets.dart';
+import '../../ui/ui.dart';
+
 import '../../i18n/i18n.dart';
 
 class FundsScreen extends StatefulWidget {
@@ -55,113 +56,94 @@ class _FundsScreenState extends State<FundsScreen> with AutoRefreshOnPop {
     final totalOut = _thisMonth
         .where((t) => t['direction'] == 'out')
         .fold<double>(0, (sum, t) => sum + ((t['amount'] as num?)?.toDouble() ?? 0));
+    final net = totalIn - totalOut;
 
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.x20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 16),
-              AuthHeader(title: tr('Funds')),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpace.x16),
+              HxHeader(title: tr('Funds')),
+              const SizedBox(height: AppSpace.x20),
               if (_loading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(child: CircularProgressIndicator()),
-                )
+                const _LoadingSkeleton()
               else ...[
                 Row(
                   children: [
                     Expanded(
-                      child: _StatBox(
+                      child: HxStat(
                         label: 'Savings fund',
                         value: state.money(state.groupSavings),
-                        color: AppColors.teal800,
+                        valueColor: AppColors.teal800,
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: AppSpace.x12),
                     Expanded(
-                      child: _StatBox(
+                      child: HxStat(
                         label: 'Share fund',
                         value: state.money(state.groupShares),
-                        color: AppColors.blue,
+                        valueColor: AppColors.info,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: AppSpace.x12),
                 Row(
                   children: [
                     Expanded(
-                      child: _StatBox(
+                      child: HxStat(
                         label: 'Social Fund',
                         value: state.money(state.groupSocialFund),
-                        color: AppColors.gold500,
+                        valueColor: AppColors.gold500,
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: AppSpace.x12),
                     Expanded(
-                      child: _StatBox(
+                      child: HxStat(
                         label: 'Loan fund out',
                         value: state.money(state.groupLoansOut),
-                        color: AppColors.danger,
+                        valueColor: AppColors.danger,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  tr('Fund movement this month'),
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.ink900,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: AppRadius.md,
-                    border: Border.all(color: AppColors.line),
-                  ),
+                const SizedBox(height: AppSpace.x24),
+                const HxSectionTitle(title: 'Fund movement this month'),
+                const SizedBox(height: AppSpace.x12),
+                HxSurface(
                   child: Column(
                     children: [
-                      _KVRow(label: 'Total in', value: state.money(totalIn)),
+                      _KVRow(
+                        label: 'Total in',
+                        value: HxMoney(text: state.money(totalIn)),
+                      ),
                       const Divider(height: 24),
-                      _KVRow(label: 'Total out', value: state.money(totalOut)),
+                      _KVRow(
+                        label: 'Total out',
+                        value: HxMoney(text: state.money(totalOut)),
+                      ),
                       const Divider(height: 24),
                       _KVRow(
                         label: 'Net movement',
-                        value:
-                            '${totalIn - totalOut >= 0 ? '+' : ''}${state.money(totalIn - totalOut)}',
-                        positive: totalIn - totalOut >= 0,
+                        value: HxMoney.signed(
+                          text:
+                              '${net >= 0 ? '+' : '-'}${state.money(net.abs())}',
+                          positive: net >= 0,
+                          autoSign: false,
+                        ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  tr('By fund this month'),
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.ink900,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: AppRadius.md,
-                    border: Border.all(color: AppColors.line),
-                  ),
+                const SizedBox(height: AppSpace.x24),
+                const HxSectionTitle(title: 'By fund this month'),
+                const SizedBox(height: AppSpace.x12),
+                HxSurface(
+                  padding: EdgeInsets.zero,
                   child: Column(
                     children: [
                       _FundRow(
@@ -176,7 +158,7 @@ class _FundsScreenState extends State<FundsScreen> with AutoRefreshOnPop {
                         icon: Icons.pie_chart_outline_rounded,
                         name: 'Shares',
                         detail: '${state.money(_sum('share'))} in · TZS 0 out',
-                        color: AppColors.blue,
+                        color: AppColors.info,
                       ),
                       const Divider(height: 1, indent: 56),
                       _FundRow(
@@ -192,13 +174,13 @@ class _FundsScreenState extends State<FundsScreen> with AutoRefreshOnPop {
                         name: 'Loan fund',
                         detail:
                             '${state.money(_sum('loan_repayment'))} in · ${state.money(_sum('loan_disbursement'))} out',
-                        color: AppColors.green600,
+                        color: AppColors.teal700,
                       ),
                     ],
                   ),
                 ),
               ],
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpace.x24),
             ],
           ),
         ),
@@ -207,58 +189,35 @@ class _FundsScreenState extends State<FundsScreen> with AutoRefreshOnPop {
   }
 }
 
-class _StatBox extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-
-  const _StatBox({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
+class _LoadingSkeleton extends StatelessWidget {
+  const _LoadingSkeleton();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: AppRadius.md,
-        border: Border.all(color: AppColors.line),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            tr(label),
-            style: GoogleFonts.inter(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: AppColors.ink400,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            tr(value),
-            style: GoogleFonts.inter(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
-          ),
-        ],
-      ),
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        HxSkeletonStats(),
+        SizedBox(height: AppSpace.x12),
+        HxSkeletonStats(),
+        SizedBox(height: AppSpace.x20),
+        HxSkeleton(width: 170, height: 14),
+        SizedBox(height: AppSpace.x12),
+        HxSkeleton(height: 120),
+        SizedBox(height: AppSpace.x20),
+        HxSkeleton(width: 140, height: 14),
+        SizedBox(height: AppSpace.x12),
+        HxSkeleton(height: 220),
+      ],
     );
   }
 }
 
 class _KVRow extends StatelessWidget {
   final String label;
-  final String value;
-  final bool positive;
+  final Widget value;
 
-  const _KVRow({required this.label, required this.value, this.positive = false});
+  const _KVRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -269,14 +228,7 @@ class _KVRow extends StatelessWidget {
           tr(label),
           style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600),
         ),
-        Text(
-          tr(value),
-          style: GoogleFonts.inter(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: positive ? AppColors.green600 : AppColors.ink900,
-          ),
-        ),
+        value,
       ],
     );
   }
@@ -298,7 +250,8 @@ class _FundRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpace.x16, vertical: AppSpace.x12),
       child: Row(
         children: [
           Container(
@@ -310,7 +263,7 @@ class _FundRow extends StatelessWidget {
             ),
             child: Icon(icon, size: 20, color: color),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpace.x12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

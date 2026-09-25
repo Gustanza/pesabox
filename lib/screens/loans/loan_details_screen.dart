@@ -5,6 +5,7 @@ import '../../router/app_router.dart';
 import '../../services/app_data.dart';
 import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 
 import '../../i18n/i18n.dart';
@@ -112,10 +113,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
               ),
               const SizedBox(height: 20),
               if (_loading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(child: CircularProgressIndicator()),
-                )
+                const HxSkeletonList(rows: 6)
               else if (loan == null)
                 Text(tr('Loan not found.'), style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600))
               else ...[
@@ -128,29 +126,18 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
                 const SizedBox(height: 16),
                 _KeyValueCard(loan: loan, state: state),
                 const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: loan['status'] == 'active'
-                        ? () {
-                            Navigator.of(context).pushNamed(
-                              AppRouter.loanRepaymentPath(widget.loanId),
-                              arguments: _meetingId,
-                            );
-                          }
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.green600,
-                      foregroundColor: AppColors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
-                    ),
-                    child: Text(
-                      loan['status'] == 'active' ? tr('Record repayment') : tr('Loan repaid'),
-                      style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.white),
-                    ),
-                  ),
+                HxButton(
+                  text: loan['status'] == 'active'
+                      ? tr('Record repayment')
+                      : tr('Loan repaid'),
+                  onPressed: loan['status'] == 'active'
+                      ? () {
+                          Navigator.of(context).pushNamed(
+                            AppRouter.loanRepaymentPath(widget.loanId),
+                            arguments: _meetingId,
+                          );
+                        }
+                      : null,
                 ),
               ],
               const SizedBox(height: 32),

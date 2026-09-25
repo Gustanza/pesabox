@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../router/app_router.dart';
 import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 
 import '../../i18n/i18n.dart';
 
@@ -133,30 +134,15 @@ class _AwaitingAssignmentScreenState extends State<AwaitingAssignmentScreen> {
                 isLast: true,
               ),
               const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: OutlinedButton(
-                  onPressed: _checking ? null : _checkAgain,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.teal900,
-                    side: const BorderSide(color: AppColors.teal900, width: 1.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.md,
-                    ),
-                  ),
-                  child: Text(
-                    _checking ? tr('Checking…') : tr('Check again'),
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+              HxButton(
+                text: _checking ? tr('Checking…') : tr('Check again'),
+                variant: HxButtonVariant.secondary,
+                onPressed: _checking ? null : _checkAgain,
               ),
               const SizedBox(height: 12),
               Center(
-                child: TextButton(
+                child: HxLink(
+                  text: tr('Log out'),
                   onPressed: () async {
                     await AppState.I.signOut();
                     if (!context.mounted) return;
@@ -165,14 +151,6 @@ class _AwaitingAssignmentScreenState extends State<AwaitingAssignmentScreen> {
                       (r) => false,
                     );
                   },
-                  child: Text(
-                    tr('Log out'),
-                    style: GoogleFonts.inter(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.ink400,
-                    ),
-                  ),
                 ),
               ),
               const SizedBox(height: 24),

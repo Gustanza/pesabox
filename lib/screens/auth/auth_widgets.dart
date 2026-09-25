@@ -3,9 +3,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 
 import '../../i18n/i18n.dart';
 import '../../brand.dart';
+
+/// Note: this file keeps the legacy shared widget names so existing screens
+/// keep compiling — every widget now delegates to the `lib/ui` kit so the
+/// whole app inherits the unified treatment automatically.
 
 class BrandMark extends StatelessWidget {
   final double size;
@@ -48,35 +53,25 @@ class BrandMark extends StatelessWidget {
 class PrimaryButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
+  final bool loading;
+  final bool success;
 
-  const PrimaryButton({super.key, required this.text, this.onPressed});
+  const PrimaryButton({
+    super.key,
+    required this.text,
+    this.onPressed,
+    this.loading = false,
+    this.success = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.green600,
-          foregroundColor: AppColors.white,
-          disabledBackgroundColor: AppColors.ink400,
-          elevation: 0,
-          padding: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-        child: Text(
-          tr(text),
-          style: GoogleFonts.inter(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: AppColors.white,
-          ),
-        ),
-      ),
+    return HxButton(
+      text: text,
+      onPressed: onPressed,
+      variant: HxButtonVariant.primary,
+      loading: loading,
+      success: success,
     );
   }
 }
@@ -84,34 +79,17 @@ class PrimaryButton extends StatelessWidget {
 class OutlineButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
+  final bool loading;
 
-  const OutlineButton({super.key, required this.text, this.onPressed});
+  const OutlineButton({super.key, required this.text, this.onPressed, this.loading = false});
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: OutlinedButton(
-        onPressed: onPressed,
-        style: OutlinedButton.styleFrom(
-          backgroundColor: AppColors.white,
-          foregroundColor: AppColors.green600,
-          side: const BorderSide(color: AppColors.green600, width: 1.5),
-          padding: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-        child: Text(
-          tr(text),
-          style: GoogleFonts.inter(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: AppColors.green600,
-          ),
-        ),
-      ),
+    return HxButton(
+      text: text,
+      onPressed: onPressed,
+      variant: HxButtonVariant.secondary,
+      loading: loading,
     );
   }
 }
@@ -124,25 +102,7 @@ class ScreenBackButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onPressed ?? () => Navigator.of(context).maybePop(),
-      child: Container(
-        width: 34,
-        height: 34,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: dark ? const Color(0x1FFFFFFF) : AppColors.cream,
-          border: Border.all(
-            color: dark ? const Color(0x33FFFFFF) : AppColors.line,
-          ),
-        ),
-        child: Icon(
-          Icons.arrow_back_ios_new,
-          size: 16,
-          color: dark ? AppColors.white : AppColors.ink900,
-        ),
-      ),
-    );
+    return HxBackButton(dark: dark, onPressed: onPressed);
   }
 }
 
@@ -151,6 +111,7 @@ class AuthHeader extends StatelessWidget {
   final String? title;
   final String? subtitle;
   final VoidCallback? onBack;
+  final Widget? trailing;
 
   const AuthHeader({
     super.key,
@@ -158,44 +119,17 @@ class AuthHeader extends StatelessWidget {
     this.title,
     this.subtitle,
     this.onBack,
+    this.trailing,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ScreenBackButton(dark: dark, onPressed: onBack),
-        if (title != null || subtitle != null) ...[
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (title != null)
-                  Text(
-                    tr(title!),
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                      color: dark ? AppColors.white : AppColors.ink900,
-                    ),
-                  ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 1),
-                  Text(
-                    tr(subtitle!),
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: AppColors.ink400,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ],
+    return HxHeader(
+      dark: dark,
+      title: title,
+      subtitle: subtitle,
+      onBack: onBack,
+      actions: trailing == null ? null : [trailing!],
     );
   }
 }
@@ -208,6 +142,7 @@ class AuthTextField extends StatelessWidget {
   final TextInputType keyboardType;
   final TextEditingController? controller;
   final void Function(String)? onChanged;
+  final String? errorText;
 
   const AuthTextField({
     super.key,
@@ -218,62 +153,20 @@ class AuthTextField extends StatelessWidget {
     this.keyboardType = TextInputType.text,
     this.controller,
     this.onChanged,
+    this.errorText,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text.rich(
-          TextSpan(
-            text: label,
-            style: GoogleFonts.inter(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w700,
-              color: AppColors.ink700,
-            ),
-            children: requiredField
-                ? [
-                    TextSpan(
-                      text: ' *',
-                      style: GoogleFonts.inter(color: AppColors.danger),
-                    ),
-                  ]
-                : null,
-          ),
-        ),
-        const SizedBox(height: 6),
-        TextField(
-          controller: controller,
-          obscureText: obscure,
-          keyboardType: keyboardType,
-          onChanged: onChanged,
-          style: GoogleFonts.inter(fontSize: 14, color: AppColors.ink900),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: GoogleFonts.inter(
-              fontSize: 14,
-              color: AppColors.ink400,
-            ),
-            filled: true,
-            fillColor: AppColors.white,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 12,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.line, width: 1.5),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  const BorderSide(color: AppColors.green600, width: 1.5),
-            ),
-          ),
-        ),
-      ],
+    return HxField(
+      label: tr(label),
+      hint: tr(hint),
+      obscure: obscure,
+      required: requiredField,
+      keyboardType: keyboardType,
+      controller: controller,
+      onChanged: onChanged,
+      errorText: errorText == null ? null : tr(errorText!),
     );
   }
 }
@@ -309,25 +202,8 @@ class PhoneInputField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text.rich(
-          TextSpan(
-            text: label,
-            style: GoogleFonts.inter(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w700,
-              color: AppColors.ink700,
-            ),
-            children: requiredField
-                ? [
-                    TextSpan(
-                      text: ' *',
-                      style: GoogleFonts.inter(color: AppColors.danger),
-                    ),
-                  ]
-                : null,
-          ),
-        ),
-        const SizedBox(height: 6),
+        HxFieldLabel(text: tr(label), required: requiredField),
+        const SizedBox(height: AppSpace.x8),
         InternationalPhoneNumberInput(
           onInputChanged: (number) =>
               onChanged((number.phoneNumber ?? '').replaceFirst('+', '')),
@@ -346,22 +222,23 @@ class PhoneInputField extends StatelessWidget {
           autoValidateMode: AutovalidateMode.disabled,
           ignoreBlank: false,
           keyboardType: TextInputType.phone,
-          textStyle: GoogleFonts.inter(fontSize: 14, color: AppColors.ink900),
+          textStyle:
+              GoogleFonts.inter(fontSize: 15, color: AppColors.ink900),
           selectorTextStyle:
-              GoogleFonts.inter(fontSize: 14, color: AppColors.ink900),
+              GoogleFonts.inter(fontSize: 15, color: AppColors.ink900),
           inputDecoration: InputDecoration(
             hintText: tr('Phone number'),
-            hintStyle: GoogleFonts.inter(fontSize: 14, color: AppColors.ink400),
             filled: true,
             fillColor: AppColors.white,
             contentPadding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            hintStyle: GoogleFonts.inter(fontSize: 14, color: AppColors.ink400),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.line, width: 1.5),
+              borderRadius: AppRadius.sm,
+              borderSide: const BorderSide(color: AppColors.line, width: 1),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: AppRadius.sm,
               borderSide:
                   const BorderSide(color: AppColors.green600, width: 1.5),
             ),

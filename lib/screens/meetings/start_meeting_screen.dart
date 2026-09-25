@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../router/app_router.dart';
 import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 
 import '../../i18n/i18n.dart';
@@ -84,10 +85,7 @@ class _StartMeetingScreenState extends State<StartMeetingScreen> {
               ),
               const SizedBox(height: 24),
               if (_loading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(child: CircularProgressIndicator()),
-                )
+                const HxSkeletonList(rows: 5)
               else if (meeting == null)
                 Container(
                   width: double.infinity,
@@ -172,37 +170,10 @@ class _StartMeetingScreenState extends State<StartMeetingScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: _starting ? null : _start,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.green600,
-                      foregroundColor: AppColors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: AppRadius.md,
-                      ),
-                    ),
-                    child: _starting
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.white,
-                            ),
-                          )
-                        : Text(
-                            tr('Start meeting'),
-                            style: GoogleFonts.inter(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.white,
-                            ),
-                          ),
-                  ),
+                HxButton(
+                  text: tr('Start meeting'),
+                  loading: _starting,
+                  onPressed: _starting ? null : _start,
                 ),
               ],
               const SizedBox(height: 32),
