@@ -970,6 +970,16 @@ class AppState {
     }
   }
 
+  /// The Sender ID SMS go out as (set on the server: BEEM_SENDER_ID or the
+  /// approved default), shown on the Settings screen.
+  Future<String> fetchSmsSenderId() async {
+    try {
+      final raw = await _restGet('/api/admin/sms/settings');
+      if (raw is Map && raw['senderId'] is String) return raw['senderId'] as String;
+    } catch (_) {}
+    return '—';
+  }
+
   // ---------------------------------------------------------------------------
   // Group officers (Mwenyekiti manages Katibu / Mweka Hazina / committee)
   // ---------------------------------------------------------------------------

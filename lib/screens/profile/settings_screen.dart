@@ -5,6 +5,7 @@ import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
 import '../../i18n/i18n.dart';
+import '../../services/app_data.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -105,7 +106,13 @@ class SettingsScreen extends StatelessWidget {
                   children: [
                     _SettingRow(title: tr('App version'), value: '1.0.0 (MVP)'),
                     Divider(height: 1, indent: 56),
-                    _SettingRow(title: tr('SMS sender ID'), value: 'PESABOX'),
+                    FutureBuilder<String>(
+                      future: AppState.I.fetchSmsSenderId(),
+                      builder: (context, snap) => _SettingRow(
+                        title: tr('SMS sender ID'),
+                        value: snap.data ?? '…',
+                      ),
+                    ),
                   ],
                 ),
               ),
