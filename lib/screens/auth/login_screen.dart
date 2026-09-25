@@ -57,51 +57,62 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppColors.teal900, AppColors.teal800],
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(18, 10, 18, 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 24),
-                const BrandMark(size: 64, radius: 18, fontSize: 28),
-                const SizedBox(height: 18),
-                Text(
-                  tr('Welcome to {0}', [kBrandName]),
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.white,
-                  ),
+      backgroundColor: AppColors.cream,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(18, 6, 18, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const AuthHeader(),
+              const SizedBox(height: 24),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: AppRadius.lg,
+                  border: Border.all(color: AppColors.line),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  tr("Enter your phone number and we'll text you a code."),
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    height: 1.5,
-                    color: const Color(0xFFBFE0D3),
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Center(
+                      child: BrandMark(size: 72, radius: 20, fontSize: 30),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      tr('Welcome to {0}', [kBrandName]),
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.ink900,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      tr("Enter your phone number and we'll text you a code."),
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        height: 1.5,
+                        color: AppColors.ink600,
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    PhoneInputField(
+                      onChanged: (value) => _phone = value,
+                    ),
+                    const SizedBox(height: 22),
+                    PrimaryButton(
+                      text: _loading ? tr('Sending code…') : tr('Continue'),
+                      onPressed: _loading ? null : _continue,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 26),
-                PhoneInputField(
-                  onChanged: (value) => _phone = value,
-                ),
-                const SizedBox(height: 22),
-                PrimaryButton(
-                  text: _loading ? tr('Sending code…') : tr('Continue'),
-                  onPressed: _loading ? null : _continue,
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../router/app_router.dart';
@@ -67,7 +67,7 @@ class ReportsScreen extends StatelessWidget {
                       icon: Icons.pie_chart_outline_rounded,
                       title: tr('Shares Report'),
                       onTap: () => _openReport(context, 'shares'),
-                      color: AppColors.blue,
+                      color: AppColors.info,
                     ),
                     const Divider(height: 1, indent: 56),
                     _ReportRow(

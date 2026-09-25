@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../i18n/i18n.dart';
 import '../../services/report_service.dart';
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 
 /// Pick the datasets you need (and optionally their columns), a date range and
@@ -155,7 +156,10 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
 
   Widget _body() {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.teal900));
+      return const Padding(
+        padding: EdgeInsets.all(AppSpace.x20),
+        child: HxSkeletonList(rows: 7),
+      );
     }
     if (_datasets.isEmpty) {
       return Center(
@@ -170,7 +174,11 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                 style: GoogleFonts.inter(fontSize: 13.5, color: AppColors.danger),
               ),
               const SizedBox(height: 14),
-              OutlinedButton(onPressed: _load, child: Text(tr('Try again'))),
+              HxButton(
+                text: tr('Try again'),
+                variant: HxButtonVariant.secondary,
+                onPressed: _load,
+              ),
             ],
           ),
         ),

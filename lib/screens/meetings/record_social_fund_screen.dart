@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 
 import '../../i18n/i18n.dart';
@@ -125,10 +126,7 @@ class _RecordSocialFundScreenState extends State<RecordSocialFundScreen> {
               ),
               const SizedBox(height: 24),
               if (_loading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(child: CircularProgressIndicator()),
-                )
+                const HxSkeletonList(rows: 6)
               else ...[
                 _SectionCard(
                   title: tr('Contribution details'),
@@ -150,7 +148,6 @@ class _RecordSocialFundScreenState extends State<RecordSocialFundScreen> {
                                       ))
                                   .toList(),
                               onChanged: (v) => setState(() => _memberId = v),
-                              decoration: _inputDecoration(),
                             ),
                     ),
                     const SizedBox(height: 16),
@@ -159,7 +156,8 @@ class _RecordSocialFundScreenState extends State<RecordSocialFundScreen> {
                       child: TextField(
                         controller: _amountController,
                         keyboardType: TextInputType.number,
-                        decoration: _inputDecoration(hint: tr('Enter amount')),
+                        decoration:
+                            InputDecoration(hintText: tr('Enter amount')),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -171,7 +169,6 @@ class _RecordSocialFundScreenState extends State<RecordSocialFundScreen> {
                             .map((m) => DropdownMenuItem(value: m, child: Text(tr(m))))
                             .toList(),
                         onChanged: (v) => setState(() => _method = v ?? 'Cash'),
-                        decoration: _inputDecoration(),
                       ),
                     ),
                   ],
@@ -200,33 +197,10 @@ class _RecordSocialFundScreenState extends State<RecordSocialFundScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: (_submitting || _members.isEmpty) ? null : _submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.green600,
-                      foregroundColor: AppColors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
-                    ),
-                    child: _submitting
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: AppColors.white),
-                          )
-                        : Text(
-                            tr('Save contribution'),
-                            style: GoogleFonts.inter(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.white,
-                            ),
-                          ),
-                  ),
+                HxButton(
+                  text: tr('Save contribution'),
+                  loading: _submitting,
+                  onPressed: (_submitting || _members.isEmpty) ? null : _submit,
                 ),
               ],
               const SizedBox(height: 32),
@@ -236,27 +210,6 @@ class _RecordSocialFundScreenState extends State<RecordSocialFundScreen> {
       ),
     );
   }
-}
-
-InputDecoration _inputDecoration({String? hint}) {
-  return InputDecoration(
-    hintText: hint,
-    filled: true,
-    fillColor: AppColors.white,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: AppColors.line, width: 1.5),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: AppColors.teal900, width: 1.5),
-    ),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: AppColors.line, width: 1.5),
-    ),
-  );
 }
 
 class _SectionCard extends StatelessWidget {

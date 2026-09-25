@@ -3,12 +3,23 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../router/app_router.dart';
 import '../../theme/app_theme.dart';
-import '../auth/auth_widgets.dart';
+import '../../ui/ui.dart';
 
 import '../../i18n/i18n.dart';
 
 class FinancialFeaturesScreen extends StatelessWidget {
   const FinancialFeaturesScreen({super.key});
+
+  static const List<(IconData, String, String)> _features = [
+    (Icons.savings_rounded, 'Savings', 'Track member savings contributions'),
+    (Icons.pie_chart_rounded, 'Shares', 'Manage group shares and dividends'),
+    (Icons.favorite_rounded, 'Social Fund', 'Emergency and welfare fund'),
+    (Icons.request_quote_rounded, 'Loans', 'Loan disbursement and tracking'),
+    (Icons.gavel_rounded, 'Fines', 'Track and manage fines'),
+    (Icons.card_membership_rounded, 'Membership Fee', 'One-time registration fees'),
+    (Icons.handshake_rounded, 'Other Contributions', 'Custom contribution types'),
+    (Icons.receipt_long_rounded, 'Group Expenses', 'Track group operational costs'),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -18,186 +29,93 @@ class FinancialFeaturesScreen extends StatelessWidget {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+              padding:
+                  const EdgeInsets.fromLTRB(AppSpace.x20, AppSpace.x24, 20, 0),
               child: Row(
                 children: [
-                  const ScreenBackButton(),
-                  const SizedBox(width: 12),
-                  Text(
-                    tr('Financial Services'),
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.ink900,
-                    ),
-                  ),
+                  HxBackButton(),
+                  const SizedBox(width: AppSpace.x12),
+                  HxPageTitle(title: 'Financial Services'),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpace.x12),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpace.x20),
                 children: [
-                  _FeatureRow(
-                    icon: Icons.savings_rounded,
-                    title: tr('Savings'),
-                    description: tr('Track member savings contributions'),
-                    isOn: true,
+                  Text(
+                    tr('Your group starts with the financial tools below. You can fine-tune the limits and rules at any time.'),
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: AppColors.ink600,
+                      height: 1.5,
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  _FeatureRow(
-                    icon: Icons.pie_chart_rounded,
-                    title: tr('Shares'),
-                    description: tr('Manage group shares and dividends'),
-                    isOn: true,
-                  ),
-                  const SizedBox(height: 12),
-                  _FeatureRow(
-                    icon: Icons.favorite_rounded,
-                    title: tr('Social Fund'),
-                    description: tr('Emergency and welfare fund'),
-                    isOn: true,
-                  ),
-                  const SizedBox(height: 12),
-                  _FeatureRow(
-                    icon: Icons.request_quote_rounded,
-                    title: tr('Loans'),
-                    description: tr('Loan disbursement and tracking'),
-                    isOn: false,
-                  ),
-                  const SizedBox(height: 12),
-                  _FeatureRow(
-                    icon: Icons.gavel_rounded,
-                    title: tr('Fines'),
-                    description: tr('Track and manage fines'),
-                    isOn: false,
-                  ),
-                  const SizedBox(height: 12),
-                  _FeatureRow(
-                    icon: Icons.card_membership_rounded,
-                    title: tr('Membership Fee'),
-                    description: tr('One-time registration fees'),
-                    isOn: false,
-                  ),
-                  const SizedBox(height: 12),
-                  _FeatureRow(
-                    icon: Icons.handshake_rounded,
-                    title: tr('Other Contributions'),
-                    description: tr('Custom contribution types'),
-                    isOn: false,
-                  ),
-                  const SizedBox(height: 12),
-                  _FeatureRow(
-                    icon: Icons.receipt_long_rounded,
-                    title: tr('Group Expenses'),
-                    description: tr('Track group operational costs'),
-                    isOn: true,
-                  ),
+                  const SizedBox(height: AppSpace.x16),
+                  for (final f in _features) ...[
+                    HxSurface(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpace.x16, vertical: AppSpace.x12),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppColors.green100,
+                            ),
+                            child: const Icon(
+                              Icons.check_rounded,
+                              size: 20,
+                              color: AppColors.teal800,
+                            ),
+                          ),
+                          const SizedBox(width: AppSpace.x12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  tr(f.$2),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.ink900,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  tr(f.$3),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: AppColors.ink400,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpace.x12),
+                  ],
                 ],
               ),
             ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, AppRouter.rulesConfig);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.green600,
-                      foregroundColor: AppColors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: AppRadius.md,
-                      ),
-                    ),
-                    child: Text(
-                      tr('Next'),
-                      style: GoogleFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.white,
-                      ),
-                    ),
-                  ),
-                ),
+            Padding(
+              padding:
+                  const EdgeInsets.fromLTRB(AppSpace.x20, AppSpace.x12, 20, 24),
+              child: HxButton(
+                text: tr('Next'),
+                onPressed: () {
+                  Navigator.pushNamed(context, AppRouter.rulesConfig);
+                },
               ),
+            ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _FeatureRow extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String description;
-  final bool isOn;
-
-  const _FeatureRow({
-    required this.icon,
-    required this.title,
-    required this.description,
-    required this.isOn,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: AppRadius.md,
-        border: Border.all(color: AppColors.line),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.green100,
-            ),
-            child: Icon(icon, size: 20, color: AppColors.green600),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  tr(title),
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.ink900,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  tr(description),
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: AppColors.ink400,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: isOn,
-            onChanged: (_) {},
-            activeThumbColor: AppColors.white,
-            activeTrackColor: AppColors.green600,
-            inactiveThumbColor: AppColors.white,
-            inactiveTrackColor: AppColors.ink400,
-          ),
-        ],
       ),
     );
   }

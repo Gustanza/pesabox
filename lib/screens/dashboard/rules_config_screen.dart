@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
-import '../auth/auth_widgets.dart';
+import '../../ui/ui.dart';
+import 'review_rules_screen.dart';
 
 import '../../i18n/i18n.dart';
 
@@ -17,38 +19,40 @@ class RulesConfigScreen extends StatelessWidget {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+              padding:
+                  const EdgeInsets.fromLTRB(AppSpace.x20, AppSpace.x24, 20, 0),
               child: Row(
                 children: [
-                  const ScreenBackButton(),
-                  const SizedBox(width: 12),
-                  Text(
-                    tr('Set Group Rules'),
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.ink900,
-                    ),
-                  ),
+                  HxBackButton(),
+                  const SizedBox(width: AppSpace.x12),
+                  HxPageTitle(title: 'Set Group Rules'),
                 ],
               ),
             ),
             Expanded(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.construction_rounded, size: 40, color: AppColors.ink400),
-                      const SizedBox(height: 12),
-                      Text(
-                        tr('Editing group rules is coming soon.'),
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(fontSize: 14, color: AppColors.ink600),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpace.x20,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tr('Your group\'s financial rules are shown below. These limits drive lending, savings and fines for every member.'),
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: AppColors.ink600,
+                        height: 1.5,
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: AppSpace.x16),
+                    RulesSummaryCard(state: AppState.I),
+                    const SizedBox(height: AppSpace.x16),
+                    HxHint(
+                      text: tr('Only a Super Admin can change these rules. Review them now — changes later require a Super Admin.'),
+                      icon: Icons.lock_outline_rounded,
+                    ),
+                  ],
                 ),
               ),
             ),

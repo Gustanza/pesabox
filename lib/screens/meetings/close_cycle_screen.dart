@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../router/app_router.dart';
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 
 import '../../i18n/i18n.dart';
@@ -106,56 +107,21 @@ class CloseCycleScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pushNamedAndRemoveUntil(
-                      AppRouter.meetingsList,
-                      (route) => route.isFirst,
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.danger,
-                    foregroundColor: AppColors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.md,
-                    ),
-                  ),
-                  child: Text(
-                    tr('Confirm & close cycle'),
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.white,
-                    ),
-                  ),
-                ),
+              HxButton(
+                text: tr('Confirm & close cycle'),
+                variant: HxButtonVariant.destructive,
+                onPressed: () {
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    AppRouter.meetingsList,
+                    (route) => route.isFirst,
+                  );
+                },
               ),
               const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: OutlinedButton(
-                  onPressed: () => Navigator.of(context).maybePop(),
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: AppColors.white,
-                    foregroundColor: AppColors.ink600,
-                    side: const BorderSide(color: AppColors.line, width: 1.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.md,
-                    ),
-                  ),
-                  child: Text(
-                    tr('Cancel'),
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+              HxButton(
+                text: tr('Cancel'),
+                variant: HxButtonVariant.secondary,
+                onPressed: () => Navigator.of(context).maybePop(),
               ),
               const SizedBox(height: 32),
             ],

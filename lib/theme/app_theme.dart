@@ -2,42 +2,97 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+/// Single source of truth for every color in HelaBox.
+///
+/// Semantics (one job, one token):
+/// - [primary]/`green600` — the ONE action green: buttons, FABs, switches,
+///   progress, active states (used only as large fills with white text).
+/// - [teal900]/[teal800] — brand depth: gradient heroes, headers and any
+///   *text-level* green (links, labels, positive amounts) where green600's
+///   contrast is too low for small text.
+/// - [gold500] — accent only: highlights, tags, care signs.
+/// - [danger] — destructive + negative money. Never near-black for debits.
 class AppColors {
   AppColors._();
 
+  // Brand depths
   static const Color teal900 = Color(0xFF0B4A3D);
   static const Color teal800 = Color(0xFF0F5F4C);
   static const Color teal700 = Color(0xFF136B54);
+  static const Color teal100 = Color(0xFFBFE0D3);
 
+  // Action green (the primary)
   static const Color green600 = Color(0xFF18A672);
   static const Color green500 = Color(0xFF1FBF82);
   static const Color green100 = Color(0xFFE3F5EC);
 
+  // Accent
   static const Color gold500 = Color(0xFFD9A441);
   static const Color gold100 = Color(0xFFFBF1DE);
 
+  // Surfaces
   static const Color cream = Color(0xFFF6F8F7);
   static const Color white = Color(0xFFFFFFFF);
 
+  // Ink
   static const Color ink900 = Color(0xFF152420);
   static const Color ink700 = Color(0xFF33423E);
   static const Color ink600 = Color(0xFF4B5A56);
   static const Color ink400 = Color(0xFF8A9895);
 
+  // Lines & status
   static const Color line = Color(0xFFE4EAE7);
   static const Color danger = Color(0xFFE15454);
   static const Color danger100 = Color(0xFFFCEAEA);
-  static const Color blue = Color(0xFF3E7BFA);
+  static const Color info = Color(0xFF3E7BFA);
+
+  // Semantic aliases — used by money display and status pills.
+  /// Positive money / success text. Darker than [green600] so it clears
+  /// WCAG AA contrast on white/cream at small sizes.
+  static const Color positive = teal800;
+  /// Negative money / loss text.
+  static const Color negative = danger;
 }
 
+/// Intentional spacing scale — 4px grid. Never use 6/10/14/18/22…
+class AppSpace {
+  AppSpace._();
+
+  static const double x2 = 2;
+  static const double x4 = 4;
+  static const double x8 = 8;
+  static const double x12 = 12;
+  static const double x16 = 16;
+  static const double x20 = 20;
+  static const double x24 = 24;
+  static const double x32 = 32;
+  static const double x40 = 40;
+  static const double x48 = 48;
+}
+
+/// Deliberate corner scale: controls / cards / overlays.
 class AppRadius {
   AppRadius._();
 
-  static const BorderRadius lg = BorderRadius.all(Radius.circular(22));
-  static const BorderRadius md = BorderRadius.all(Radius.circular(14));
-  static const BorderRadius sm = BorderRadius.all(Radius.circular(10));
+  static const BorderRadius sm = BorderRadius.all(Radius.circular(12));
+  static const BorderRadius md = BorderRadius.all(Radius.circular(16));
+  static const BorderRadius lg = BorderRadius.all(Radius.circular(24));
 
   static BorderRadius circular(double r) => BorderRadius.circular(r);
+  static BorderRadius get topLg =>
+      const BorderRadius.vertical(top: Radius.circular(24));
+}
+
+/// Restrained elevations — premium lives in borders, not shadows.
+class AppShadow {
+  AppShadow._();
+
+  static const List<BoxShadow> low = [
+    BoxShadow(color: Color(0x0F0B4A3D), blurRadius: 16, offset: Offset(0, 4)),
+  ];
+  static const List<BoxShadow> nav = [
+    BoxShadow(color: Color(0x1A0B4A3D), blurRadius: 28, offset: Offset(0, 8)),
+  ];
 }
 
 class AppTheme {
@@ -114,16 +169,16 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.teal900,
+        seedColor: AppColors.green600,
         brightness: Brightness.light,
-        primary: AppColors.teal900,
+        primary: AppColors.green600,
         onPrimary: AppColors.white,
         primaryContainer: AppColors.green100,
-        onPrimaryContainer: AppColors.teal900,
-        secondary: AppColors.green600,
+        onPrimaryContainer: AppColors.teal800,
+        secondary: AppColors.teal900,
         onSecondary: AppColors.white,
-        secondaryContainer: AppColors.green100,
-        onSecondaryContainer: AppColors.teal800,
+        secondaryContainer: AppColors.teal100,
+        onSecondaryContainer: AppColors.teal900,
         tertiary: AppColors.gold500,
         onTertiary: AppColors.white,
         tertiaryContainer: AppColors.gold100,
@@ -164,18 +219,20 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.teal900,
+          backgroundColor: AppColors.green600,
           foregroundColor: AppColors.white,
           disabledBackgroundColor: AppColors.ink400,
           disabledForegroundColor: AppColors.white,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.md,
+          minimumSize: const Size(0, 48),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpace.x20,
+            vertical: AppSpace.x16,
           ),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
           textStyle: GoogleFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -183,23 +240,27 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.teal900,
           side: const BorderSide(color: AppColors.teal900, width: 1.5),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.md,
+          backgroundColor: AppColors.white,
+          minimumSize: const Size(0, 48),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpace.x20,
+            vertical: AppSpace.x16,
           ),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
           textStyle: GoogleFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.teal900,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.sm,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpace.x16,
+            vertical: AppSpace.x8,
           ),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.sm),
           textStyle: GoogleFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w600,
@@ -210,9 +271,9 @@ class AppTheme {
         filled: true,
         fillColor: AppColors.white,
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            const EdgeInsets.symmetric(horizontal: AppSpace.x16, vertical: 14),
         hintStyle: GoogleFonts.inter(
-          fontSize: 15,
+          fontSize: 14,
           color: AppColors.ink400,
           fontWeight: FontWeight.w400,
         ),
@@ -236,8 +297,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: AppRadius.sm,
-          borderSide:
-              const BorderSide(color: AppColors.teal900, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.green600, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: AppRadius.sm,
@@ -260,14 +320,15 @@ class AppTheme {
           color: AppColors.teal800,
         ),
         side: BorderSide.none,
-        shape: RoundedRectangleBorder(
-          borderRadius: AppRadius.sm,
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.sm),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpace.x12,
+          vertical: AppSpace.x4,
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: AppColors.white,
-        selectedItemColor: AppColors.teal900,
+        selectedItemColor: AppColors.green600,
         unselectedItemColor: AppColors.ink400,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
@@ -310,16 +371,14 @@ class AppTheme {
           fontWeight: FontWeight.w400,
         ),
       ),
-      bottomSheetTheme: const BottomSheetThemeData(
+      bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: AppColors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.topLg),
         showDragHandle: true,
         dragHandleColor: AppColors.line,
       ),
       tabBarTheme: TabBarThemeData(
-        labelColor: AppColors.teal900,
+        labelColor: AppColors.green600,
         unselectedLabelColor: AppColors.ink400,
         labelStyle: GoogleFonts.inter(
           fontSize: 14,
@@ -330,18 +389,19 @@ class AppTheme {
           fontWeight: FontWeight.w400,
         ),
         indicator: const UnderlineTabIndicator(
-          borderSide: BorderSide(color: AppColors.teal900, width: 2),
+          borderSide: BorderSide(color: AppColors.green600, width: 2),
           insets: EdgeInsets.symmetric(horizontal: 16),
         ),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.teal900,
+        backgroundColor: AppColors.green600,
         foregroundColor: AppColors.white,
         elevation: 4,
         shape: CircleBorder(),
       ),
       listTileTheme: ListTileThemeData(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: AppSpace.x16, vertical: 4),
         titleTextStyle: GoogleFonts.inter(
           fontSize: 15,
           fontWeight: FontWeight.w500,
@@ -354,8 +414,20 @@ class AppTheme {
         ),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: AppColors.teal900,
+        color: AppColors.green600,
         linearTrackColor: AppColors.line,
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? AppColors.white
+              : AppColors.ink400,
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? AppColors.green600
+              : AppColors.line,
+        ),
       ),
       pageTransitionsTheme: PageTransitionsTheme(
         builders: {

@@ -5,6 +5,7 @@ import '../../i18n/i18n.dart';
 import '../../services/app_data.dart';
 import '../../services/graphql_client.dart';
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 
 /// Group officers (Katibu, Mweka Hazina, committee members). The Mwenyekiti
@@ -148,10 +149,7 @@ class _OfficersScreenState extends State<OfficersScreen> {
               ),
               const SizedBox(height: 16),
               if (_loading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(child: CircularProgressIndicator()),
-                )
+                const HxSkeletonList(rows: 4)
               else if (_error != null)
                 Text(
                   _error!,
@@ -161,22 +159,10 @@ class _OfficersScreenState extends State<OfficersScreen> {
                   ),
                 )
               else if (_officers.isEmpty)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: AppRadius.md,
-                    border: Border.all(color: AppColors.line),
-                  ),
-                  child: Text(
-                    tr('No officers yet.'),
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      color: AppColors.ink400,
-                    ),
-                  ),
+                HxEmpty(
+                  icon: Icons.badge_outlined,
+                  title: tr('No officers yet'),
+                  message: tr('Officers added here appear for the whole group.'),
                 )
               else
                 Container(
@@ -190,16 +176,8 @@ class _OfficersScreenState extends State<OfficersScreen> {
                       for (var i = 0; i < _officers.length; i++) ...[
                         if (i > 0) const Divider(height: 1, indent: 64),
                         ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: AppColors.teal900,
-                            child: Text(
-                              AppState.I.initials(_name(_officers[i])),
-                              style: GoogleFonts.inter(
-                                color: AppColors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13,
-                              ),
-                            ),
+                          leading: HxAvatar(
+                            initials: AppState.I.initials(_name(_officers[i])),
                           ),
                           title: Text(
                             _name(_officers[i]),

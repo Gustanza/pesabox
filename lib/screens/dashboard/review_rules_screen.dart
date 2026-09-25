@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../router/app_router.dart';
+import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
-import '../auth/auth_widgets.dart';
+import '../../ui/ui.dart';
 
 import '../../i18n/i18n.dart';
 
@@ -12,131 +13,106 @@ class ReviewRulesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final state = AppState.I;
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: SafeArea(
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+              padding:
+                  const EdgeInsets.fromLTRB(AppSpace.x20, AppSpace.x24, 20, 0),
               child: Row(
                 children: [
-                  const ScreenBackButton(),
-                  const SizedBox(width: 12),
-                  Text(
-                    tr('Confirm Rules'),
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.ink900,
-                    ),
-                  ),
+                  HxBackButton(),
+                  const SizedBox(width: AppSpace.x12),
+                  HxPageTitle(title: 'Confirm Rules'),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpace.x20),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: AppSpace.x20),
                 child: Column(
                   children: [
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: AppRadius.md,
-                        border: Border.all(color: AppColors.line),
-                      ),
-                      child: Column(
-                        children: [
-                          _ReviewRow(label: tr('Share value'), value: 'TZS 5,000'),
-                          const Divider(height: 24),
-                          _ReviewRow(
-                              label: tr('Mandatory savings'), value: 'TZS 5,000'),
-                          const Divider(height: 24),
-                          _ReviewRow(
-                              label: tr('Social Fund'), value: 'TZS 2,000'),
-                          const Divider(height: 24),
-                          _ReviewRow(label: tr('Loan max'), value: '3x savings'),
-                          const Divider(height: 24),
-                          _ReviewRow(label: tr('Fines'), value: 'TZS 1,000 late · TZS 5,000 absent'),
-                          const Divider(height: 24),
-                          _ReviewRow(label: tr('Repayment'), value: '10% interest'),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.green100,
-                        borderRadius: AppRadius.md,
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: AppColors.green600,
-                            ),
-                            child: const Icon(
-                              Icons.check_rounded,
-                              size: 18,
-                              color: AppColors.white,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              tr('These rules will apply to all members once the group is active.'),
-                              style: GoogleFonts.inter(
-                                fontSize: 13,
-                                color: AppColors.teal900,
-                                height: 1.4,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                    RulesSummaryCard(state: state),
+                    const SizedBox(height: AppSpace.x16),
+                    HxHint(
+                      text: tr('These rules will apply to all members once the group is active.'),
+                      icon: Icons.check_rounded,
                     ),
                   ],
                 ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-              child: SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, AppRouter.groupReady);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.green600,
-                    foregroundColor: AppColors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.md,
-                    ),
-                  ),
-                  child: Text(
-                    tr('Create group'),
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.white,
-                    ),
-                  ),
-                ),
+              padding:
+                  const EdgeInsets.fromLTRB(AppSpace.x20, 0, 20, 24),
+              child: HxButton(
+                text: tr('Create group'),
+                onPressed: () {
+                  Navigator.pushNamed(context, AppRouter.groupReady);
+                },
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// The one rules summary used both here and in Set Group Rules — always
+/// driven by the group's real configuration, never hardcoded figures.
+class RulesSummaryCard extends StatelessWidget {
+  final AppState state;
+  const RulesSummaryCard({super.key, required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    final share = state.shareValue;
+    final savings = state.mandatorySavingsAmount;
+    final social = state.socialFundContribution;
+    final interest = state.loanInterestRate;
+    final months = state.maxLoanPeriodMonths;
+
+    return HxSurface(
+      child: Column(
+        children: [
+          _ReviewRow(
+            label: tr('Share value'),
+            value: share > 0 ? state.money(share) : tr('Not set'),
+          ),
+          const Divider(height: 24),
+          _ReviewRow(
+            label: tr('Mandatory savings'),
+            value: savings > 0 ? state.money(savings) : tr('Not set'),
+          ),
+          const Divider(height: 24),
+          _ReviewRow(
+            label: tr('Social Fund'),
+            value: social > 0 ? state.money(social) : tr('Not set'),
+          ),
+          const Divider(height: 24),
+          _ReviewRow(
+            label: tr('Loan interest'),
+            value: interest > 0 ? '$interest%' : tr('Not set'),
+          ),
+          const Divider(height: 24),
+          _ReviewRow(
+            label: tr('Repayment period'),
+            value: months > 0
+                ? tr('{0} months', [months])
+                : tr('Not set'),
+          ),
+          const Divider(height: 24),
+          _ReviewRow(
+            label: tr('Max shares'),
+            value: '${state.maxShares}',
+          ),
+        ],
       ),
     );
   }
@@ -157,7 +133,8 @@ class _ReviewRow extends StatelessWidget {
           tr(label),
           style: GoogleFonts.inter(
             fontSize: 13,
-            color: AppColors.ink600,
+            fontWeight: FontWeight.w500,
+            color: AppColors.ink400,
           ),
         ),
         Text(

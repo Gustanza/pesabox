@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../router/app_router.dart';
 import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 
 import '../../i18n/i18n.dart';
@@ -106,16 +107,10 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
               const SizedBox(height: 28),
               _Field(
                 label: tr('Meeting number'),
-                child: Container(
-                  width: double.infinity,
+                child: HxSurface(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 13,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.line, width: 1.5),
+                    horizontal: AppSpace.x16,
+                    vertical: AppSpace.x12,
                   ),
                   child: Row(
                     children: [
@@ -181,63 +176,15 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                     color: AppColors.ink900,
                   ),
                   maxLines: 4,
-                  decoration: InputDecoration(
-                    hintText: tr('Add meeting agenda items (optional)'),
-                    hintStyle: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: AppColors.ink400,
-                    ),
-                    filled: true,
-                    fillColor: AppColors.white,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: AppColors.line, width: 1.5),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                          color: AppColors.teal900, width: 1.5),
-                    ),
-                  ),
+                  decoration:
+                      InputDecoration(hintText: tr('Add meeting agenda items (optional)')),
                 ),
               ),
               const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: _submitting ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.green600,
-                    foregroundColor: AppColors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.md,
-                    ),
-                  ),
-                  child: _submitting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.white,
-                          ),
-                        )
-                      : Text(
-                          tr('Create meeting'),
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.white,
-                          ),
-                        ),
-                ),
+              HxButton(
+                text: tr('Create meeting'),
+                loading: _submitting,
+                onPressed: _submitting ? null : _submit,
               ),
               const SizedBox(height: 32),
             ],

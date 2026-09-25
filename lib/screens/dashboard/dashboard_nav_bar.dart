@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../router/app_router.dart';
 import '../../theme/app_theme.dart';
 
 import '../../i18n/i18n.dart';
 
+/// Premium floating pill bar — the app's signature navigation treatment.
+///
+/// A softly-raised rounded surface floats above the cream scaffold; the
+/// active tab wears a green capsule (pressed feel without neon fills), with
+/// weight + colour echoing motion between tabs. Labels stay on for all five
+/// tabs so users never stop being sure where they are.
 class DashboardNavBar extends StatelessWidget {
   final int currentIndex;
 
@@ -18,6 +25,14 @@ class DashboardNavBar extends StatelessWidget {
     AppRouter.profile,
   ];
 
+  static const List<_TabDef> _tabs = [
+    _TabDef(icon: Icons.home_rounded, key: 'Home'),
+    _TabDef(icon: Icons.group_rounded, key: 'Group'),
+    _TabDef(icon: Icons.event_rounded, key: 'Meetings'),
+    _TabDef(icon: Icons.receipt_long_rounded, key: 'Activity'),
+    _TabDef(icon: Icons.person_rounded, key: 'Profile'),
+  ];
+
   void _switchTab(BuildContext context, int index) {
     if (index == currentIndex) return;
     Navigator.of(context).pushNamedAndRemoveUntil(
@@ -28,65 +43,47 @@ class DashboardNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.white,
-        border: Border(top: BorderSide(color: AppColors.line, width: 1)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NavItem(
-                icon: Icons.home_rounded,
-                label: tr('Home'),
-                isActive: currentIndex == 0,
-                onTap: () => _switchTab(context, 0),
+    return SafeArea(
+      top: false,
+      minimum: const EdgeInsets.fromLTRB(AppSpace.x16, 0, AppSpace.x16, AppSpace.x12),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpace.x8),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.line),
+          boxShadow: AppShadow.nav,
+        ),
+        child: Row(
+          children: List.generate(_tabs.length, (i) {
+            return Expanded(
+              child: _PillItem(
+                def: _tabs[i],
+                isActive: i == currentIndex,
+                onTap: () => _switchTab(context, i),
               ),
-              _NavItem(
-                icon: Icons.group_rounded,
-                label: tr('Group'),
-                isActive: currentIndex == 1,
-                onTap: () => _switchTab(context, 1),
-              ),
-              _NavItem(
-                icon: Icons.event_rounded,
-                label: tr('Meetings'),
-                isActive: currentIndex == 2,
-                onTap: () => _switchTab(context, 2),
-              ),
-              _NavItem(
-                icon: Icons.notifications_rounded,
-                label: tr('Activity'),
-                isActive: currentIndex == 3,
-                onTap: () => _switchTab(context, 3),
-              ),
-              _NavItem(
-                icon: Icons.person_rounded,
-                label: tr('Profile'),
-                isActive: currentIndex == 4,
-                onTap: () => _switchTab(context, 4),
-              ),
-            ],
-          ),
+            );
+          }),
         ),
       ),
     );
   }
 }
 
-class _NavItem extends StatelessWidget {
+class _TabDef {
   final IconData icon;
-  final String label;
+  final String key;
+
+  const _TabDef({required this.icon, required this.key});
+}
+
+class _PillItem extends StatelessWidget {
+  final _TabDef def;
   final bool isActive;
   final VoidCallback onTap;
 
-  const _NavItem({
-    required this.icon,
-    required this.label,
+  const _PillItem({
+    required this.def,
     required this.isActive,
     required this.onTap,
   });
@@ -94,21 +91,31 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = isActive ? AppColors.teal900 : AppColors.ink400;
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: SizedBox(
-        width: 64,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpace.x8,
+          vertical: AppSpace.x8,
+        ),
+        decoration: BoxDecoration(
+          color: isActive ? AppColors.green100 : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 24, color: color),
-            const SizedBox(height: 2),
+            Icon(def.icon, size: 22, color: color),
+            const SizedBox(height: 3),
             Text(
-              tr(label),
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+              tr(def.key),
+              maxLines: 1,
+              style: GoogleFonts.inter(
+                fontSize: 10.5,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                 color: color,
               ),
             ),

@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../router/app_router.dart';
 import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 
 import '../../i18n/i18n.dart';
@@ -127,14 +128,17 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   const SizedBox(width: 8),
                   _MiniStat(label: tr('Absent'), value: '${_count('absent')}', color: AppColors.danger),
                   const SizedBox(width: 8),
-                  _MiniStat(label: tr('Excused'), value: '${_count('excused')}', color: AppColors.blue),
+                  _MiniStat(label: tr('Excused'), value: '${_count('excused')}', color: AppColors.info),
                 ],
               ),
             ),
             const SizedBox(height: 16),
             Expanded(
               child: _loading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: AppSpace.x20),
+                      child: HxSkeletonList(rows: 6),
+                    )
                   : SingleChildScrollView(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Column(
@@ -185,37 +189,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              child: SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: (_loading || _submitting) ? null : _continue,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.green600,
-                    foregroundColor: AppColors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.md,
-                    ),
-                  ),
-                  child: _submitting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.white,
-                          ),
-                        )
-                      : Text(
-                          tr('Continue to activities'),
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.white,
-                          ),
-                        ),
-                ),
+              child: HxButton(
+                text: tr('Continue to activities'),
+                loading: _submitting,
+                onPressed: (_loading || _submitting) ? null : _continue,
               ),
             ),
           ],

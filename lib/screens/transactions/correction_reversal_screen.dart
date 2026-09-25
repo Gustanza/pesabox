@@ -5,6 +5,7 @@ import '../../i18n/i18n.dart';
 import '../../services/app_data.dart';
 import '../../services/graphql_client.dart';
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 
 /// Fixes a mistake on a recorded transaction. Financial records are never
@@ -162,10 +163,7 @@ class _CorrectionReversalScreenState extends State<CorrectionReversalScreen> {
               ),
               const SizedBox(height: 16),
               if (_loading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(child: CircularProgressIndicator()),
-                )
+                const HxSkeletonList(rows: 6)
               else if (txn == null)
                 Text(
                   tr('Transaction not found.'),
@@ -232,29 +230,11 @@ class _CorrectionReversalScreenState extends State<CorrectionReversalScreen> {
                     ),
                   ],
                   const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: _saving ? null : _submit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.danger,
-                        foregroundColor: AppColors.white,
-                        disabledBackgroundColor: AppColors.ink400,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: AppRadius.md,
-                        ),
-                      ),
-                      child: Text(
-                        _saving ? tr('Reversing…') : tr('Reverse transaction'),
-                        style: GoogleFonts.inter(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.white,
-                        ),
-                      ),
-                    ),
+                  HxButton(
+                    text: _saving ? tr('Reversing…') : tr('Reverse transaction'),
+                    variant: HxButtonVariant.destructive,
+                    loading: _saving,
+                    onPressed: _saving ? null : _submit,
                   ),
                 ],
               ],

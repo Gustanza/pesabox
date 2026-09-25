@@ -1,11 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../router/app_router.dart';
 import '../../services/app_data.dart';
 import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
-import '../auth/auth_widgets.dart';
+import '../../ui/ui.dart';
 
 import '../../i18n/i18n.dart';
 
@@ -18,12 +17,6 @@ class LoansListScreen extends StatefulWidget {
 
 class _LoansListScreenState extends State<LoansListScreen>
     with AutoRefreshOnPop {
-  static const List<Color> _avatarColors = [
-    AppColors.green600,
-    AppColors.blue,
-    AppColors.gold500,
-  ];
-
   List<Map<String, dynamic>> _loans = [];
   bool _loading = true;
   String? _meetingId;
@@ -44,16 +37,13 @@ class _LoansListScreenState extends State<LoansListScreen>
   void onReturnedToScreen() => _load();
 
   Future<void> _load() async {
-    final state = AppState.I;
-    final results = await Future.wait([
-      state.fetchLoans(refresh: true),
-      state.fetchMembers(),
-    ]);
-    if (!mounted) return;
-    setState(() {
-      _loans = results[0];
-      _loading = false;
-    });
+    final list = await AppState.I.fetchLoans(refresh: true);
+    if (mounted) {
+      setState(() {
+        _loans = list;
+        _loading = false;
+      });
+    }
   }
 
   String _memberName(String? memberId) {
@@ -65,14 +55,6 @@ class _LoansListScreenState extends State<LoansListScreen>
         .where((s) => (s ?? '').toString().isNotEmpty)
         .join(' ');
     return name.isEmpty ? tr('Unknown member') : name;
-  }
-
-  String _initials(String name) {
-    final parts = name.split(' ').where((p) => p.isNotEmpty).toList();
-    if (parts.isEmpty) return '?';
-    final first = parts.first[0];
-    final last = parts.length > 1 ? parts.last[0] : '';
-    return ('$first$last').toUpperCase();
   }
 
   @override
@@ -93,142 +75,103 @@ class _LoansListScreenState extends State<LoansListScreen>
       backgroundColor: AppColors.cream,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.x20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  const ScreenBackButton(),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      tr('Loans'),
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.ink900,
-                      ),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
+              const SizedBox(height: AppSpace.x16),
+              HxHeader(
+                title: tr('Loans'),
+                actions: [
+                  HxIconButton(
+                    icon: Icons.add_rounded,
+                    tooltip: tr('Record loan'),
+                    onPressed: () {
                       Navigator.of(context).pushNamed(
                         AppRouter.recordLoan,
                         arguments: _meetingId,
                       );
                     },
-                    child: Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.line),
-                      ),
-                      child: const Icon(Icons.add, size: 22, color: AppColors.teal900),
-                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpace.x16),
               if (_loading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(child: CircularProgressIndicator()),
-                )
+                const _LoadingSkeleton()
               else ...[
                 Row(
                   children: [
                     Expanded(
-                      child: _StatBox(
+                      child: HxStat(
                         label: tr('Active loans'),
                         value: '${active.length}',
-                        color: AppColors.teal800,
+                        valueColor: AppColors.teal800,
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: AppSpace.x12),
                     Expanded(
-                      child: _StatBox(
+                      child: HxStat(
                         label: tr('Outstanding'),
                         value: state.money(outstanding),
-                        color: AppColors.danger,
+                        valueColor: AppColors.danger,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: AppSpace.x12),
                 Row(
                   children: [
                     Expanded(
-                      child: _StatBox(
+                      child: HxStat(
                         label: tr('Total loaned'),
                         value: state.money(totalLoaned),
-                        color: AppColors.blue,
+                        valueColor: AppColors.info,
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: AppSpace.x12),
                     Expanded(
-                      child: _StatBox(
+                      child: HxStat(
                         label: tr('Total repaid'),
                         value: state.money(totalRepaid),
-                        color: AppColors.green600,
+                        valueColor: AppColors.teal800,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  tr('Recent loans'),
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.ink900,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: AppRadius.md,
-                    border: Border.all(color: AppColors.line),
-                  ),
-                  child: _loans.isEmpty
-                      ? Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Text(
-                            tr('No loans recorded yet.'),
-                            style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink400),
+                const SizedBox(height: AppSpace.x24),
+                const HxSectionTitle(title: 'Recent loans'),
+                const SizedBox(height: AppSpace.x12),
+                if (_loans.isEmpty)
+                  HxEmpty(
+                    icon: Icons.request_quote_outlined,
+                    title: 'No loans yet',
+                    message: 'Record the first loan from a meeting.',
+                  )
+                else
+                  HxSurface(
+                    padding: EdgeInsets.zero,
+                    child: Column(
+                      children: [
+                        for (var i = 0; i < _loans.length; i++) ...[
+                          if (i > 0) const Divider(height: 1, indent: 64),
+                          _LoanRow(
+                            name: _memberName(_loans[i]['memberId']?.toString()),
+                            loan: _loans[i],
+                            state: state,
+                            onTap: () {
+                              Navigator.of(context).pushNamed(
+                                AppRouter.loanDetailsPath(
+                                    _loans[i]['id']?.toString() ?? ''),
+                                arguments: _meetingId,
+                              );
+                            },
                           ),
-                        )
-                      : Column(
-                          children: [
-                            for (var i = 0; i < _loans.length; i++) ...[
-                              if (i > 0) const Divider(height: 1, indent: 56),
-                              _LoanRow(
-                                name: _memberName(_loans[i]['memberId']?.toString()),
-                                initials: _initials(
-                                    _memberName(_loans[i]['memberId']?.toString())),
-                                amount: state.money((_loans[i]['amount'] as num?) ?? 0),
-                                months: '${state.maxLoanPeriodMonths} months',
-                                status: _loans[i]['status']?.toString() ?? 'active',
-                                color: _avatarColors[i % _avatarColors.length],
-                                onTap: () {
-                                  Navigator.of(context).pushNamed(
-                                    AppRouter.loanDetailsPath(
-                                        _loans[i]['id']?.toString() ?? ''),
-                                    arguments: _meetingId,
-                                  );
-                                },
-                              ),
-                            ],
-                          ],
-                        ),
-                ),
+                        ],
+                      ],
+                    ),
+                  ),
               ],
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpace.x24),
             ],
           ),
         ),
@@ -237,95 +180,52 @@ class _LoansListScreenState extends State<LoansListScreen>
   }
 }
 
-class _StatBox extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-
-  const _StatBox({required this.label, required this.value, required this.color});
+class _LoadingSkeleton extends StatelessWidget {
+  const _LoadingSkeleton();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: AppRadius.md,
-        border: Border.all(color: AppColors.line),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(tr(label), style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.ink400)),
-          const SizedBox(height: 6),
-          Text(tr(value), style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: color)),
-        ],
-      ),
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        HxSkeletonStats(),
+        SizedBox(height: AppSpace.x12),
+        HxSkeletonStats(),
+        SizedBox(height: AppSpace.x20),
+        HxSkeleton(width: 130, height: 14),
+        SizedBox(height: AppSpace.x12),
+        HxSkeletonList(rows: 4),
+      ],
     );
   }
 }
 
 class _LoanRow extends StatelessWidget {
   final String name;
-  final String initials;
-  final String amount;
-  final String months;
-  final String status;
-  final Color color;
+  final Map<String, dynamic> loan;
+  final AppState state;
   final VoidCallback onTap;
 
   const _LoanRow({
     required this.name,
-    required this.initials,
-    required this.amount,
-    required this.months,
-    required this.status,
-    required this.color,
+    required this.loan,
+    required this.state,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final status = loan['status']?.toString() ?? 'active';
     final active = status == 'active';
-    return InkWell(
+    return HxRow(
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-              alignment: Alignment.center,
-              child: Text(tr(initials), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.white)),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(tr(name), style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.ink900)),
-                  const SizedBox(height: 2),
-                  Text('$amount · $months', style: GoogleFonts.inter(fontSize: 12, color: AppColors.ink400)),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: active ? AppColors.green100 : AppColors.line,
-                borderRadius: AppRadius.sm,
-              ),
-              child: Text(
-                active ? tr('Active') : tr('Repaid'),
-                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: active ? AppColors.teal800 : AppColors.ink600),
-              ),
-            ),
-            const SizedBox(width: 6),
-            const Icon(Icons.chevron_right, size: 20, color: AppColors.ink400),
-          ],
-        ),
+      leading: HxAvatar(initials: state.initials(name)),
+      title: name,
+      subtitle:
+          '${state.money((loan['amount'] as num?) ?? 0)} · ${state.maxLoanPeriodMonths} months',
+      trailing: HxPill(
+        text: active ? tr('Active') : tr('Repaid'),
+        tone: active ? HxPillTone.success : HxPillTone.neutral,
       ),
     );
   }

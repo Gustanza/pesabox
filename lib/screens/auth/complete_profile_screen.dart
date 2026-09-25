@@ -6,6 +6,7 @@ import '../../services/graphql_client.dart';
 import '../../theme/app_theme.dart';
 import '../../router/app_router.dart';
 import 'auth_widgets.dart';
+import '../../i18n/i18n.dart';
 
 /// Step 3 of the OTP flow: shown right after a first-time login, when the
 /// backend's `firstName == ""` on the login response says this account was
@@ -37,7 +38,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   Future<void> _submit() async {
     final firstName = _firstName.text.trim();
     if (firstName.isEmpty) {
-      setState(() => _error = 'First name is required');
+      setState(() => _error = tr('First name is required'));
       return;
     }
     setState(() {
@@ -61,7 +62,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
       setState(() => _error = e.message);
     } catch (_) {
       if (!mounted) return;
-      setState(() => _error = 'Could not save your profile. Try again.');
+      setState(() => _error = tr('Could not save your profile. Try again.'));
+      return;
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -80,7 +82,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
               const AuthHeader(),
               const SizedBox(height: 24),
               Text(
-                'Complete your profile',
+                tr('Complete your profile'),
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 19,
                   fontWeight: FontWeight.w800,
@@ -89,7 +91,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Just your name so we know who you are.',
+                tr('Just your name so we know who you are.'),
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   height: 1.5,
@@ -129,7 +131,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
               ],
               const SizedBox(height: 24),
               PrimaryButton(
-                text: _saving ? 'Saving…' : 'Continue',
+                text: _saving ? tr('Saving…') : tr('Continue'),
                 onPressed: _saving ? null : _submit,
               ),
             ],

@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../services/app_data.dart';
 import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 import '../../i18n/i18n.dart';
 import '../../brand.dart';
@@ -19,7 +20,7 @@ class _SmsActivityScreenState extends State<SmsActivityScreen>
     with AutoRefreshOnPop {
   static const List<Color> _avatarColors = [
     AppColors.green600,
-    AppColors.blue,
+    AppColors.info,
     AppColors.gold500,
     AppColors.teal800,
   ];
@@ -66,9 +67,12 @@ class _SmsActivityScreenState extends State<SmsActivityScreen>
               ),
               const SizedBox(height: 20),
               if (_loading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(child: CircularProgressIndicator()),
+                const Column(
+                  children: [
+                    HxSkeletonStats(),
+                    SizedBox(height: AppSpace.x12),
+                    HxSkeletonList(rows: 4),
+                  ],
                 )
               else ...[
                 Row(
@@ -101,21 +105,10 @@ class _SmsActivityScreenState extends State<SmsActivityScreen>
                 ),
                 const SizedBox(height: 12),
                 if (_messages.isEmpty)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: AppRadius.md,
-                      border: Border.all(color: AppColors.line),
-                    ),
-                    child: Text(
-                      tr('No messages sent yet.'),
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: AppColors.ink400,
-                      ),
-                    ),
+                  HxEmpty(
+                    icon: Icons.sms_outlined,
+                    title: tr('No messages yet'),
+                    message: tr('SMS sent to members will appear here.'),
                   )
                 else
                   ..._messages.indexed.map(

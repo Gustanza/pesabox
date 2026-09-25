@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../router/app_router.dart';
 import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 import '../../i18n/i18n.dart';
 
@@ -61,10 +62,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
               AuthHeader(title: tr('Transaction Details')),
               const SizedBox(height: 20),
               if (_loading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(child: CircularProgressIndicator()),
-                )
+                const HxSkeletonList(rows: 6)
               else if (txn == null)
                 Text(
                   tr('Transaction not found.'),

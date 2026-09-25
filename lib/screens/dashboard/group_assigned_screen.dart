@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../router/app_router.dart';
+import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 
 import '../../i18n/i18n.dart';
 
@@ -11,11 +13,17 @@ class GroupAssignedScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final state = AppState.I;
+    final name = state.groupName.isEmpty ? tr('Your group') : state.groupName;
+    final location = state.groupLocation.isNotEmpty
+        ? [state.groupType, state.groupLocation].join(' · ')
+        : state.groupType;
+
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.x20),
           child: Column(
             children: [
               const SizedBox(height: 48),
@@ -53,87 +61,59 @@ class GroupAssignedScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: AppRadius.md,
-                  border: Border.all(color: AppColors.line),
-                ),
+              HxSurface(
+                padding: const EdgeInsets.all(AppSpace.x16),
                 child: Row(
                   children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.green100,
-                      ),
-                      child: Center(
-                        child: Text(
-                          tr('KJ'),
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.teal900,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
+                    HxAvatar(initials: state.initials(name), size: 44),
+                    const SizedBox(width: AppSpace.x12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            tr('Kijiji Savings Group'),
+                            name,
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                               color: AppColors.ink900,
                             ),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            tr('Vikoba (Savings Group) · Arusha Rural'),
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: AppColors.ink400,
+                          if (location.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              location,
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: AppColors.ink400,
+                              ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: AppRadius.md,
-                  border: Border.all(color: AppColors.line),
-                ),
-                child: Column(
-                  children: [
-                    _KVRow(label: tr('Region'), value: 'Arusha'),
-                    const SizedBox(height: 12),
-                    _KVRow(label: tr('District'), value: 'Arusha Rural'),
-                    const SizedBox(height: 12),
-                    _KVRow(label: tr('Ward'), value: 'Kijiji'),
-                    const SizedBox(height: 12),
-                    _KVRow(label: tr('Village'), value: 'Kijiji'),
-                    const SizedBox(height: 12),
-                    _KVRow(label: tr('Meeting frequency'), value: 'Weekly'),
-                    const SizedBox(height: 12),
-                    _KVRow(label: tr('Assigned admin'), value: 'You (Group Admin)'),
-                  ],
-                ),
+              const SizedBox(height: AppSpace.x12),
+              HxSurface(
+                padding: const EdgeInsets.all(AppSpace.x16),
+child: Column(
+                    children: [
+                      _KVRow(label: tr('Group type'), value: state.groupType),
+                      const SizedBox(height: AppSpace.x12),
+                      _KVRow(
+                          label: tr('Location'),
+                          value: state.groupLocation),
+                      const SizedBox(height: AppSpace.x12),
+                      _KVRow(
+                        label: tr('Assigned admin'),
+                        value: tr('You (Group Admin)'),
+                      ),
+                    ],
+                  ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpace.x16),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -152,32 +132,13 @@ class GroupAssignedScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 28),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, AppRouter.financialFeatures);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.green600,
-                    foregroundColor: AppColors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.md,
-                    ),
-                  ),
-                  child: Text(
-                    tr('Set up financial features'),
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.white,
-                    ),
-                  ),
-                ),
+              HxButton(
+                text: tr('Set up financial features'),
+                onPressed: () {
+                  Navigator.pushNamed(context, AppRouter.financialFeatures);
+                },
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSpace.x32),
             ],
           ),
         ),
