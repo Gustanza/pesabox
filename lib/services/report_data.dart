@@ -11,47 +11,95 @@ abstract class ReportSource {
   Future<List<Map<String, dynamic>>> loans();
   Future<List<Map<String, dynamic>>> fines();
   Future<List<Map<String, dynamic>>> smsActivity();
+  Future<List<Map<String, dynamic>>> govLoans();
   Future<Map<String, dynamic>?> group();
 }
 
-/// The live app data. `refresh: true` so a report never uses a stale cache.
+/// The live app data. `refresh: true` so a report never uses a stale cache,
+/// and `throwOnError: true` so a failed download is reported as an error
+/// instead of silently producing a report from old (or no) data.
 /// (The signed-in user only receives their own group's data from the server.)
 class AppStateReportSource implements ReportSource {
   const AppStateReportSource();
 
   @override
-  Future<List<Map<String, dynamic>>> members() => AppState.I.fetchMembers(refresh: true);
+  Future<List<Map<String, dynamic>>> members() =>
+      AppState.I.fetchMembers(refresh: true, throwOnError: true);
   @override
-  Future<List<Map<String, dynamic>>> meetings() => AppState.I.fetchMeetings(refresh: true);
+  Future<List<Map<String, dynamic>>> meetings() =>
+      AppState.I.fetchMeetings(refresh: true, throwOnError: true);
   @override
-  Future<List<Map<String, dynamic>>> transactions() => AppState.I.fetchTransactions(refresh: true);
+  Future<List<Map<String, dynamic>>> transactions() =>
+      AppState.I.fetchTransactions(refresh: true, throwOnError: true);
   @override
-  Future<List<Map<String, dynamic>>> loans() => AppState.I.fetchLoans(refresh: true);
+  Future<List<Map<String, dynamic>>> loans() =>
+      AppState.I.fetchLoans(refresh: true, throwOnError: true);
   @override
-  Future<List<Map<String, dynamic>>> fines() => AppState.I.fetchFines(refresh: true);
+  Future<List<Map<String, dynamic>>> fines() =>
+      AppState.I.fetchFines(refresh: true, throwOnError: true);
   @override
-  Future<List<Map<String, dynamic>>> smsActivity() => AppState.I.fetchSmsActivity(refresh: true);
+  Future<List<Map<String, dynamic>>> smsActivity() =>
+      AppState.I.fetchSmsActivity(refresh: true, throwOnError: true);
   @override
-  Future<Map<String, dynamic>?> group() => AppState.I.fetchGroup(refresh: true);
+  Future<List<Map<String, dynamic>>> govLoans() =>
+      AppState.I.fetchGovLoans(refresh: true, throwOnError: true);
+  @override
+  Future<Map<String, dynamic>?> group() =>
+      AppState.I.fetchGroup(refresh: true, throwOnError: true);
 }
 
-/// Inclusive date range; either end may be open.
+// ---- East Africa Time --------------------------------------------------------
+
+/// Reports use East Africa Time (UTC+3, no daylight saving) whatever time
+/// zone the phone is set to. Returns the EAT wall-clock time as a UTC-flagged
+/// DateTime (read its year/month/day/hour directly), or null when [value] is
+/// not a date. A value without a zone (e.g. a meeting's `2026-09-17`) is
+/// already an EAT wall-clock time.
+DateTime? toEat(Object? value) {
+  if (value == null) return null;
+  if (value is DateTime) return value.toUtc().add(const Duration(hours: 3));
+  final s = '$value'.trim();
+  if (s.isEmpty) return null;
+  final d = DateTime.tryParse(s);
+  if (d == null) return null;
+  if (d.isUtc) return d.add(const Duration(hours: 3));
+  return DateTime.utc(d.year, d.month, d.day, d.hour, d.minute, d.second, d.millisecond);
+}
+
+String _two(int n) => n.toString().padLeft(2, '0');
+
+/// `YYYY-MM-DD` of [value] in EAT, or null.
+String? eatDay(Object? value) {
+  final d = toEat(value);
+  if (d == null) return null;
+  return '${d.year.toString().padLeft(4, '0')}-${_two(d.month)}-${_two(d.day)}';
+}
+
+/// Inclusive date range of EAT calendar days; either end may be open.
 class ReportRange {
   const ReportRange({this.from, this.to});
 
   final DateTime? from;
   final DateTime? to;
 
+  bool get isOpen => from == null && to == null;
+
+  static int _key(int y, int m, int d) => y * 10000 + m * 100 + d;
+
+  /// A record with no usable date cannot be placed in a period, so it is
+  /// left out once a range is set (the same rule as the server's reports).
   bool contains(Object? value) {
-    if (from == null && to == null) return true;
-    final d = DateTime.tryParse('$value');
-    if (d == null) return true; // no usable date — don't drop the row
-    final day = DateTime(d.year, d.month, d.day);
-    if (from != null && day.isBefore(DateTime(from!.year, from!.month, from!.day))) return false;
-    if (to != null && day.isAfter(DateTime(to!.year, to!.month, to!.day))) return false;
+    if (isOpen) return true;
+    final d = toEat(value);
+    if (d == null) return false;
+    final day = _key(d.year, d.month, d.day);
+    if (from != null && day < _key(from!.year, from!.month, from!.day)) return false;
+    if (to != null && day > _key(to!.year, to!.month, to!.day)) return false;
     return true;
   }
 }
+
+// ---- Report registry -----------------------------------------------------------
 
 /// One selectable dataset: its columns and how to build its rows.
 class ReportDef {
@@ -62,6 +110,8 @@ class ReportDef {
     required this.en,
     required this.columns,
     required this.rows,
+    this.splitByDirection = false,
+    this.pointInTime = false,
   });
 
   final String key;
@@ -70,7 +120,18 @@ class ReportDef {
   final String en;
   final List<String> columns; // English column keys, in display order
   final Future<List<Map<String, Object?>>> Function(ReportSource src, ReportRange range) rows;
+
+  /// Totals show money in and money out separately (a mixed list of
+  /// transactions has no meaningful single sum).
+  final bool splitByDirection;
+
+  /// Current balances: the date range does not apply.
+  final bool pointInTime;
 }
+
+/// Row key that keeps a row out of the on-screen totals (e.g. a cancelled
+/// loan). Never shown or exported — only listed columns are.
+const kNoTotals = '_noTotals';
 
 const categorySw = {
   'Group': 'Kikundi',
@@ -80,55 +141,61 @@ const categorySw = {
 };
 
 const columnSw = {
-  'Group': 'Kikundi', 'Members': 'Wanachama', 'Savings': 'Akiba', 'Shares': 'Hisa',
-  'Social Fund': 'Mfuko wa Jamii', 'Loans Out': 'Mikopo Iliyotolewa', 'Fines': 'Faini',
+  'Group': 'Kikundi', 'Members': 'Wanachama', 'Members (active)': 'Wanachama Hai',
+  'Members (total)': 'Wanachama Wote', 'Savings': 'Akiba', 'Shares': 'Hisa',
+  'Social Fund': 'Mfuko wa Jamii', 'Loans Outstanding': 'Mikopo Inayodaiwa', 'Fines': 'Faini',
+  'Fines Collected': 'Faini Zilizolipwa', 'Government Loans': 'Mikopo ya Serikali',
   'Expenses': 'Matumizi', 'Date': 'Tarehe', 'Member': 'Mwanachama', 'Type': 'Aina',
   'Amount': 'Kiasi', 'Direction': 'Mwelekeo', 'Method': 'Njia', 'Reference': 'Kumbukumbu',
   'Loan #': 'Mkopo #', 'Borrower': 'Mkopaji', 'Principal': 'Kiasi cha Mkopo',
   'Repaid': 'Kimelipwa', 'Balance': 'Salio', 'Status': 'Hali', 'Issued': 'Ilitolewa',
-  'Due': 'Tarehe ya Kulipa', 'Reason': 'Sababu', 'Paid': 'Kimelipwa', 'Meeting #': 'Mkutano #',
+  'Due': 'Tarehe ya Kulipa', 'Reason': 'Sababu', 'Paid': 'Imelipwa', 'Meeting #': 'Mkutano #',
   'Title': 'Kichwa', 'Time': 'Muda', 'Location': 'Mahali', 'Name': 'Jina', 'Phone': 'Simu',
   'Gender': 'Jinsia', 'Member #': 'Namba ya Mwanachama', 'Joined': 'Alijiunga',
-  'Recipient': 'Mpokeaji',
+  'Recipient': 'Mpokeaji', 'Charged': 'Faini Iliyotozwa', 'Outstanding': 'Inayodaiwa',
+  'Lender': 'Mkopeshaji', 'Programme': 'Programu', 'Interest %': 'Riba %',
+  'Total Due': 'Jumla Inayodaiwa', 'Description': 'Maelezo', 'Interest': 'Riba',
 };
 
 /// Stored enum-like values (statuses, transaction types...) shown in Swahili.
+/// Only applied to the enum columns in [_enumColumns] — never to names or
+/// other free text.
 const valueSw = {
   'Mandatory Savings': 'Akiba ya Lazima', 'Shares': 'Hisa', 'Social Fund': 'Mfuko wa Jamii',
   'Loan Repayment': 'Marejesho ya Mkopo', 'Loan Disbursement': 'Utoaji wa Mkopo',
-  'Fine': 'Faini', 'Expense': 'Matumizi', 'Withdrawal': 'Uondoaji', 'Active': 'Hai',
-  'Inactive': 'Haifanyi kazi', 'Closed': 'Imefungwa', 'Suspended': 'Amesimamishwa',
+  'Fine': 'Faini', 'Fine Payment': 'Malipo ya Faini', 'Expense': 'Matumizi', 'Withdrawal': 'Uondoaji',
+  'Active': 'Hai', 'Inactive': 'Haifanyi kazi', 'Closed': 'Imefungwa', 'Suspended': 'Amesimamishwa',
   'active': 'Hai', 'repaid': 'Imelipwa', 'defaulted': 'Imeshindwa kulipwa',
   'pending': 'Inasubiri', 'paid': 'Imelipwa', 'waived': 'Imesamehewa',
   'upcoming': 'Inakuja', 'in_progress': 'Inaendelea', 'completed': 'Imekamilika',
   'cancelled': 'Imeghairiwa', 'sent': 'Imetumwa', 'failed': 'Imeshindwa',
   'in': 'Ndani', 'out': 'Nje', 'Male': 'Mwanamume', 'Female': 'Mwanamke',
+  'Cash': 'Taslimu', 'Mobile Money': 'Pesa kwa Simu', 'Bank Transfer': 'Uhamisho wa Benki',
+  'Weekly': 'Kila Wiki', 'Biweekly': 'Kila Wiki Mbili', 'Monthly': 'Kila Mwezi',
   'member_otp': 'OTP ya Mwanachama', 'login_otp': 'OTP ya Kuingia',
   'member_joined': 'Amejiunga', 'contribution': 'Akiba ya Lazima', 'share': 'Hisa',
   'social_fund': 'Mfuko wa Jamii', 'loan_disbursement': 'Utoaji wa Mkopo',
   'loan_repayment': 'Marejesho ya Mkopo', 'fine': 'Faini', 'fine_payment': 'Malipo ya Faini',
   'meeting_reminder': 'Kikumbusho cha Mkutano', 'loan_due_soon': 'Mkopo Unakaribia Kuisha',
-  'loan_overdue': 'Mkopo Umechelewa', 'other': 'Nyingine',
+  'loan_overdue': 'Mkopo Umechelewa', 'other': 'Nyingine', 'expense': 'Matumizi',
+  'withdrawal': 'Uondoaji',
 };
 
+const _enumColumns = {'Type', 'Status', 'Direction', 'Gender', 'Method'};
 const _dateColumns = {'Date', 'Issued', 'Due', 'Joined'};
 
 String columnLabel(String key) => I18n.isSwahili ? (columnSw[key] ?? key) : key;
 
-/// Text for a cell (CSV / PDF): dates as YYYY-MM-DD, whole numbers without
-/// ".00", stored enum values translated.
+/// Text for a cell (CSV / PDF / screen): dates as the EAT day YYYY-MM-DD,
+/// whole numbers without ".00", enum values translated.
 String cellText(String column, Object? v) {
   if (v == null) return '';
-  if (_dateColumns.contains(column)) {
-    final s = '$v';
-    final d = DateTime.tryParse(s);
-    if (d == null) return s;
-    return '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-  }
+  if (_dateColumns.contains(column)) return eatDay(v) ?? '$v';
   if (v is num) {
     return v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(2);
   }
   final s = '$v';
+  if (!_enumColumns.contains(column)) return s;
   return I18n.isSwahili ? (valueSw[s] ?? s) : s;
 }
 
@@ -147,18 +214,104 @@ String _name(Map<String, dynamic> m) {
 const _txLabels = {
   'contribution': 'Mandatory Savings', 'share': 'Shares', 'social_fund': 'Social Fund',
   'loan_repayment': 'Loan Repayment', 'loan_disbursement': 'Loan Disbursement',
-  'fine': 'Fine', 'expense': 'Expense', 'withdrawal': 'Withdrawal',
+  'fine': 'Fine Payment', 'expense': 'Expense', 'withdrawal': 'Withdrawal',
 };
+
+/// The one "active member" rule (same as the server): status Active, or no
+/// status (the schema default). Inactive and Suspended members are not active.
+bool memberActive(Map<String, dynamic> m) {
+  final s = _s(m['status']).trim();
+  return s.isEmpty || s.toLowerCase() == 'active';
+}
+
+/// A loan still owes money unless it is repaid, completed or cancelled.
+bool loanOpen(Map<String, dynamic> l) =>
+    !const {'repaid', 'completed', 'cancelled'}.contains(_s(l['status']).toLowerCase());
+
+/// What a loan must repay in total: its stored total due (principal + the
+/// flat interest fixed at issue). Loans from before interest was charged have
+/// no totalDue and owe the principal only (same rule as the server).
+num loanTotalDue(Map<String, dynamic> l) {
+  final t = _n(l['totalDue']);
+  return t > 0 ? t : _n(l['amount']);
+}
+
+/// The interest charged on a loan (0 for older loans).
+num loanInterest(Map<String, dynamic> l) {
+  final i = loanTotalDue(l) - _n(l['amount']);
+  return i < 0 ? 0 : i;
+}
+
+/// What a loan still owes (never negative); 0 for a closed or cancelled loan.
+num loanBalance(Map<String, dynamic> l) {
+  if (!loanOpen(l)) return 0;
+  final b = loanTotalDue(l) - _n(l['amountRepaid']);
+  return b < 0 ? 0 : b;
+}
+
+/// The group's money, computed from its non-reversed transactions and its
+/// non-cancelled loans — never from the stored running totals, which can
+/// drift. Shared by the Group Summary report and the Group Statement.
+class GroupFigures {
+  num savings = 0, shares = 0, socialFund = 0, fines = 0, expenses = 0, withdrawals = 0;
+  num loansOutstanding = 0, loansDisbursed = 0, loansRepaid = 0;
+  num govReceived = 0, govRepaid = 0, govOutstanding = 0;
+  int membersActive = 0, membersTotal = 0;
+
+  GroupFigures.compute({
+    List<Map<String, dynamic>> transactions = const [],
+    List<Map<String, dynamic>> loans = const [],
+    List<Map<String, dynamic>> members = const [],
+    List<Map<String, dynamic>> govLoans = const [],
+  }) {
+    for (final t in transactions) {
+      if (t['reversed'] == true) continue;
+      final a = _n(t['amount']);
+      switch (_s(t['type'])) {
+        case 'contribution':
+          savings += a;
+        case 'withdrawal':
+          savings -= a;
+          withdrawals += a;
+        case 'share':
+          shares += a;
+        case 'social_fund':
+          socialFund += a;
+        case 'fine':
+          fines += a;
+        case 'expense':
+          expenses += a;
+      }
+    }
+    if (savings < 0) savings = 0;
+    for (final l in loans) {
+      if (_s(l['status']) == 'cancelled') continue;
+      loansDisbursed += _n(l['amount']);
+      loansRepaid += _n(l['amountRepaid']);
+      loansOutstanding += loanBalance(l);
+    }
+    for (final m in members) {
+      membersTotal++;
+      if (memberActive(m)) membersActive++;
+    }
+    for (final g in govLoans) {
+      govReceived += _n(g['amount']);
+      govRepaid += _n(g['amountRepaid']);
+      final o = g['outstanding'];
+      govOutstanding += o is num ? o : 0;
+    }
+  }
+}
 
 Future<List<Map<String, Object?>>> _transactionRows(
   ReportSource src,
   ReportRange range, {
-  String? type,
+  Set<String>? types,
 }) async {
   final out = <Map<String, Object?>>[];
   for (final t in await src.transactions()) {
     if (t['reversed'] == true) continue;
-    if (type != null && _s(t['type']) != type) continue;
+    if (types != null && !types.contains(_s(t['type']))) continue;
     if (!range.contains(t['createdAt'])) continue;
     out.add({
       'Date': t['createdAt'],
@@ -168,9 +321,22 @@ Future<List<Map<String, Object?>>> _transactionRows(
       'Direction': _s(t['direction']),
       'Method': _s(t['method']),
       'Reference': _s(t['reference']),
+      'Description': _s(t['description']),
     });
   }
+  _newestFirst(out, 'Date');
   return out;
+}
+
+/// Newest first by a date column (rows without a date go last).
+void _newestFirst(List<Map<String, Object?>> rows, String column) {
+  rows.sort((a, b) {
+    final da = toEat(a[column]), db = toEat(b[column]);
+    if (da == null && db == null) return 0;
+    if (da == null) return 1;
+    if (db == null) return -1;
+    return db.compareTo(da);
+  });
 }
 
 const _txColumns = ['Date', 'Member', 'Type', 'Amount', 'Direction', 'Method', 'Reference'];
@@ -182,20 +348,31 @@ final List<ReportDef> kReportDefs = [
     category: 'Group',
     sw: 'Muhtasari wa Kikundi',
     en: 'Group Summary',
-    columns: const ['Group', 'Members', 'Savings', 'Shares', 'Social Fund', 'Loans Out', 'Fines', 'Expenses'],
+    pointInTime: true,
+    columns: const [
+      'Group', 'Members (active)', 'Members (total)', 'Savings', 'Shares', 'Social Fund',
+      'Fines Collected', 'Expenses', 'Loans Outstanding', 'Government Loans',
+    ],
     rows: (src, range) async {
       final g = await src.group() ?? const <String, dynamic>{};
-      final members = await src.members();
+      final f = GroupFigures.compute(
+        transactions: await src.transactions(),
+        loans: await src.loans(),
+        members: await src.members(),
+        govLoans: await src.govLoans(),
+      );
       return [
         {
           'Group': _s(g['name']),
-          'Members': members.length,
-          'Savings': _n(g['totalSavings']),
-          'Shares': _n(g['totalShares']),
-          'Social Fund': _n(g['totalSocialFund']),
-          'Loans Out': _n(g['totalLoans']),
-          'Fines': _n(g['totalFines']),
-          'Expenses': _n(g['totalExpenses']),
+          'Members (active)': f.membersActive,
+          'Members (total)': f.membersTotal,
+          'Savings': f.savings,
+          'Shares': f.shares,
+          'Social Fund': f.socialFund,
+          'Fines Collected': f.fines,
+          'Expenses': f.expenses,
+          'Loans Outstanding': f.loansOutstanding,
+          'Government Loans': f.govOutstanding,
         },
       ];
     },
@@ -206,7 +383,7 @@ final List<ReportDef> kReportDefs = [
     sw: 'Akiba',
     en: 'Savings',
     columns: _txColumns,
-    rows: (src, range) => _transactionRows(src, range, type: 'contribution'),
+    rows: (src, range) => _transactionRows(src, range, types: {'contribution'}),
   ),
   ReportDef(
     key: 'shares',
@@ -214,7 +391,7 @@ final List<ReportDef> kReportDefs = [
     sw: 'Hisa',
     en: 'Shares',
     columns: _txColumns,
-    rows: (src, range) => _transactionRows(src, range, type: 'share'),
+    rows: (src, range) => _transactionRows(src, range, types: {'share'}),
   ),
   ReportDef(
     key: 'social-fund',
@@ -222,15 +399,15 @@ final List<ReportDef> kReportDefs = [
     sw: 'Mfuko wa Jamii',
     en: 'Social Fund',
     columns: _txColumns,
-    rows: (src, range) => _transactionRows(src, range, type: 'social_fund'),
+    rows: (src, range) => _transactionRows(src, range, types: {'social_fund'}),
   ),
   ReportDef(
     key: 'expenses',
     category: 'Financial',
-    sw: 'Matumizi',
-    en: 'Expenses',
-    columns: _txColumns,
-    rows: (src, range) => _transactionRows(src, range, type: 'expense'),
+    sw: 'Matumizi na Uondoaji',
+    en: 'Expenses & Withdrawals',
+    columns: const ['Date', 'Type', 'Description', 'Member', 'Amount', 'Method'],
+    rows: (src, range) => _transactionRows(src, range, types: {'expense', 'withdrawal'}),
   ),
   ReportDef(
     key: 'transactions',
@@ -238,6 +415,7 @@ final List<ReportDef> kReportDefs = [
     sw: 'Miamala Yote',
     en: 'All Transactions',
     columns: _txColumns,
+    splitByDirection: true,
     rows: (src, range) => _transactionRows(src, range),
   ),
   ReportDef(
@@ -245,46 +423,92 @@ final List<ReportDef> kReportDefs = [
     category: 'Financial',
     sw: 'Mikopo',
     en: 'Loans',
-    columns: const ['Loan #', 'Borrower', 'Principal', 'Repaid', 'Balance', 'Status', 'Issued', 'Due'],
+    columns: const ['Loan #', 'Borrower', 'Principal', 'Interest', 'Total Due', 'Repaid', 'Balance', 'Status', 'Issued', 'Due'],
     rows: (src, range) async {
       final out = <Map<String, Object?>>[];
       for (final l in await src.loans()) {
-        if (!range.contains(l['issuedDate'])) continue;
-        final principal = _n(l['amount']);
-        final repaid = _n(l['amountRepaid']);
+        if (!range.contains(l['issuedDate'] ?? l['createdAt'])) continue;
+        final cancelled = _s(l['status']) == 'cancelled';
         out.add({
           'Loan #': _s(l['loanNumber']),
           'Borrower': _name(l),
-          'Principal': principal,
-          'Repaid': repaid,
-          'Balance': principal - repaid,
+          'Principal': _n(l['amount']),
+          'Interest': loanInterest(l),
+          'Total Due': loanTotalDue(l),
+          'Repaid': _n(l['amountRepaid']), // the real amount, even when cancelled
+          'Balance': loanBalance(l), // 0 for a cancelled loan
           'Status': _s(l['status']),
-          'Issued': l['issuedDate'],
+          'Issued': l['issuedDate'] ?? l['createdAt'],
           'Due': l['dueDate'],
+          if (cancelled) kNoTotals: true, // a cancelled loan was never lent
         });
       }
+      _newestFirst(out, 'Issued');
+      return out;
+    },
+  ),
+  ReportDef(
+    key: 'fines-outstanding',
+    category: 'Financial',
+    sw: 'Faini Zilizotozwa na Madeni',
+    en: 'Fines Charged & Outstanding',
+    columns: const ['Date', 'Member', 'Reason', 'Charged', 'Paid', 'Outstanding', 'Status'],
+    rows: (src, range) async {
+      final out = <Map<String, Object?>>[];
+      for (final f in await src.fines()) {
+        final when = f['issuedAt'] ?? f['createdAt'];
+        if (!range.contains(when)) continue;
+        final charged = _n(f['amount']);
+        final paid = _n(f['amountPaid']);
+        final waived = _s(f['status']) == 'waived';
+        final owed = charged - paid;
+        out.add({
+          'Date': when,
+          'Member': _name(f),
+          'Reason': _s(f['reason']),
+          'Charged': charged,
+          'Paid': paid,
+          'Outstanding': waived || owed < 0 ? 0 : owed,
+          'Status': _s(f['status']),
+        });
+      }
+      _newestFirst(out, 'Date');
       return out;
     },
   ),
   ReportDef(
     key: 'fines',
     category: 'Financial',
-    sw: 'Faini',
-    en: 'Fines',
-    columns: const ['Date', 'Member', 'Reason', 'Amount', 'Paid', 'Status'],
+    sw: 'Malipo ya Faini',
+    en: 'Fine Payments',
+    columns: _txColumns,
+    rows: (src, range) => _transactionRows(src, range, types: {'fine'}),
+  ),
+  ReportDef(
+    key: 'government-loans',
+    category: 'Financial',
+    sw: 'Mikopo ya Serikali',
+    en: 'Government Loans',
+    columns: const ['Lender', 'Programme', 'Reference', 'Principal', 'Interest %', 'Total Due', 'Repaid', 'Balance', 'Issued', 'Due', 'Status'],
     rows: (src, range) async {
       final out = <Map<String, Object?>>[];
-      for (final f in await src.fines()) {
-        if (!range.contains(f['createdAt'])) continue;
+      for (final g in await src.govLoans()) {
+        if (!range.contains(g['receivedDate'] ?? g['createdAt'])) continue;
         out.add({
-          'Date': f['createdAt'],
-          'Member': _name(f),
-          'Reason': _s(f['reason']),
-          'Amount': _n(f['amount']),
-          'Paid': _n(f['amountPaid']),
-          'Status': _s(f['status']),
+          'Lender': _s(g['lender']),
+          'Programme': _s(g['programme']),
+          'Reference': _s(g['reference']),
+          'Principal': _n(g['amount']),
+          'Interest %': _n(g['interestRate']),
+          'Total Due': _n(g['totalDue']),
+          'Repaid': _n(g['amountRepaid']),
+          'Balance': _n(g['outstanding']),
+          'Issued': g['receivedDate'] ?? g['createdAt'],
+          'Due': g['dueDate'],
+          'Status': _s(g['status']),
         });
       }
+      _newestFirst(out, 'Issued');
       return out;
     },
   ),
@@ -297,16 +521,17 @@ final List<ReportDef> kReportDefs = [
     rows: (src, range) async {
       final out = <Map<String, Object?>>[];
       for (final m in await src.meetings()) {
-        if (!range.contains(m['date'])) continue;
+        if (!range.contains(m['date'] ?? m['createdAt'])) continue;
         out.add({
           'Meeting #': _n(m['meetingNumber']),
           'Title': _s(m['title']),
-          'Date': m['date'],
+          'Date': m['date'] ?? m['createdAt'],
           'Time': _s(m['time']),
           'Location': _s(m['location']),
           'Status': _s(m['status']),
         });
       }
+      out.sort((a, b) => (b['Meeting #'] as num).compareTo(a['Meeting #'] as num));
       return out;
     },
   ),
@@ -316,17 +541,22 @@ final List<ReportDef> kReportDefs = [
     sw: 'Wanachama',
     en: 'Members',
     columns: const ['Name', 'Phone', 'Gender', 'Member #', 'Status', 'Joined'],
-    rows: (src, range) async => [
-      for (final m in await src.members())
-        {
+    rows: (src, range) async {
+      final out = <Map<String, Object?>>[];
+      for (final m in await src.members()) {
+        if (!range.contains(m['joinedAt'] ?? m['createdAt'])) continue;
+        out.add({
           'Name': _name(m),
           'Phone': _s(m['phone']),
           'Gender': _s(m['gender']),
           'Member #': _s(m['memberNumber']),
           'Status': _s(m['status']),
-          'Joined': m['joinedAt'],
-        },
-    ],
+          'Joined': m['joinedAt'] ?? m['createdAt'],
+        });
+      }
+      out.sort((a, b) => '${a['Name']}'.toLowerCase().compareTo('${b['Name']}'.toLowerCase()));
+      return out;
+    },
   ),
   ReportDef(
     key: 'sms',
@@ -347,6 +577,7 @@ final List<ReportDef> kReportDefs = [
           'Status': _s(s['status']),
         });
       }
+      _newestFirst(out, 'Date');
       return out;
     },
   ),

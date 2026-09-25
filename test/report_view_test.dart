@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pesa_box_app/i18n/i18n.dart';
 import 'package:pesa_box_app/screens/reports/group_statement_screen.dart';
 import 'package:pesa_box_app/screens/reports/report_view_screen.dart';
-import 'package:pesa_box_app/services/app_data.dart';
 import 'package:pesa_box_app/services/report_data.dart';
 import 'package:pesa_box_app/services/report_service.dart';
 
@@ -28,6 +27,14 @@ class _Source implements ReportSource {
   Future<List<Map<String, dynamic>>> meetings() async => [];
   @override
   Future<List<Map<String, dynamic>>> smsActivity() async => [];
+  @override
+  Future<List<Map<String, dynamic>>> govLoans() async => [];
+}
+
+/// A source whose server calls fail.
+class _FailingSource extends _Source {
+  @override
+  Future<List<Map<String, dynamic>>> transactions() async => throw Exception('Request failed (500)');
 }
 
 class _RecordingService implements ReportService {
@@ -89,13 +96,27 @@ void main() {
   testWidgets('group summary is a list of totals', (tester) async {
     await _pump(tester, ReportViewScreen(defKey: 'group-summary', source: _Source()));
     expect(find.text('Umoja Group'), findsOneWidget);
-    expect(find.text('TZS 15,000'), findsOneWidget); // savings
-    expect(find.text('TZS 3,000'), findsOneWidget); // shares
+    expect(find.text('TZS 15,000'), findsOneWidget); // savings, from the transactions
+    expect(find.text('TZS 3,000'), findsNothing); // not the stored totalShares
   });
 
   testWidgets('an empty report says so instead of showing a blank screen', (tester) async {
     await _pump(tester, ReportViewScreen(defKey: 'fines', source: _Source()));
     expect(find.text('Hakuna data kwa vigezo hivi.'), findsOneWidget);
+  });
+
+  testWidgets('a failed download shows an error instead of an empty report', (tester) async {
+    await _pump(tester, ReportViewScreen(defKey: 'savings', source: _FailingSource()));
+    expect(find.textContaining('Request failed (500)'), findsOneWidget);
+    expect(find.text('Hakuna data kwa vigezo hivi.'), findsNothing);
+  });
+
+  testWidgets('all transactions total money in and money out separately', (tester) async {
+    await _pump(tester, ReportViewScreen(defKey: 'transactions', source: _Source()));
+    expect(find.text('Pesa iliyoingia'), findsOneWidget);
+    expect(find.text('TZS 15,000'), findsOneWidget);
+    expect(find.text('Pesa iliyotoka'), findsOneWidget);
+    expect(find.text('TZS 2,500'), findsOneWidget);
   });
 
   testWidgets('the download buttons export exactly this report', (tester) async {
@@ -112,25 +133,55 @@ void main() {
 
   testWidgets('group statement shows the group\'s real totals, not sample numbers',
       (tester) async {
-    AppState.I.group = {
-      'name': 'Umoja Group',
-      'totalSavings': 1500000,
-      'totalShares': 480000,
-      'totalSocialFund': 0,
-      'totalLoans': 40000,
-      'totalFines': 6000,
-      'totalExpenses': 8000,
-      'shareValue': 5000,
-      'cycleCurrent': 2,
-      'cycleTotal': 52,
-    };
-    await _pump(tester, const GroupStatementScreen());
+    await _pump(tester, GroupStatementScreen(source: _StatementSource()));
 
     expect(find.text('Umoja Group'), findsOneWidget);
     expect(find.text('MZUNGUKO 2'), findsOneWidget);
-    expect(find.text('TZS 1,500,000'), findsOneWidget);
+    expect(find.text('TZS 1,500,000'), findsOneWidget); // the reversed 700,000 is not added
+    expect(find.text('TZS 40,000'), findsNWidgets(2)); // disbursed + outstanding; cancelled loan left out
+    expect(find.text('TZS 130,000'), findsNothing);
+    expect(find.text('TZS 1,000,000'), findsNWidgets(2)); // government loan received + outstanding
     // the old hard-coded demo numbers must be gone
     expect(find.text('TZS 2,160,000'), findsNothing);
     expect(find.text('Kijiji Savings Group'), findsNothing);
   });
+
+  testWidgets('group statement shows an error with a retry, not stale figures', (tester) async {
+    final src = _StatementSource()..fail = true;
+    await _pump(tester, GroupStatementScreen(source: src));
+    expect(find.textContaining('Request failed (500)'), findsOneWidget);
+    expect(find.text('TZS 1,500,000'), findsNothing);
+
+    src.fail = false;
+    await tester.tap(find.text('Jaribu tena'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Request failed (500)'), findsNothing);
+    expect(find.text('TZS 1,500,000'), findsOneWidget);
+  });
+}
+
+/// The statement's data; [fail] makes the transactions download fail.
+class _StatementSource extends _Source {
+  bool fail = false;
+
+  @override
+  Future<Map<String, dynamic>?> group() async => {'name': 'Umoja Group', 'shareValue': 5000, 'cycleCurrent': 2, 'cycleTotal': 52};
+  @override
+  Future<List<Map<String, dynamic>>> transactions() async {
+    if (fail) throw Exception('Request failed (500)');
+    return [
+      {'type': 'contribution', 'amount': 1500000, 'createdAt': '2026-09-01T08:00:00Z'},
+      {'type': 'contribution', 'amount': 700000, 'reversed': true, 'createdAt': '2026-09-02T08:00:00Z'},
+    ];
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> loans() async => [
+        {'amount': 40000, 'amountRepaid': 0, 'status': 'active'},
+        {'amount': 90000, 'amountRepaid': 0, 'status': 'cancelled'},
+      ];
+  @override
+  Future<List<Map<String, dynamic>>> govLoans() async => [
+        {'amount': 1000000, 'amountRepaid': 0, 'outstanding': 1000000},
+      ];
 }

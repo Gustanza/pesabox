@@ -52,9 +52,10 @@ class _FinesListScreenState extends State<FinesListScreen>
       (m) => m['id'] == memberId,
       orElse: () => const {},
     );
-    final name = [m['firstName'], m['lastName']]
-        .where((s) => (s ?? '').toString().isNotEmpty)
-        .join(' ');
+    final name = [
+      m['firstName'],
+      m['lastName'],
+    ].where((s) => (s ?? '').toString().isNotEmpty).join(' ');
     return name.isEmpty ? tr('Unknown member') : name;
   }
 
@@ -62,8 +63,9 @@ class _FinesListScreenState extends State<FinesListScreen>
     final amount = (fine['amount'] as num?)?.toDouble() ?? 0;
     final paid = (fine['amountPaid'] as num?)?.toDouble() ?? 0;
     final remaining = amount - paid;
-    final controller =
-        TextEditingController(text: remaining.toStringAsFixed(0));
+    final controller = TextEditingController(
+      text: remaining.toStringAsFixed(0),
+    );
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -116,7 +118,10 @@ class _FinesListScreenState extends State<FinesListScreen>
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(tr(e.toString())), behavior: SnackBarBehavior.floating),
+        SnackBar(
+          content: Text(tr(e.toString())),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     }
   }
@@ -124,7 +129,10 @@ class _FinesListScreenState extends State<FinesListScreen>
   @override
   Widget build(BuildContext context) {
     final state = AppState.I;
-    final total = _fines.fold<double>(0, (sum, f) => sum + (f['amount'] as num? ?? 0));
+    final total = _fines.fold<double>(
+      0,
+      (sum, f) => sum + (f['amount'] as num? ?? 0),
+    );
     final unpaid = _fines.fold<double>(
       0,
       (sum, f) =>
@@ -143,16 +151,17 @@ class _FinesListScreenState extends State<FinesListScreen>
               HxHeader(
                 title: tr('Fines'),
                 actions: [
-                  HxIconButton(
-                    icon: Icons.add_rounded,
-                    tooltip: tr('Record fine'),
-                    onPressed: () {
-                      Navigator.of(context).pushNamed(
-                        AppRouter.recordFine,
-                        arguments: _meetingId,
-                      );
-                    },
-                  ),
+                  if (AppState.I.serviceEnabled('Fines'))
+                    HxIconButton(
+                      icon: Icons.add_rounded,
+                      tooltip: tr('Record fine'),
+                      onPressed: () {
+                        Navigator.of(context).pushNamed(
+                          AppRouter.recordFine,
+                          arguments: _meetingId,
+                        );
+                      },
+                    ),
                 ],
               ),
               const SizedBox(height: AppSpace.x16),
@@ -200,28 +209,32 @@ class _FinesListScreenState extends State<FinesListScreen>
                                 : () => _pay(_fines[i]),
                             leading: HxAvatar(
                               initials: state.initials(
-                                  _memberName(_fines[i]['memberId']?.toString())),
+                                _memberName(_fines[i]['memberId']?.toString()),
+                              ),
                             ),
-                            title: _memberName(_fines[i]['memberId']?.toString()),
-                            subtitle: '${_fines[i]['reason']?.toString() ?? ''} · '
+                            title: _memberName(
+                              _fines[i]['memberId']?.toString(),
+                            ),
+                            subtitle:
+                                '${_fines[i]['reason']?.toString() ?? ''} · '
                                 '${state.money((_fines[i]['amount'] as num?) ?? 0)}',
                             trailing: _statusPill(
-                                _fines[i]['status']?.toString() ?? 'pending'),
+                              _fines[i]['status']?.toString() ?? 'pending',
+                            ),
                           ),
                         ],
                       ],
                     ),
                   ),
                 const SizedBox(height: AppSpace.x24),
-                if (!_loading)
+                if (!_loading && AppState.I.serviceEnabled('Fines'))
                   HxButton(
                     text: tr('Record a fine'),
                     icon: Icons.gavel_rounded,
                     onPressed: () {
-                      Navigator.of(context).pushNamed(
-                        AppRouter.recordFine,
-                        arguments: _meetingId,
-                      );
+                      Navigator.of(
+                        context,
+                      ).pushNamed(AppRouter.recordFine, arguments: _meetingId);
                     },
                   ),
               ],

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../router/app_router.dart';
 import '../../services/app_data.dart';
+import '../../services/report_data.dart';
 import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
 import '../../ui/ui.dart';
@@ -219,7 +220,10 @@ class _KeyValueCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final amount = (loan['amount'] as num?)?.toDouble() ?? 0;
     final repaid = (loan['amountRepaid'] as num?)?.toDouble() ?? 0;
-    final outstanding = amount - repaid;
+    // Terms fixed at issue: principal + flat interest (older loans: principal only).
+    final interest = loanInterest(loan);
+    final totalDue = loanTotalDue(loan);
+    final outstanding = loanBalance(loan);
     final active = loan['status'] == 'active';
 
     return Container(
@@ -234,7 +238,14 @@ class _KeyValueCard extends StatelessWidget {
         children: [
           _KVRow(label: tr('Principal'), value: state.money(amount)),
           const Divider(height: 24),
-          _KVRow(label: tr('Interest'), value: '${(loan['interestRate'] as num?)?.toStringAsFixed(0) ?? '0'}%'),
+          _KVRow(
+            label: tr('Interest'),
+            value: loan['totalDue'] == null
+                ? tr('None (issued before interest was charged)')
+                : '${state.money(interest)} (${(loan['interestRate'] as num?)?.toStringAsFixed(0) ?? '0'}%)',
+          ),
+          const Divider(height: 24),
+          _KVRow(label: tr('Total to repay'), value: state.money(totalDue)),
           const Divider(height: 24),
           _KVRow(label: tr('Duration'), value: '${state.maxLoanPeriodMonths} months'),
           const Divider(height: 24),

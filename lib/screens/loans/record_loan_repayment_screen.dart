@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../services/app_data.dart';
+import '../../services/report_data.dart';
 import '../../theme/app_theme.dart';
 import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
@@ -63,8 +64,7 @@ class _RecordLoanRepaymentScreenState extends State<RecordLoanRepaymentScreen> {
   double get _outstanding {
     final loan = _loan;
     if (loan == null) return 0;
-    return ((loan['amount'] as num? ?? 0) - (loan['amountRepaid'] as num? ?? 0))
-        .toDouble();
+    return loanBalance(loan).toDouble(); // total due (principal + interest) - repaid
   }
 
   String get _memberName {

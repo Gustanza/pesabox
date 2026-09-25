@@ -11,6 +11,7 @@ import '../screens/dashboard/financial_features_screen.dart';
 import '../screens/dashboard/rules_config_screen.dart';
 import '../screens/dashboard/review_rules_screen.dart';
 import '../screens/dashboard/group_ready_screen.dart';
+import '../screens/group/rules_edit_screen.dart';
 import '../screens/members/members_list_screen.dart';
 import '../screens/members/add_member_screen.dart';
 import '../screens/members/member_details_screen.dart';
@@ -112,6 +113,7 @@ class AppRouter {
   static const String groupInfo = '/group/info';
   static const String editGroup = '/group/edit';
   static const String rulesConstitution = '/group/rules';
+  static const String rulesEdit = '/group/rules/edit';
   static const String announcements = '/announcements';
   static const String officers = '/group/officers';
   static const String govLoans = '/group/gov-loans';
@@ -198,6 +200,8 @@ class AppRouter {
         return _buildRoute(settings, const EditGroupScreen());
       case rulesConstitution:
         return _buildRoute(settings, const RulesConstitutionScreen());
+      case rulesEdit:
+        return _buildRoute(settings, const RulesEditScreen());
       case announcements:
         return _buildRoute(settings, const AnnouncementsScreen());
       case officers:

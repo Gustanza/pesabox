@@ -12,7 +12,9 @@ import '../auth/auth_widgets.dart';
 class ExportReportScreen extends StatefulWidget {
   const ExportReportScreen({super.key, this.service});
 
-  /// Injectable for tests; the app uses the real server.
+  /// Injectable for tests. The app builds the files on the device
+  /// ([LocalReportService]) from the group's live data — there is no server
+  /// report endpoint for the mobile app.
   final ReportService? service;
 
   @override
@@ -116,7 +118,10 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = '$e'.replaceFirst('Exception: ', ''));
+      final msg = '$e'.replaceFirst('Exception: ', '');
+      setState(() => _error = msg);
+      // The inline message sits under the list; make sure it is seen.
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     } finally {
       if (mounted) setState(() => _exporting = false);
     }

@@ -381,16 +381,18 @@ class _DashboardScreenState extends State<DashboardScreen>
             ),
           ),
           const SizedBox(width: AppSpace.x12),
-          Expanded(
-            child: _QuickAction(
-              icon: Icons.request_quote_rounded,
-              label: tr('Record loan'),
-              onTap: () {
-                Navigator.of(context).pushNamed(AppRouter.recordLoan);
-              },
+          if (AppState.I.serviceEnabled('Loans')) ...[
+            Expanded(
+              child: _QuickAction(
+                icon: Icons.request_quote_rounded,
+                label: tr('Record loan'),
+                onTap: () {
+                  Navigator.of(context).pushNamed(AppRouter.recordLoan);
+                },
+              ),
             ),
-          ),
-          const SizedBox(width: AppSpace.x12),
+            const SizedBox(width: AppSpace.x12),
+          ],
           Expanded(
             child: _QuickAction(
               icon: Icons.bar_chart_rounded,

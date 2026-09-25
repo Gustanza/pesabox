@@ -153,7 +153,7 @@ Future<List<int>> buildPdf(
           _pdfSafe(
             '${sw ? 'Kikundi' : 'Group'}: $groupName    '
             '${sw ? 'Kipindi' : 'Period'}: $period    '
-            '${sw ? 'Imetengenezwa' : 'Generated'}: ${DateTime.now().toString().substring(0, 16)}',
+            '${sw ? 'Imetengenezwa' : 'Generated'}: ${toEat(DateTime.now())!.toIso8601String().substring(0, 16).replaceFirst('T', ' ')} EAT',
           ),
           style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
         ),

@@ -27,7 +27,9 @@ class ReportViewScreen extends StatefulWidget {
 
 class _ReportViewScreenState extends State<ReportViewScreen> {
   static const _shownRows = 200;
-  static const _moneyColumns = ['Amount', 'Principal', 'Repaid', 'Balance', 'Paid'];
+  static const _moneyColumns = [
+    'Amount', 'Principal', 'Interest', 'Repaid', 'Balance', 'Paid', 'Charged', 'Outstanding', 'Total Due',
+  ];
 
   late final ReportDef _def = reportDefFor(widget.defKey)!;
   late final ReportSource _source = widget.source ?? const AppStateReportSource();
@@ -62,6 +64,8 @@ class _ReportViewScreenState extends State<ReportViewScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
+        // Never keep showing the previous rows as if they were current.
+        _rows = [];
         _error = tr('Could not load the data for the report: {0}', ['$e']);
         _loading = false;
       });
@@ -111,13 +115,22 @@ class _ReportViewScreenState extends State<ReportViewScreen> {
     }
   }
 
-  /// Sum of each money column present in this dataset.
+  /// Sum of each money column present in this dataset (rows flagged
+  /// [kNoTotals], e.g. cancelled loans, are left out). A mixed list of
+  /// transactions shows money in and money out separately instead of one
+  /// meaningless sum.
   Map<String, num> get _totals {
-    final t = <String, num>{};
-    for (final c in _def.columns.where(_moneyColumns.contains)) {
-      t[c] = _rows.fold<num>(0, (sum, r) => sum + (r[c] is num ? r[c] as num : 0));
+    final rows = _rows.where((r) => r[kNoTotals] != true);
+    num sum(String c, [bool Function(Map<String, Object?>)? keep]) => rows
+        .where((r) => keep == null || keep(r))
+        .fold<num>(0, (s, r) => s + (r[c] is num ? r[c] as num : 0));
+    if (_def.splitByDirection) {
+      return {
+        tr('Money in'): sum('Amount', (r) => r['Direction'] == 'in'),
+        tr('Money out'): sum('Amount', (r) => r['Direction'] == 'out'),
+      };
     }
-    return t;
+    return {for (final c in _def.columns.where(_moneyColumns.contains)) columnLabel(c): sum(c)};
   }
 
   @override
@@ -199,7 +212,7 @@ class _ReportViewScreenState extends State<ReportViewScreen> {
             runSpacing: 10,
             children: [
               _stat(tr('Rows'), '${_rows.length}'),
-              for (final e in totals.entries) _stat(columnLabel(e.key), AppState.I.money(e.value)),
+              for (final e in totals.entries) _stat(e.key, AppState.I.money(e.value)),
             ],
           ),
           const SizedBox(height: 16),
@@ -285,7 +298,9 @@ class _ReportViewScreenState extends State<ReportViewScreen> {
 
   /// Group summary is one row of totals — shown as a list, not a table.
   Widget _summaryCard(Map<String, Object?> row) {
-    final money = const {'Savings', 'Shares', 'Social Fund', 'Loans Out', 'Fines', 'Expenses'};
+    final money = const {
+      'Savings', 'Shares', 'Social Fund', 'Loans Outstanding', 'Fines Collected', 'Expenses', 'Government Loans',
+    };
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(

@@ -61,7 +61,40 @@ class _RecordLoanScreenState extends State<RecordLoanScreen> {
       .where((s) => (s ?? '').toString().isNotEmpty)
       .join(' ');
 
-  double get _amount => double.tryParse(_amountController.text.trim()) ?? 0;
+  double get _amount => double.tryParse(_amountController.text.trim().replaceAll(',', '')) ?? 0;
+
+  static String _rateText(double r) => r == r.roundToDouble() ? '${r.toInt()}' : '$r';
+
+  /// The group's loan limit for the chosen member (savings + shares × the
+  /// multiplier); the server enforces it.
+  double _maxFor(AppState state) {
+    final b = state.balanceFor(_memberId);
+    num v(String k) => (b?[k] as num?) ?? 0;
+    return (v('savings') + v('shares')).toDouble() * state.maxLoanMultiplier;
+  }
+
+  /// The member confirms what they will owe before the loan is issued.
+  Future<bool> _confirm() async {
+    final state = AppState.I;
+    final p = state.loanPreview(_amount);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(tr('Confirm loan')),
+        content: Text(tr('Principal {0} + interest {1} = {2} to repay over {3} months.', [
+          state.money(_amount),
+          state.money(p.interest),
+          state.money(p.totalDue),
+          state.maxLoanPeriodMonths,
+        ])),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('Cancel'))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(tr('Disburse loan'))),
+        ],
+      ),
+    );
+    return ok == true;
+  }
 
   Future<void> _submit() async {
     final memberId = _memberId;
@@ -74,6 +107,7 @@ class _RecordLoanScreenState extends State<RecordLoanScreen> {
       _showError(tr('Enter a valid amount'));
       return;
     }
+    if (!await _confirm()) return;
     setState(() => _submitting = true);
     try {
       await AppState.I.createLoan(
@@ -182,13 +216,28 @@ class _RecordLoanScreenState extends State<RecordLoanScreen> {
                   decoration: BoxDecoration(color: AppColors.green100, borderRadius: AppRadius.md),
                   child: Column(
                     children: [
-                      _EligRow(label: tr('Interest rate'), value: '${state.loanInterestRate.toStringAsFixed(0)}%'),
+                      _EligRow(label: tr('Interest rate (flat)'), value: '${_rateText(state.loanInterestRate)}%'),
+                      const Divider(height: 24, color: Color(0xFFC9E8D6)),
+                      _EligRow(label: tr('Interest'), value: state.money(state.loanPreview(_amount).interest)),
+                      const Divider(height: 24, color: Color(0xFFC9E8D6)),
+                      _EligRow(
+                        key: const ValueKey('loan-total-due'),
+                        label: tr('Total to repay'),
+                        value: state.money(state.loanPreview(_amount).totalDue),
+                        strong: true,
+                      ),
                       const Divider(height: 24, color: Color(0xFFC9E8D6)),
                       _EligRow(
                         label: tr('Repayment period'),
-                        value: '${state.maxLoanPeriodMonths} months',
-                        strong: true,
+                        value: tr('{0} months', [state.maxLoanPeriodMonths]),
                       ),
+                      if (state.maxLoanMultiplier > 0) ...[
+                        const Divider(height: 24, color: Color(0xFFC9E8D6)),
+                        _EligRow(
+                          label: tr('Max for this member'),
+                          value: state.money(_maxFor(state)),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -214,7 +263,7 @@ class _EligRow extends StatelessWidget {
   final String value;
   final bool strong;
 
-  const _EligRow({required this.label, required this.value, this.strong = false});
+  const _EligRow({super.key, required this.label, required this.value, this.strong = false});
 
   @override
   Widget build(BuildContext context) {

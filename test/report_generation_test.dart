@@ -45,6 +45,30 @@ class _FakeSource implements ReportSource {
   Future<List<Map<String, dynamic>>> meetings() async => [];
   @override
   Future<List<Map<String, dynamic>>> smsActivity() async => [];
+  @override
+  Future<List<Map<String, dynamic>>> govLoans() async => [];
+}
+
+/// A group with a cancelled loan, a reversed transaction and a government
+/// loan: the cases the reports must not get wrong.
+class _TrickySource extends _FakeSource {
+  @override
+  Future<List<Map<String, dynamic>>> loans() async => [
+        {'loanNumber': 'LN-0001', 'memberName': 'John Mfinanga', 'amount': 50000, 'amountRepaid': 10000, 'status': 'active', 'issuedDate': '2026-08-01T08:00:00Z'},
+        {'loanNumber': 'LN-0002', 'memberName': 'Asha Juma', 'amount': 20000, 'amountRepaid': 0, 'status': 'cancelled', 'issuedDate': '2026-09-10T08:00:00Z'},
+        {'loanNumber': 'LN-0003', 'memberName': 'Asha Juma', 'amount': 8000, 'amountRepaid': 3000, 'status': 'defaulted', 'issuedDate': '2026-05-01T08:00:00Z'},
+      ];
+
+  @override
+  Future<List<Map<String, dynamic>>> members() async => [
+        ...await super.members(),
+        {'firstName': 'Bakari', 'lastName': 'Said', 'status': 'Suspended', 'joinedAt': '2026-01-01T08:00:00Z'},
+      ];
+
+  @override
+  Future<List<Map<String, dynamic>>> govLoans() async => [
+        {'lender': 'Halmashauri', 'amount': 1000000, 'amountRepaid': 250000, 'totalDue': 1100000, 'outstanding': 850000, 'receivedDate': '2026-09-01T07:00:00Z', 'status': 'active'},
+      ];
 }
 
 LocalReportService _service() => LocalReportService(source: _FakeSource());
@@ -71,7 +95,7 @@ void main() {
     // (utf8.decode hides it, so check the raw bytes).
     expect(file.bytes.take(3).toList(), [0xEF, 0xBB, 0xBF]);
     expect(text, contains('Tarehe,Mwanachama,Aina,Kiasi,Mwelekeo,Njia,Kumbukumbu'));
-    expect(text, contains('Asha Juma,Akiba ya Lazima,5000,Ndani,Cash'));
+    expect(text, contains('Asha Juma,Akiba ya Lazima,5000,Ndani,Taslimu'));
     expect(text, isNot(contains('Reversed')));
     expect(text, isNot(contains('Hisa'))); // shares are not in the savings dataset
   });
@@ -115,7 +139,9 @@ void main() {
 
     final loans = book['Mikopo'];
     expect(loans.rows.first.map((c) => c?.value.toString()).first, 'Mkopo #');
-    final balance = loans.rows[1][4]!.value; // Balance = 50000 - 10000
+    // Loan #, Borrower, Principal, Interest, Total Due, Repaid, Balance: a loan
+    // from before interest was charged owes its principal (50000 - 10000).
+    final balance = loans.rows[1][6]!.value;
     expect(balance is IntCellValue || balance is DoubleCellValue, isTrue);
     expect(balance.toString(), anyOf('40000', '40000.0'));
   });
@@ -138,5 +164,51 @@ void main() {
       // unknown column names leave nothing to export
       throwsA(isA<Exception>()),
     );
+  });
+
+  test('cancelled loans owe nothing and stay out of the totals; reversed rows are skipped', () async {
+    final src = _TrickySource();
+    final loans = await reportDefFor('loans')!.rows(src, const ReportRange());
+    final cancelled = loans.firstWhere((r) => r['Loan #'] == 'LN-0002');
+    expect(cancelled['Balance'], 0);
+    expect(cancelled['Repaid'], 0); // the real repaid amount, not the principal
+    expect(cancelled[kNoTotals], isTrue);
+    expect(loans.firstWhere((r) => r['Loan #'] == 'LN-0003')['Balance'], 5000); // defaulted still owes
+
+    final f = GroupFigures.compute(
+      transactions: await src.transactions(),
+      loans: await src.loans(),
+      members: await src.members(),
+      govLoans: await src.govLoans(),
+    );
+    expect(f.loansDisbursed, 58000); // 50000 + 8000; the cancelled 20000 was never lent
+    expect(f.loansOutstanding, 45000);
+    expect(f.savings, 15000); // the reversed 999 is not counted
+    expect(f.membersActive, 2);
+    expect(f.membersTotal, 3);
+    expect(f.govOutstanding, 850000);
+
+    final summary = (await reportDefFor('group-summary')!.rows(src, const ReportRange())).single;
+    expect(summary['Loans Outstanding'], 45000);
+    expect(summary['Savings'], 15000);
+    expect(summary['Government Loans'], 850000);
+    expect(summary['Members (active)'], 2);
+  });
+
+  test('dates are East Africa Time days, whatever the phone zone', () async {
+    // 2026-09-16 22:00 UTC is 2026-09-17 01:00 in Dar es Salaam.
+    expect(eatDay('2026-09-16T22:00:00Z'), '2026-09-17');
+    expect(eatDay('2026-09-17'), '2026-09-17');
+    expect(cellText('Date', '2026-09-16T22:00:00Z'), '2026-09-17');
+    final day = ReportRange(from: DateTime(2026, 9, 17), to: DateTime(2026, 9, 17));
+    expect(day.contains('2026-09-16T22:00:00Z'), isTrue);
+    expect(day.contains('2026-09-17T21:30:00Z'), isFalse); // 00:30 on the 18th
+    expect(day.contains(null), isFalse); // no date cannot be placed in a period
+    expect(const ReportRange().contains(null), isTrue);
+  });
+
+  test('only enum columns are translated', () {
+    expect(cellText('Method', 'Cash'), 'Taslimu');
+    expect(cellText('Member', 'Active'), 'Active'); // a name is never translated
   });
 }

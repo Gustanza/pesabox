@@ -245,7 +245,8 @@ class AppState {
   /// a mwenyekiti/katibu/mweka hazina/committee assignment, otherwise the
   /// group this user created or whose admin phone is theirs. Caches the group
   /// in [group] and the user's [groupPosition] / [groupPermissions].
-  Future<bool> checkGroupAssignment({bool refresh = false}) async {
+  Future<bool> checkGroupAssignment(
+      {bool refresh = false, bool throwOnError = false}) async {
     if (group != null && !refresh) return true;
     if (token == null) return false;
     try {
@@ -269,6 +270,7 @@ class AppState {
       // login instead of wrongly saying "no group assigned".
       if (_isDeadSession(e.message)) {
         await _clearLocalSession();
+        if (throwOnError) rethrow;
         return false;
       }
       // 403 "no group assigned to this account" — genuinely not assigned.
@@ -278,11 +280,13 @@ class AppState {
         groupPermissions = {};
         return false;
       }
+      if (throwOnError) rethrow;
       return group != null;
     } catch (e) {
       // Keep whatever was cached; don't flip an assigned group back to
       // "awaiting" just because a single request failed.
       debugPrint('checkGroupAssignment failed: $e');
+      if (throwOnError) rethrow;
       return group != null;
     }
   }
@@ -292,7 +296,9 @@ class AppState {
     return m.contains('token expired') ||
         m.contains('unauthorized') ||
         m.contains('revoked') ||
-        m.contains('access token invalid');
+        m.contains('access token invalid') ||
+        // a login issued by another server (e.g. live vs local)
+        m.contains('domain mismatch');
   }
 
   /// Drops the stored session without calling the server (it already
@@ -393,9 +399,46 @@ class AppState {
   int get maxShares => (group?['maxShares'] as num?)?.toInt() ?? 5;
   double get socialFundContribution => _num(group, 'socialFundContribution');
   double get mandatorySavingsAmount => _num(group, 'mandatorySavingsAmount');
-  double get loanInterestRate {
-    final v = _num(group, 'loanInterestRate');
-    return v > 0 ? v : 10;
+  /// The group's flat loan interest (0 is a real rate: no interest).
+  double get loanInterestRate =>
+      group?['loanInterestRate'] == null ? 10 : _num(group, 'loanInterestRate');
+
+  /// Max loan as a multiple of the member's savings + shares (0 = no limit).
+  double get maxLoanMultiplier => _num(group, 'maxLoanMultiplier');
+
+  /// The services the group has switched on (server/group_rules.go); a group
+  /// that never set them uses the defaults.
+  static const kDefaultServices = ['Shares', 'Mandatory Savings', 'Social Fund', 'Loans', 'Fines'];
+  List<String> get enabledServices {
+    final raw = group?['enabledServices'];
+    if (raw is! List) return kDefaultServices;
+    return [for (final s in raw) '$s'];
+  }
+
+  bool serviceEnabled(String service) => enabledServices.contains(service);
+  bool get savingsEnabled =>
+      serviceEnabled('Mandatory Savings') || serviceEnabled('Voluntary Savings');
+
+  /// What a new loan of [amount] will cost under the current rules: flat
+  /// interest (principal × rate / 100), charged once at issue.
+  ({double interest, double totalDue}) loanPreview(double amount) {
+    final interest = (amount * loanInterestRate / 100 * 100).round() / 100;
+    return (interest: interest, totalDue: amount + interest);
+  }
+
+  /// The group's rules as the server normalises them:
+  /// `{rules, canEdit, services, note}`.
+  Future<Map<String, dynamic>> fetchGroupRules() async {
+    final raw = await _restGet('/api/main/group/rules');
+    return raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+  }
+
+  /// Saves rule changes (the server validates; its message is thrown), then
+  /// reloads the group so every screen uses the new values.
+  Future<Map<String, dynamic>> saveGroupRules(Map<String, dynamic> rules) async {
+    final saved = await _restPost('/api/main/group/rules', rules);
+    await checkGroupAssignment(refresh: true);
+    return saved;
   }
 
   int get maxLoanPeriodMonths {
@@ -431,8 +474,9 @@ class AppState {
   /// group data (`/graphql`). Kept as a separate name because several
   /// screens already call it; there is no working `/api/v1/group` endpoint
   /// on the live backend for the old [api] client this used to call.
-  Future<Map<String, dynamic>?> fetchGroup({bool refresh = false}) async {
-    await checkGroupAssignment(refresh: refresh);
+  Future<Map<String, dynamic>?> fetchGroup(
+      {bool refresh = false, bool throwOnError = false}) async {
+    await checkGroupAssignment(refresh: refresh, throwOnError: throwOnError);
     return group;
   }
 
@@ -441,10 +485,13 @@ class AppState {
   // ---------------------------------------------------------------------------
 
   Future<List<Map<String, dynamic>>> fetchMembers(
-      {bool refresh = false}) async {
+      {bool refresh = false, bool throwOnError = false}) async {
     if (members.isNotEmpty && !refresh) return members;
     final groupId = group?['id'] as String?;
-    if (groupId == null) return members;
+    if (groupId == null) {
+      if (throwOnError) throw GraphQLException(tr('No group assigned yet'));
+      return members;
+    }
     try {
       final data = await gql.query(
         r'''
@@ -466,7 +513,8 @@ class AppState {
           .map((e) => Map<String, dynamic>.from(e as Map))
           .toList(growable: false);
     } catch (_) {
-      // keep whatever was cached
+      // keep whatever was cached (reports ask for the error instead)
+      if (throwOnError) rethrow;
     }
     return members;
   }
@@ -584,11 +632,14 @@ class AppState {
   }
 
   Future<List<Map<String, dynamic>>> fetchMeetings(
-      {bool refresh = false}) async {
+      {bool refresh = false, bool throwOnError = false}) async {
     if (meetings.isNotEmpty && !refresh) return meetings;
     try {
       meetings = await _list('/meetings');
-    } catch (_) {}
+    } catch (_) {
+      // Callers that must not work from stale data (reports) get the error.
+      if (throwOnError) rethrow;
+    }
     return meetings;
   }
 
@@ -680,11 +731,14 @@ class AppState {
   }
 
   Future<List<Map<String, dynamic>>> fetchTransactions(
-      {bool refresh = false}) async {
+      {bool refresh = false, bool throwOnError = false}) async {
     if (transactions.isNotEmpty && !refresh) return transactions;
     try {
       transactions = await _list('/transactions');
-    } catch (_) {}
+    } catch (_) {
+      // Callers that must not work from stale data (reports) get the error.
+      if (throwOnError) rethrow;
+    }
     return transactions;
   }
 
@@ -771,11 +825,14 @@ class AppState {
     return null;
   }
 
-  Future<List<Map<String, dynamic>>> fetchLoans({bool refresh = false}) async {
+  Future<List<Map<String, dynamic>>> fetchLoans({bool refresh = false, bool throwOnError = false}) async {
     if (loans.isNotEmpty && !refresh) return loans;
     try {
       loans = await _list('/loans');
-    } catch (_) {}
+    } catch (_) {
+      // Callers that must not work from stale data (reports) get the error.
+      if (throwOnError) rethrow;
+    }
     return loans;
   }
 
@@ -840,11 +897,14 @@ class AppState {
     }
   }
 
-  Future<List<Map<String, dynamic>>> fetchFines({bool refresh = false}) async {
+  Future<List<Map<String, dynamic>>> fetchFines({bool refresh = false, bool throwOnError = false}) async {
     if (fines.isNotEmpty && !refresh) return fines;
     try {
       fines = await _list('/fines');
-    } catch (_) {}
+    } catch (_) {
+      // Callers that must not work from stale data (reports) get the error.
+      if (throwOnError) rethrow;
+    }
     return fines;
   }
 
@@ -917,11 +977,14 @@ class AppState {
   }
 
   Future<List<Map<String, dynamic>>> fetchSmsActivity(
-      {bool refresh = false}) async {
+      {bool refresh = false, bool throwOnError = false}) async {
     if (smsActivity.isNotEmpty && !refresh) return smsActivity;
     try {
       smsActivity = await _list('/sms/activity');
-    } catch (_) {}
+    } catch (_) {
+      // Callers that must not work from stale data (reports) get the error.
+      if (throwOnError) rethrow;
+    }
     return smsActivity;
   }
 
@@ -1009,11 +1072,14 @@ class AppState {
 
   List<Map<String, dynamic>> govLoans = [];
 
-  Future<List<Map<String, dynamic>>> fetchGovLoans({bool refresh = false}) async {
+  Future<List<Map<String, dynamic>>> fetchGovLoans({bool refresh = false, bool throwOnError = false}) async {
     if (govLoans.isNotEmpty && !refresh) return govLoans;
     try {
       govLoans = await _list('/gov-loans');
-    } catch (_) {}
+    } catch (_) {
+      // Callers that must not work from stale data (reports) get the error.
+      if (throwOnError) rethrow;
+    }
     return govLoans;
   }
 

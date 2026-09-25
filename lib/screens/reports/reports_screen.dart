@@ -87,7 +87,7 @@ class ReportsScreen extends StatelessWidget {
                     _ReportRow(
                       icon: Icons.gavel_outlined,
                       title: tr('Fines Report'),
-                      onTap: () => _openReport(context, 'fines'),
+                      onTap: () => _openReport(context, 'fines-outstanding'),
                       color: AppColors.danger,
                     ),
                     const Divider(height: 1, indent: 56),

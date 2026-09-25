@@ -1,7 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../router/app_router.dart';
 import '../../services/app_data.dart';
+import '../../services/report_data.dart';
 import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
 import '../../ui/ui.dart';
@@ -51,9 +52,10 @@ class _LoansListScreenState extends State<LoansListScreen>
       (m) => m['id'] == memberId,
       orElse: () => const {},
     );
-    final name = [m['firstName'], m['lastName']]
-        .where((s) => (s ?? '').toString().isNotEmpty)
-        .join(' ');
+    final name = [
+      m['firstName'],
+      m['lastName'],
+    ].where((s) => (s ?? '').toString().isNotEmpty).join(' ');
     return name.isEmpty ? tr('Unknown member') : name;
   }
 
@@ -63,13 +65,16 @@ class _LoansListScreenState extends State<LoansListScreen>
     final active = _loans.where((l) => l['status'] == 'active').toList();
     final outstanding = active.fold<double>(
       0,
-      (sum, l) =>
-          sum + ((l['amount'] as num? ?? 0) - (l['amountRepaid'] as num? ?? 0)),
+      (sum, l) => sum + loanBalance(l),
     );
-    final totalLoaned =
-        _loans.fold<double>(0, (sum, l) => sum + (l['amount'] as num? ?? 0));
+    final totalLoaned = _loans.fold<double>(
+      0,
+      (sum, l) => sum + (l['amount'] as num? ?? 0),
+    );
     final totalRepaid = _loans.fold<double>(
-        0, (sum, l) => sum + (l['amountRepaid'] as num? ?? 0));
+      0,
+      (sum, l) => sum + (l['amountRepaid'] as num? ?? 0),
+    );
 
     return Scaffold(
       backgroundColor: AppColors.cream,
@@ -83,16 +88,17 @@ class _LoansListScreenState extends State<LoansListScreen>
               HxHeader(
                 title: tr('Loans'),
                 actions: [
-                  HxIconButton(
-                    icon: Icons.add_rounded,
-                    tooltip: tr('Record loan'),
-                    onPressed: () {
-                      Navigator.of(context).pushNamed(
-                        AppRouter.recordLoan,
-                        arguments: _meetingId,
-                      );
-                    },
-                  ),
+                  if (state.serviceEnabled('Loans'))
+                    HxIconButton(
+                      icon: Icons.add_rounded,
+                      tooltip: tr('Record loan'),
+                      onPressed: () {
+                        Navigator.of(context).pushNamed(
+                          AppRouter.recordLoan,
+                          arguments: _meetingId,
+                        );
+                      },
+                    ),
                 ],
               ),
               const SizedBox(height: AppSpace.x16),
@@ -155,13 +161,16 @@ class _LoansListScreenState extends State<LoansListScreen>
                         for (var i = 0; i < _loans.length; i++) ...[
                           if (i > 0) const Divider(height: 1, indent: 64),
                           _LoanRow(
-                            name: _memberName(_loans[i]['memberId']?.toString()),
+                            name: _memberName(
+                              _loans[i]['memberId']?.toString(),
+                            ),
                             loan: _loans[i],
                             state: state,
                             onTap: () {
                               Navigator.of(context).pushNamed(
                                 AppRouter.loanDetailsPath(
-                                    _loans[i]['id']?.toString() ?? ''),
+                                  _loans[i]['id']?.toString() ?? '',
+                                ),
                                 arguments: _meetingId,
                               );
                             },

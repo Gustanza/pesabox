@@ -4,18 +4,11 @@ import 'package:http/http.dart' as http;
 
 import 'app_data.dart';
 import '../i18n/i18n.dart';
+import 'api_base.dart';
 
-/// Resolves the base URL of the PesaBox Go backend.
-///
-/// Defaults to the live VPS deployment so the app talks to the real backend
-/// on every platform without extra setup. `--dart-define=API_BASE_URL=...`
-/// still overrides this (e.g. for pointing back at a local dev server:
-/// `flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8090`).
-String resolveApiBaseUrl() {
-  const fromEnv = String.fromEnvironment('API_BASE_URL');
-  if (fromEnv.isNotEmpty) return fromEnv;
-  return 'http://161.97.99.40:8090';
-}
+/// Base URL of the HelaBox Go backend — local server in debug runs, live
+/// server in release builds (see api_base.dart).
+String resolveApiBaseUrl() => apiBaseUrl();
 
 /// Thin GraphQL client for the real PesaBox Go backend. Sessions are carried
 /// as `Authorization: Bearer <accessToken>` rather than cookies — cookies

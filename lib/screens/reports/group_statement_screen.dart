@@ -3,17 +3,24 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../i18n/i18n.dart';
 import '../../services/app_data.dart';
+import '../../services/report_data.dart';
 import '../../services/report_service.dart';
 import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 
 /// The group's statement: cycle progress and totals, all from live data.
 class GroupStatementScreen extends StatefulWidget {
-  const GroupStatementScreen({super.key, this.service});
+  const GroupStatementScreen({super.key, this.service, this.source});
 
   /// Injectable for tests; the app builds the file from live data.
   final ReportService? service;
+
+  /// Where the figures come from. The app uses the live data with errors
+  /// surfaced ([AppStateReportSource]), so a failed download shows an error
+  /// instead of old or empty numbers.
+  final ReportSource? source;
 
   @override
   State<GroupStatementScreen> createState() => _GroupStatementScreenState();
@@ -21,13 +28,18 @@ class GroupStatementScreen extends StatefulWidget {
 
 class _GroupStatementScreenState extends State<GroupStatementScreen>
     with AutoRefreshOnPop {
-  late final ReportService _service = widget.service ?? LocalReportService();
+  late final ReportSource _source = widget.source ?? const AppStateReportSource();
+  late final ReportService _service = widget.service ?? LocalReportService(source: _source);
 
   bool _loading = true;
   bool _saving = false;
+  String? _error;
   int _meetingsHeld = 0;
-  double _loansDisbursed = 0;
-  double _loansRepaid = 0;
+  Map<String, dynamic>? _group;
+
+  /// Computed from the non-reversed transactions and non-cancelled loans
+  /// (never from the group's stored running totals, which can drift).
+  GroupFigures _fig = GroupFigures.compute();
 
   @override
   void initState() {
@@ -39,20 +51,39 @@ class _GroupStatementScreenState extends State<GroupStatementScreen>
   void onReturnedToScreen() => _load();
 
   Future<void> _load() async {
-    final app = AppState.I;
-    // each fetch keeps its cached value if the server call fails
-    await app.fetchGroup(refresh: true);
-    final meetings = await app.fetchMeetings(refresh: true);
-    final loans = await app.fetchLoans(refresh: true);
-    if (!mounted) return;
-    double sum(String k) => loans.fold<double>(
-        0, (s, l) => s + (l[k] is num ? (l[k] as num).toDouble() : 0));
     setState(() {
-      _meetingsHeld = meetings.where((m) => m['status'] == 'completed').length;
-      _loansDisbursed = sum('amount');
-      _loansRepaid = sum('amountRepaid');
-      _loading = false;
+      _loading = true;
+      _error = null;
     });
+    try {
+      final group = await _source.group();
+      final results = await Future.wait([
+        _source.meetings(),
+        _source.loans(),
+        _source.transactions(),
+        _source.members(),
+        _source.govLoans(),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _group = group;
+        _meetingsHeld = results[0].where((m) => m['status'] == 'completed').length;
+        _fig = GroupFigures.compute(
+          loans: results[1], // cancelled loans are skipped inside
+          transactions: results[2],
+          members: results[3],
+          govLoans: results[4],
+        );
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      // Never show stale or empty figures as if they were current.
+      setState(() {
+        _error = tr('Could not load the data for the report: {0}', ['$e']);
+        _loading = false;
+      });
+    }
   }
 
   Future<void> _download() async {
@@ -60,7 +91,7 @@ class _GroupStatementScreenState extends State<GroupStatementScreen>
     setState(() => _saving = true);
     try {
       final file = await _service.export(
-        datasets: const ['group-summary', 'loans'],
+        datasets: const ['group-summary', 'loans', 'government-loans'],
         columns: const {},
         format: 'pdf',
       );
@@ -79,10 +110,34 @@ class _GroupStatementScreenState extends State<GroupStatementScreen>
     }
   }
 
+  String _v(num n) => _loading ? '…' : (_error != null ? '—' : AppState.I.money(n));
+
+  Widget _errorCard() => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: AppRadius.md,
+          border: Border.all(color: AppColors.danger),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(_error!, style: GoogleFonts.inter(fontSize: 13, color: AppColors.danger)),
+            const SizedBox(height: 12),
+            HxButton(
+              text: tr('Try again'),
+              variant: HxButtonVariant.secondary,
+              onPressed: _load,
+            ),
+          ],
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     final app = AppState.I;
-    final group = app.group;
+    final group = _group ?? app.group;
     final cycle = (group?['cycleCurrent'] as num?)?.toInt();
     final cycleTotal = (group?['cycleTotal'] as num?)?.toInt();
     final held = cycleTotal != null && cycleTotal > 0
@@ -98,8 +153,15 @@ class _GroupStatementScreenState extends State<GroupStatementScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-              AuthHeader(title: tr('Group Statement'), subtitle: app.groupName),
+              AuthHeader(
+                title: tr('Group Statement'),
+                subtitle: (group?['name'] as String?) ?? app.groupName,
+              ),
               const SizedBox(height: 20),
+              if (_error != null) ...[
+                _errorCard(),
+                const SizedBox(height: 16),
+              ],
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -128,7 +190,12 @@ class _GroupStatementScreenState extends State<GroupStatementScreen>
                       children: [
                         Expanded(child: _InverseStat(label: tr('Meetings held'), value: _loading ? '…' : held)),
                         const SizedBox(width: 10),
-                        Expanded(child: _InverseStat(label: tr('Share value'), value: app.money(app.shareValue))),
+                        Expanded(
+                          child: _InverseStat(
+                            label: tr('Share value'),
+                            value: app.money((group?['shareValue'] as num?) ?? app.shareValue),
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -145,28 +212,32 @@ class _GroupStatementScreenState extends State<GroupStatementScreen>
                 ),
                 child: Column(
                   children: [
-                    _KVRow(label: tr('Total contributions'), value: app.money(app.groupSavings)),
+                    _KVRow(label: tr('Total contributions'), value: _v(_fig.savings)),
                     const Divider(height: 24),
-                    _KVRow(label: tr('Total shares'), value: app.money(app.groupShares)),
+                    _KVRow(label: tr('Total shares'), value: _v(_fig.shares)),
                     const Divider(height: 24),
-                    _KVRow(label: tr('Social fund'), value: app.money(app.groupSocialFund)),
+                    _KVRow(label: tr('Social fund'), value: _v(_fig.socialFund)),
                     const Divider(height: 24),
-                    _KVRow(label: tr('Loans disbursed'), value: _loading ? '…' : app.money(_loansDisbursed)),
+                    _KVRow(label: tr('Loans disbursed'), value: _v(_fig.loansDisbursed)),
                     const Divider(height: 24),
-                    _KVRow(label: tr('Loans outstanding'), value: app.money(app.groupLoansOut)),
+                    _KVRow(label: tr('Loans outstanding'), value: _v(_fig.loansOutstanding)),
                     const Divider(height: 24),
-                    _KVRow(label: tr('Loans repaid'), value: _loading ? '…' : app.money(_loansRepaid)),
+                    _KVRow(label: tr('Loans repaid'), value: _v(_fig.loansRepaid)),
                     const Divider(height: 24),
-                    _KVRow(label: tr('Total fines'), value: app.money(app.groupFines)),
+                    _KVRow(label: tr('Total fines'), value: _v(_fig.fines)),
                     const Divider(height: 24),
-                    _KVRow(label: tr('Total expenses'), value: app.money(app.groupExpenses), strong: true),
+                    _KVRow(label: tr('Government loans received'), value: _v(_fig.govReceived)),
+                    const Divider(height: 24),
+                    _KVRow(label: tr('Government loans outstanding'), value: _v(_fig.govOutstanding)),
+                    const Divider(height: 24),
+                    _KVRow(label: tr('Total expenses'), value: _v(_fig.expenses), strong: true),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
               OutlineButton(
                 text: _saving ? tr('Preparing…') : tr('Download statement (PDF)'),
-                onPressed: _saving ? null : _download,
+                onPressed: (_saving || _error != null) ? null : _download,
               ),
               const SizedBox(height: 32),
             ],

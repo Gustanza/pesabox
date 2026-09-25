@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../router/app_router.dart';
+import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../../ui/ui.dart';
 
@@ -10,16 +11,22 @@ import '../../i18n/i18n.dart';
 class FinancialFeaturesScreen extends StatelessWidget {
   const FinancialFeaturesScreen({super.key});
 
-  static const List<(IconData, String, String)> _features = [
-    (Icons.savings_rounded, 'Savings', 'Track member savings contributions'),
-    (Icons.pie_chart_rounded, 'Shares', 'Manage group shares and dividends'),
-    (Icons.favorite_rounded, 'Social Fund', 'Emergency and welfare fund'),
-    (Icons.request_quote_rounded, 'Loans', 'Loan disbursement and tracking'),
-    (Icons.gavel_rounded, 'Fines', 'Track and manage fines'),
-    (Icons.card_membership_rounded, 'Membership Fee', 'One-time registration fees'),
-    (Icons.handshake_rounded, 'Other Contributions', 'Custom contribution types'),
-    (Icons.receipt_long_rounded, 'Group Expenses', 'Track group operational costs'),
+  // (icon, service name as stored in enabledServices — null = always on, title, subtitle)
+  static const List<(IconData, String?, String, String)> _features = [
+    (Icons.savings_rounded, 'Mandatory Savings', 'Savings', 'Track member savings contributions'),
+    (Icons.pie_chart_rounded, 'Shares', 'Shares', 'Manage group shares and dividends'),
+    (Icons.favorite_rounded, 'Social Fund', 'Social Fund', 'Emergency and welfare fund'),
+    (Icons.request_quote_rounded, 'Loans', 'Loans', 'Loan disbursement and tracking'),
+    (Icons.gavel_rounded, 'Fines', 'Fines', 'Track and manage fines'),
+    (Icons.card_membership_rounded, 'Membership Fee', 'Membership Fee', 'One-time registration fees'),
+    (Icons.receipt_long_rounded, null, 'Group Expenses', 'Track group operational costs'),
   ];
+
+  static bool _on(String? service) {
+    if (service == null) return true;
+    final state = AppState.I;
+    return service == 'Mandatory Savings' ? state.savingsEnabled : state.serviceEnabled(service);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +52,7 @@ class FinancialFeaturesScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: AppSpace.x20),
                 children: [
                   Text(
-                    tr('Your group starts with the financial tools below. You can fine-tune the limits and rules at any time.'),
+                    tr('These are the services your group uses. The Mwenyekiti can switch them on or off in the group rules.'),
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       color: AppColors.ink600,
@@ -62,14 +69,14 @@ class FinancialFeaturesScreen extends StatelessWidget {
                           Container(
                             width: 40,
                             height: 40,
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: AppColors.green100,
+                              color: _on(f.$2) ? AppColors.green100 : AppColors.line,
                             ),
-                            child: const Icon(
-                              Icons.check_rounded,
+                            child: Icon(
+                              _on(f.$2) ? Icons.check_rounded : Icons.close_rounded,
                               size: 20,
-                              color: AppColors.teal800,
+                              color: _on(f.$2) ? AppColors.teal800 : AppColors.ink400,
                             ),
                           ),
                           const SizedBox(width: AppSpace.x12),
@@ -78,7 +85,7 @@ class FinancialFeaturesScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  tr(f.$2),
+                                  tr(f.$3),
                                   style: GoogleFonts.inter(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
@@ -87,7 +94,7 @@ class FinancialFeaturesScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  tr(f.$3),
+                                  _on(f.$2) ? tr(f.$4) : tr('Switched off'),
                                   style: GoogleFonts.inter(
                                     fontSize: 12,
                                     color: AppColors.ink400,

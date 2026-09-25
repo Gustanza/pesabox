@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../router/app_router.dart';
 import '../../services/app_data.dart';
 import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
@@ -58,8 +59,21 @@ class _RulesConstitutionScreenState extends State<RulesConstitutionScreen>
                         children: [
                           RulesSummaryCard(state: AppState.I),
                           const SizedBox(height: AppSpace.x16),
+                          if (AppState.I.can('group.settings')) ...[
+                            HxButton(
+                              text: tr('Edit rules'),
+                              icon: Icons.edit_outlined,
+                              onPressed: () async {
+                                await Navigator.of(context).pushNamed(AppRouter.rulesEdit);
+                                if (mounted) _load();
+                              },
+                            ),
+                            const SizedBox(height: AppSpace.x16),
+                          ],
                           HxHint(
-                            text: tr('These limits drive lending, savings and fines for every member. A Super Admin can change them.'),
+                            text: AppState.I.can('group.settings')
+                                ? tr('These limits drive lending, savings and fines for every member. Changes apply to new records only.')
+                                : tr('These limits drive lending, savings and fines for every member. The Mwenyekiti can change them.'),
                           ),
                         ],
                       ),

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../router/app_router.dart';
@@ -87,42 +87,48 @@ class _MeetingActivityScreenState extends State<MeetingActivityScreen> {
                       ),
                       child: Column(
                         children: [
-                          _ActivityRow(
-                            icon: Icons.savings_outlined,
-                            color: AppColors.green600,
-                            title: tr('Contributions'),
-                            subtitle: tr('Record member contributions'),
-                            onTap: () {
-                              Navigator.of(context).pushNamed(
-                                AppRouter.recordContributionPath(meetingId),
-                              );
-                            },
-                          ),
-                          const Divider(height: 1, indent: 56),
-                          _ActivityRow(
-                            icon: Icons.trending_up_rounded,
-                            color: AppColors.info,
-                            title: tr('Shares'),
-                            subtitle: tr('Record share purchases'),
-                            onTap: () {
-                              Navigator.of(context).pushNamed(
-                                AppRouter.recordSharesPath(meetingId),
-                              );
-                            },
-                          ),
-                          const Divider(height: 1, indent: 56),
-                          _ActivityRow(
-                            icon: Icons.people_outline,
-                            color: AppColors.gold500,
-                            title: tr('Social Fund'),
-                            subtitle: tr('Record social fund contributions'),
-                            onTap: () {
-                              Navigator.of(context).pushNamed(
-                                AppRouter.recordSocialFundPath(meetingId),
-                              );
-                            },
-                          ),
-                          const Divider(height: 1, indent: 56),
+                          if (AppState.I.savingsEnabled) ...[
+                            _ActivityRow(
+                              icon: Icons.savings_outlined,
+                              color: AppColors.green600,
+                              title: tr('Contributions'),
+                              subtitle: tr('Record member contributions'),
+                              onTap: () {
+                                Navigator.of(context).pushNamed(
+                                  AppRouter.recordContributionPath(meetingId),
+                                );
+                              },
+                            ),
+                            const Divider(height: 1, indent: 56),
+                          ],
+                          if (AppState.I.serviceEnabled('Shares')) ...[
+                            _ActivityRow(
+                              icon: Icons.trending_up_rounded,
+                              color: AppColors.info,
+                              title: tr('Shares'),
+                              subtitle: tr('Record share purchases'),
+                              onTap: () {
+                                Navigator.of(context).pushNamed(
+                                  AppRouter.recordSharesPath(meetingId),
+                                );
+                              },
+                            ),
+                            const Divider(height: 1, indent: 56),
+                          ],
+                          if (AppState.I.serviceEnabled('Social Fund')) ...[
+                            _ActivityRow(
+                              icon: Icons.people_outline,
+                              color: AppColors.gold500,
+                              title: tr('Social Fund'),
+                              subtitle: tr('Record social fund contributions'),
+                              onTap: () {
+                                Navigator.of(context).pushNamed(
+                                  AppRouter.recordSocialFundPath(meetingId),
+                                );
+                              },
+                            ),
+                            const Divider(height: 1, indent: 56),
+                          ],
                           _ActivityRow(
                             icon: Icons.account_balance_outlined,
                             color: AppColors.teal800,
@@ -183,9 +189,7 @@ class _MeetingActivityScreenState extends State<MeetingActivityScreen> {
                     backgroundColor: AppColors.green600,
                     foregroundColor: AppColors.white,
                     elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.md,
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
                   ),
                   child: Text(
                     tr('Review & close meeting'),

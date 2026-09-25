@@ -8,8 +8,21 @@ import '../../ui/ui.dart';
 
 import '../../i18n/i18n.dart';
 
-class ReviewRulesScreen extends StatelessWidget {
+/// Last step of the setup flow. The group already exists (it was created on
+/// the web), so this confirms its real rules; the Mwenyekiti can change them
+/// here through the same checked form as Rules & Constitution.
+class ReviewRulesScreen extends StatefulWidget {
   const ReviewRulesScreen({super.key});
+
+  @override
+  State<ReviewRulesScreen> createState() => _ReviewRulesScreenState();
+}
+
+class _ReviewRulesScreenState extends State<ReviewRulesScreen> {
+  Future<void> _edit() async {
+    await Navigator.of(context).pushNamed(AppRouter.rulesEdit);
+    if (mounted) setState(() {}); // AppState.group was refreshed on save
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,8 +52,16 @@ class ReviewRulesScreen extends StatelessWidget {
                   children: [
                     RulesSummaryCard(state: state),
                     const SizedBox(height: AppSpace.x16),
+                    if (state.can('group.settings')) ...[
+                      HxButton(
+                        text: tr('Edit rules'),
+                        variant: HxButtonVariant.secondary,
+                        onPressed: _edit,
+                      ),
+                      const SizedBox(height: AppSpace.x16),
+                    ],
                     HxHint(
-                      text: tr('These rules will apply to all members once the group is active.'),
+                      text: tr('These rules apply to every member. Changes apply to new records only.'),
                       icon: Icons.check_rounded,
                     ),
                   ],
@@ -51,7 +72,7 @@ class ReviewRulesScreen extends StatelessWidget {
               padding:
                   const EdgeInsets.fromLTRB(AppSpace.x20, 0, 20, 24),
               child: HxButton(
-                text: tr('Create group'),
+                text: tr('Finish'),
                 onPressed: () {
                   Navigator.pushNamed(context, AppRouter.groupReady);
                 },
@@ -77,6 +98,8 @@ class RulesSummaryCard extends StatelessWidget {
     final social = state.socialFundContribution;
     final interest = state.loanInterestRate;
     final months = state.maxLoanPeriodMonths;
+    final multiplier = state.maxLoanMultiplier;
+    String pct(double v) => v == v.roundToDouble() ? '${v.toInt()}%' : '$v%';
 
     return HxSurface(
       child: Column(
@@ -97,8 +120,8 @@ class RulesSummaryCard extends StatelessWidget {
           ),
           const Divider(height: 24),
           _ReviewRow(
-            label: tr('Loan interest'),
-            value: interest > 0 ? '$interest%' : tr('Not set'),
+            label: tr('Loan interest (flat)'),
+            value: pct(interest),
           ),
           const Divider(height: 24),
           _ReviewRow(
@@ -109,9 +132,28 @@ class RulesSummaryCard extends StatelessWidget {
           ),
           const Divider(height: 24),
           _ReviewRow(
-            label: tr('Max shares'),
-            value: '${state.maxShares}',
+            label: tr('Shares per meeting'),
+            value: '${state.minShares} – ${state.maxShares}',
           ),
+          const Divider(height: 24),
+          _ReviewRow(
+            label: tr('Max loan'),
+            value: multiplier > 0
+                ? tr('{0}× savings + shares', [multiplier == multiplier.roundToDouble() ? multiplier.toInt() : multiplier])
+                : tr('No limit'),
+          ),
+          const Divider(height: 24),
+          _ReviewRow(
+            label: tr('Services'),
+            value: state.enabledServices.map(tr).join(', '),
+          ),
+          for (final r in state.fineReasons) ...[
+            const Divider(height: 24),
+            _ReviewRow(
+              label: tr('Fine: {0}', [r['reason'] ?? '']),
+              value: state.money((r['amount'] as num?) ?? 0),
+            ),
+          ],
         ],
       ),
     );
@@ -129,14 +171,17 @@ class _ReviewRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          tr(label),
-          style: GoogleFonts.inter(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: AppColors.ink400,
+        Flexible(
+          child: Text(
+            tr(label),
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: AppColors.ink400,
+            ),
           ),
         ),
+        const SizedBox(width: 12),
         Text(
           tr(value),
           style: GoogleFonts.inter(
