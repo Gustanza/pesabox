@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pesa_box_app/i18n/i18n.dart';
 import 'package:pesa_box_app/screens/group/rules_edit_screen.dart';
 import 'package:pesa_box_app/screens/loans/record_loan_screen.dart';
+import 'package:pesa_box_app/screens/meetings/record_contribution_screen.dart';
+import 'package:pesa_box_app/screens/meetings/record_social_fund_screen.dart';
 import 'package:pesa_box_app/services/app_data.dart';
 import 'package:pesa_box_app/services/graphql_client.dart';
 import 'package:pesa_box_app/services/report_data.dart';
@@ -139,5 +141,72 @@ void main() {
     await tester.tap(find.text('Ghairi'));
     await tester.pumpAndSettle();
     expect(find.text('Thibitisha mkopo'), findsNothing);
+  });
+
+  testWidgets('a rules screen that cannot load shows an error and a retry, not an empty form', (tester) async {
+    var calls = 0;
+    await _pump(
+      tester,
+      RulesEditScreen(load: () async {
+        calls++;
+        if (calls == 1) throw const GraphQLException('Request failed (500)');
+        return _rulesResponse();
+      }),
+    );
+    expect(find.text('Imeshindwa kupakia kanuni za kikundi.'), findsOneWidget);
+    expect(find.byKey(const ValueKey('rule-loanInterestRate')), findsNothing);
+    expect(find.text('Hifadhi kanuni'), findsNothing);
+
+    await tester.tap(find.text('Jaribu tena'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('rule-loanInterestRate')), findsOneWidget);
+    expect(find.widgetWithText(TextField, '10'), findsOneWidget);
+  });
+
+  testWidgets('the social fund amount is fixed when the rules set one', (tester) async {
+    AppState.I.group = {'id': null, 'socialFundContribution': 2000};
+    AppState.I.members = [
+      {'id': 'm1', 'firstName': 'Asha', 'lastName': 'Juma'},
+    ];
+    addTearDown(() {
+      AppState.I.group = null;
+      AppState.I.members = [];
+    });
+    await _pump(tester, const RecordSocialFundScreen(meetingId: 'mt1'));
+    final field = tester.widget<TextField>(find.byKey(const ValueKey('social-fund-amount')));
+    expect(field.readOnly, isTrue);
+    expect(field.controller!.text, '2000');
+  });
+
+  testWidgets('contributions: mandatory is fixed, voluntary is free when both are on', (tester) async {
+    AppState.I.group = {
+      'id': null,
+      'mandatorySavingsAmount': 5000,
+      'enabledServices': ['Mandatory Savings', 'Voluntary Savings'],
+    };
+    AppState.I.members = [
+      {'id': 'm1', 'firstName': 'Asha', 'lastName': 'Juma'},
+    ];
+    addTearDown(() {
+      AppState.I.group = null;
+      AppState.I.members = [];
+    });
+    await _pump(tester, const RecordContributionScreen(meetingId: 'mt1'));
+    expect(find.byKey(const ValueKey('savings-kind')), findsOneWidget);
+    var field = tester.widget<TextField>(find.byKey(const ValueKey('contribution-amount')));
+    expect(field.readOnly, isTrue);
+    expect(field.controller!.text, '5000');
+
+    await tester.tap(find.text('Hiari'));
+    await tester.pumpAndSettle();
+    field = tester.widget<TextField>(find.byKey(const ValueKey('contribution-amount')));
+    expect(field.readOnly, isFalse);
+    expect(field.controller!.text, '');
+
+    // Only one kind on: no choice shown.
+    AppState.I.group = {'id': null, 'mandatorySavingsAmount': 5000, 'enabledServices': ['Voluntary Savings']};
+    await _pump(tester, const RecordContributionScreen(meetingId: 'mt2'));
+    expect(find.byKey(const ValueKey('savings-kind')), findsNothing);
+    expect(find.text('Akiba ya hiari'), findsOneWidget);
   });
 }

@@ -433,8 +433,9 @@ final List<ReportDef> kReportDefs = [
           'Loan #': _s(l['loanNumber']),
           'Borrower': _name(l),
           'Principal': _n(l['amount']),
-          'Interest': loanInterest(l),
-          'Total Due': loanTotalDue(l),
+          // A cancelled loan was never lent: no charged terms shown.
+          'Interest': cancelled ? null : loanInterest(l),
+          'Total Due': cancelled ? null : loanTotalDue(l),
           'Repaid': _n(l['amountRepaid']), // the real amount, even when cancelled
           'Balance': loanBalance(l), // 0 for a cancelled loan
           'Status': _s(l['status']),

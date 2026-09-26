@@ -53,6 +53,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     await Future.wait([
       AppState.I.fetchTransactions(refresh: refresh),
       AppState.I.fetchMeetings(refresh: refresh),
+      AppState.I.fetchLoans(refresh: refresh), // loans outstanding card
     ]);
     if (mounted) setState(() => _loading = false);
   }

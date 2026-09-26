@@ -24,6 +24,8 @@ class _RecordContributionScreenState extends State<RecordContributionScreen> {
   Map<String, dynamic>? _meeting;
   String? _memberId;
   String _method = 'Cash';
+  // 'mandatory' or 'voluntary' (group rules); both only when both are on.
+  late String _kind = AppState.I.serviceEnabled('Mandatory Savings') ? 'mandatory' : 'voluntary';
   bool _loading = true;
   bool _submitting = false;
 
@@ -37,10 +39,7 @@ class _RecordContributionScreenState extends State<RecordContributionScreen> {
     final state = AppState.I;
     final members = await state.fetchMembers();
     final meeting = await state.meetingById(widget.meetingId);
-    final mandatory = state.mandatorySavingsAmount;
-    if (mandatory > 0) {
-      _amountController.text = mandatory.toStringAsFixed(0);
-    }
+    _applyKind(_kind);
     if (!mounted) return;
     setState(() {
       _members = members;
@@ -48,6 +47,16 @@ class _RecordContributionScreenState extends State<RecordContributionScreen> {
       _memberId = members.isNotEmpty ? members.first['id']?.toString() : null;
       _loading = false;
     });
+  }
+
+  bool get _fixedAmount => _kind == 'mandatory' && AppState.I.mandatorySavingsAmount > 0;
+
+  /// Mandatory savings are the group's fixed amount; voluntary savings are
+  /// whatever the member brings.
+  void _applyKind(String kind) {
+    _kind = kind;
+    final mandatory = AppState.I.mandatorySavingsAmount;
+    _amountController.text = kind == 'mandatory' && mandatory > 0 ? mandatory.toStringAsFixed(0) : '';
   }
 
   String get _meetingTitle {
@@ -85,6 +94,7 @@ class _RecordContributionScreenState extends State<RecordContributionScreen> {
         meetingId: widget.meetingId,
         amount: amount,
         method: _method,
+        savingsType: _kind,
       );
       if (!mounted) return;
       Navigator.of(context).pop();
@@ -104,6 +114,7 @@ class _RecordContributionScreenState extends State<RecordContributionScreen> {
   @override
   Widget build(BuildContext context) {
     final mandatory = AppState.I.mandatorySavingsAmount;
+    final both = AppState.I.serviceEnabled('Mandatory Savings') && AppState.I.serviceEnabled('Voluntary Savings');
 
     return Scaffold(
       backgroundColor: AppColors.cream,
@@ -145,7 +156,25 @@ class _RecordContributionScreenState extends State<RecordContributionScreen> {
                               onChanged: (v) => setState(() => _memberId = v),
                             ),
                     ),
-                    if (mandatory > 0) ...[
+                    if (both) ...[
+                      const SizedBox(height: 16),
+                      SegmentedButton<String>(
+                        key: const ValueKey('savings-kind'),
+                        segments: [
+                          ButtonSegment(value: 'mandatory', label: Text(tr('Mandatory'))),
+                          ButtonSegment(value: 'voluntary', label: Text(tr('Voluntary'))),
+                        ],
+                        selected: {_kind},
+                        onSelectionChanged: (v) => setState(() => _applyKind(v.first)),
+                      ),
+                    ] else ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        _kind == 'mandatory' ? tr('Mandatory savings') : tr('Voluntary savings'),
+                        style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.ink700),
+                      ),
+                    ],
+                    if (_kind == 'mandatory' && mandatory > 0) ...[
                       const SizedBox(height: 10),
                       Text(
                         tr('Mandatory savings: {0} per meeting', [AppState.I.money(mandatory)]),
@@ -159,7 +188,9 @@ class _RecordContributionScreenState extends State<RecordContributionScreen> {
                     _Field(
                       label: tr('Amount'),
                       child: TextField(
+                        key: const ValueKey('contribution-amount'),
                         controller: _amountController,
+                        readOnly: _fixedAmount,
                         keyboardType: TextInputType.number,
                         decoration:
                             InputDecoration(hintText: tr('Enter amount')),

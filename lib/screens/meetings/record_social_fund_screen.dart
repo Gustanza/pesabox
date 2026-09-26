@@ -153,11 +153,19 @@ class _RecordSocialFundScreenState extends State<RecordSocialFundScreen> {
                     const SizedBox(height: 16),
                     _Field(
                       label: tr('Amount'),
+                      // The group's rules fix the social fund amount; the
+                      // server refuses any other amount.
                       child: TextField(
+                        key: const ValueKey('social-fund-amount'),
                         controller: _amountController,
+                        readOnly: AppState.I.socialFundContribution > 0,
                         keyboardType: TextInputType.number,
-                        decoration:
-                            InputDecoration(hintText: tr('Enter amount')),
+                        decoration: InputDecoration(
+                          hintText: tr('Enter amount'),
+                          helperText: AppState.I.socialFundContribution > 0
+                              ? tr('Set by the group rules')
+                              : null,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),

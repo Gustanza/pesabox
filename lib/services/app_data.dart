@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'graphql_client.dart';
+import 'report_data.dart' show loanBalance;
 import '../i18n/i18n.dart';
 import '../brand.dart';
 
@@ -385,7 +386,13 @@ class AppState {
   double get groupSavings => _num(group, 'totalSavings');
   double get groupShares => _num(group, 'totalShares');
   double get groupSocialFund => _num(group, 'totalSocialFund');
-  double get groupLoansOut => _num(group, 'totalLoans');
+  /// What members owe now: the balances of the loans themselves (principal
+  /// + the interest fixed at issue − repaid), like the server's reports. The
+  /// stored running total is only a fallback until the loans are loaded.
+  double get groupLoansOut => _loansLoaded
+      ? loans.fold<double>(0, (s, l) => s + loanBalance(l).toDouble())
+      : _num(group, 'totalLoans');
+  bool _loansLoaded = false;
   double get groupFines => _num(group, 'totalFines');
   double get groupExpenses => _num(group, 'totalExpenses');
   int get memberCount =>
@@ -459,6 +466,8 @@ class AppState {
   /// the group hasn't configured its own yet.
   List<Map<String, dynamic>> get fineReasons {
     final raw = group?['fineReasons'];
+    // Configured as an empty list (only allowed while Fines is off): none.
+    if (raw is List && raw.isEmpty) return const [];
     if (raw is List && raw.isNotEmpty) {
       final parsed = raw
           .whereType<Map>()
@@ -753,8 +762,11 @@ class AppState {
     double? amount,
     int? shareCount,
     String method = 'Cash',
+    String? savingsType,
   }) async {
     final created = await _restPost('/api/main/transactions', {
+      // mandatory / voluntary savings (contributions only)
+      if (type == 'contribution' && savingsType is String) 'savingsType': savingsType,
       'type': type,
       'memberId': memberId,
       if (meetingId != null && meetingId.isNotEmpty) 'meetingId': meetingId,
@@ -829,6 +841,7 @@ class AppState {
     if (loans.isNotEmpty && !refresh) return loans;
     try {
       loans = await _list('/loans');
+      _loansLoaded = true;
     } catch (_) {
       // Callers that must not work from stale data (reports) get the error.
       if (throwOnError) rethrow;

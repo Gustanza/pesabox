@@ -96,8 +96,8 @@ class _OtpScreenState extends State<OtpScreen> {
     try {
       await AuthService.requestOtp(_phone!);
       _startTimer();
-    } catch (_) {
-      if (mounted) setState(() => _error = tr('Could not resend the code.'));
+    } catch (e) {
+      if (mounted) setState(() => _error = AuthService.refusalMessage(e) ?? tr('Could not resend the code.'));
     } finally {
       if (mounted) setState(() => _resending = false);
     }

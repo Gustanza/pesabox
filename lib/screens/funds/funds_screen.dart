@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../services/app_data.dart';
@@ -32,6 +32,7 @@ class _FundsScreenState extends State<FundsScreen> with AutoRefreshOnPop {
     final state = AppState.I;
     await state.checkGroupAssignment(refresh: true);
     final txns = await state.fetchTransactions(refresh: true);
+    await state.fetchLoans(refresh: true); // loans outstanding = the loans' balances
     if (!mounted) return;
     final now = DateTime.now();
     setState(() {

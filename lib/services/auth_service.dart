@@ -4,8 +4,9 @@ import '../i18n/i18n.dart';
 
 /// Registration and login are the same flow against the real backend: enter
 /// a phone number (requestOtp), verify the code that comes back (verifyOtp).
-/// The account is created automatically on first successful verification —
-/// there's no separate sign-up step or password.
+/// Only numbers the platform already knows get a code (an existing account, or
+/// the admin phone of a group) — the account itself is created on the first
+/// successful verification. There's no separate sign-up step or password.
 class AuthService {
   AuthService._();
 
@@ -13,6 +14,20 @@ class AuthService {
     final trimmed = phone.trim();
     final isEmail = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(trimmed);
     return isEmail ? 'email' : 'phone';
+  }
+
+  /// Login is invite-only: the server refuses to send a code to a number that
+  /// hasn't been registered, or to a deactivated account. Returns the message
+  /// to show for such a refusal, or null for any other error.
+  static String? refusalMessage(Object error) {
+    final msg = error is GraphQLException ? error.message : '';
+    if (msg.toLowerCase().contains('not registered')) {
+      return tr('This phone number is not registered. Ask your group leader or administrator to add you.');
+    }
+    if (msg.toLowerCase().contains('deactivated')) {
+      return tr('This account has been deactivated. Contact your administrator.');
+    }
+    return null;
   }
 
   /// Sends (or resends) an OTP to [phone]. Returns true if the backend

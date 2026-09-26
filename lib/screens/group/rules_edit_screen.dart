@@ -40,6 +40,11 @@ class _Reason {
         amount = TextEditingController(text: _fmt(amount));
   final TextEditingController reason;
   final TextEditingController amount;
+
+  void dispose() {
+    reason.dispose();
+    amount.dispose();
+  }
 }
 
 String _fmt(Object? v) {
@@ -57,6 +62,7 @@ class _RulesEditScreenState extends State<RulesEditScreen> {
   bool _loading = true;
   bool _saving = false;
   String? _error;
+  String? _loadError; // the rules could not be loaded: no form, a retry
 
   @override
   void initState() {
@@ -70,8 +76,7 @@ class _RulesEditScreenState extends State<RulesEditScreen> {
       c.dispose();
     }
     for (final r in _reasons) {
-      r.reason.dispose();
-      r.amount.dispose();
+      r.dispose();
     }
     super.dispose();
   }
@@ -80,6 +85,7 @@ class _RulesEditScreenState extends State<RulesEditScreen> {
     setState(() {
       _loading = true;
       _error = null;
+      _loadError = null;
     });
     try {
       final data = await (widget.load ?? AppState.I.fetchGroupRules)();
@@ -88,6 +94,9 @@ class _RulesEditScreenState extends State<RulesEditScreen> {
       setState(() {
         for (final f in kRuleFields) {
           _fields[f.$1]!.text = _fmt(rules[f.$1]);
+        }
+        for (final r in _reasons) {
+          r.dispose();
         }
         _reasons
           ..clear()
@@ -104,7 +113,7 @@ class _RulesEditScreenState extends State<RulesEditScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = '$e';
+        _loadError = '$e';
         _loading = false;
       });
     }
@@ -171,6 +180,28 @@ class _RulesEditScreenState extends State<RulesEditScreen> {
                       padding: EdgeInsets.all(AppSpace.x20),
                       child: HxSkeletonList(rows: 8),
                     )
+                  : _loadError != null
+                  ? Padding(
+                      padding: const EdgeInsets.all(AppSpace.x20),
+                      child: HxSurface(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(tr('Could not load the group rules.'),
+                                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.danger)),
+                            const SizedBox(height: 6),
+                            Text(_loadError!, style: GoogleFonts.inter(fontSize: 12.5, color: AppColors.ink600)),
+                            const SizedBox(height: 14),
+                            HxButton(
+                              text: tr('Try again'),
+                              variant: HxButtonVariant.secondary,
+                              onPressed: _load,
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
                   : ListView(
                       padding: const EdgeInsets.fromLTRB(AppSpace.x20, 8, AppSpace.x20, AppSpace.x24),
                       children: [
@@ -218,7 +249,7 @@ class _RulesEditScreenState extends State<RulesEditScreen> {
                                 IconButton(
                                   tooltip: tr('Remove'),
                                   icon: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
-                                  onPressed: () => setState(() => _reasons.removeAt(i)),
+                                  onPressed: () => setState(() => _reasons.removeAt(i).dispose()),
                                 ),
                               ],
                             ),

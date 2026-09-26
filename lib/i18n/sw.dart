@@ -23,6 +23,10 @@ const Map<String, String> kSw = {
   'Could not reach the server. Check your connection.':
       'Imeshindwa kufikia seva. Angalia muunganisho wako.',
   'Could not resend the code.': 'Imeshindwa kutuma nambari tena.',
+  'This phone number is not registered. Ask your group leader or administrator to add you.':
+      'Namba hii ya simu haijasajiliwa. Muombe kiongozi wa kikundi au msimamizi akuongeze.',
+  'This account has been deactivated. Contact your administrator.':
+      'Akaunti hii imezimwa. Wasiliana na msimamizi.',
   'Enter the {0}-digit code': 'Weka nambari yenye tarakimu {0}',
   'Invalid or expired code': 'Nambari si sahihi au imeisha muda',
 
@@ -209,6 +213,12 @@ const Map<String, String> kSw = {
   'Repayment period': 'Muda wa marejesho',
   'Late loan repayment': 'Kuchelewa kurejesha mkopo',
   'Edit rules': 'Hariri kanuni',
+  'Set by the group rules': 'Imewekwa na kanuni za kikundi',
+  'Voluntary savings': 'Akiba ya hiari',
+  'Available to borrow': 'Kiasi anachoweza kukopa',
+  'Only active members can borrow.': 'Wanachama hai tu ndio wanaweza kukopa.',
+  'This member can borrow up to {0}.': 'Mwanachama huyu anaweza kukopa hadi {0}.',
+  'Could not load the group rules.': 'Imeshindwa kupakia kanuni za kikundi.',
   'Meeting Time Change': 'Mabadiliko ya Muda wa Mkutano',
   'New Savings Goal': 'Lengo Jipya la Akiba',
   'Cycle 1 Progress Update': 'Maendeleo ya Mzunguko wa 1',

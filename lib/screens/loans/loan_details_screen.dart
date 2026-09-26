@@ -240,12 +240,14 @@ class _KeyValueCard extends StatelessWidget {
           const Divider(height: 24),
           _KVRow(
             label: tr('Interest'),
-            value: loan['totalDue'] == null
+            value: loan['status'] == 'cancelled'
+                ? '—'
+                : loan['totalDue'] == null
                 ? tr('None (issued before interest was charged)')
                 : '${state.money(interest)} (${(loan['interestRate'] as num?)?.toStringAsFixed(0) ?? '0'}%)',
           ),
           const Divider(height: 24),
-          _KVRow(label: tr('Total to repay'), value: state.money(totalDue)),
+          _KVRow(label: tr('Total to repay'), value: loan['status'] == 'cancelled' ? '—' : state.money(totalDue)),
           const Divider(height: 24),
           _KVRow(label: tr('Duration'), value: '${state.maxLoanPeriodMonths} months'),
           const Divider(height: 24),

@@ -40,9 +40,9 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
       Navigator.of(context).pushNamed(AppRouter.otp, arguments: phone);
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
-      _toast(tr('Could not reach the server. Check your connection.'));
+      _toast(AuthService.refusalMessage(e) ?? tr('Could not reach the server. Check your connection.'));
     } finally {
       if (mounted) setState(() => _loading = false);
     }

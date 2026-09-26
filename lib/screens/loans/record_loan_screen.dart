@@ -65,13 +65,16 @@ class _RecordLoanScreenState extends State<RecordLoanScreen> {
 
   static String _rateText(double r) => r == r.roundToDouble() ? '${r.toInt()}' : '$r';
 
-  /// The group's loan limit for the chosen member (savings + shares × the
-  /// multiplier); the server enforces it.
-  double _maxFor(AppState state) {
-    final b = state.balanceFor(_memberId);
-    num v(String k) => (b?[k] as num?) ?? 0;
-    return (v('savings') + v('shares')).toDouble() * state.maxLoanMultiplier;
+  /// What the chosen member may borrow now (server-computed from the group
+  /// rules: savings + shares − withdrawals, × the multiplier, less what they
+  /// still owe). null = no limit.
+  double? _availableFor(AppState state) {
+    final v = state.balanceFor(_memberId)?['availableToBorrow'];
+    if (v is! num || v < 0) return null;
+    return v.toDouble();
   }
+
+  bool _canBorrow(AppState state) => state.balanceFor(_memberId)?['canBorrow'] != false;
 
   /// The member confirms what they will owe before the loan is issued.
   Future<bool> _confirm() async {
@@ -105,6 +108,11 @@ class _RecordLoanScreenState extends State<RecordLoanScreen> {
     }
     if (amount <= 0) {
       _showError(tr('Enter a valid amount'));
+      return;
+    }
+    final available = _availableFor(AppState.I);
+    if (available != null && amount > available) {
+      _showError(tr('This member can borrow up to {0}.', [AppState.I.money(available)]));
       return;
     }
     if (!await _confirm()) return;
@@ -231,11 +239,19 @@ class _RecordLoanScreenState extends State<RecordLoanScreen> {
                         label: tr('Repayment period'),
                         value: tr('{0} months', [state.maxLoanPeriodMonths]),
                       ),
-                      if (state.maxLoanMultiplier > 0) ...[
+                      if (_availableFor(state) != null) ...[
                         const Divider(height: 24, color: Color(0xFFC9E8D6)),
                         _EligRow(
-                          label: tr('Max for this member'),
-                          value: state.money(_maxFor(state)),
+                          key: const ValueKey('loan-available'),
+                          label: tr('Available to borrow'),
+                          value: state.money(_availableFor(state)!),
+                        ),
+                      ],
+                      if (!_canBorrow(state)) ...[
+                        const Divider(height: 24, color: Color(0xFFC9E8D6)),
+                        Text(
+                          tr('Only active members can borrow.'),
+                          style: GoogleFonts.inter(fontSize: 12.5, color: AppColors.danger),
                         ),
                       ],
                     ],
