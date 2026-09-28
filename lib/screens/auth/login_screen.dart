@@ -77,8 +77,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Center(
-                      child: BrandMark(size: 72, radius: 20, fontSize: 30),
+                    Center(
+                      child: Image.asset(
+                        kBrandLogoAsset,
+                        height: 96,
+                        semanticLabel: kBrandName,
+                      ),
                     ),
                     const SizedBox(height: 20),
                     Text(

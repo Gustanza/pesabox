@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../../ui/ui.dart';
+import 'record_saved.dart';
 import '../auth/auth_widgets.dart';
 
 import '../../i18n/i18n.dart';
@@ -75,6 +76,13 @@ class _RecordContributionScreenState extends State<RecordContributionScreen> {
       .where((s) => (s ?? '').toString().isNotEmpty)
       .join(' ');
 
+  String _memberNameById(String id) {
+    for (final m in _members) {
+      if (m['id']?.toString() == id) return _memberName(m);
+    }
+    return '';
+  }
+
   Future<void> _submit() async {
     final memberId = _memberId;
     final amount = double.tryParse(_amountController.text.trim());
@@ -88,7 +96,7 @@ class _RecordContributionScreenState extends State<RecordContributionScreen> {
     }
     setState(() => _submitting = true);
     try {
-      await AppState.I.recordTransaction(
+      final created = await AppState.I.recordTransaction(
         type: 'contribution',
         memberId: memberId,
         meetingId: widget.meetingId,
@@ -97,7 +105,15 @@ class _RecordContributionScreenState extends State<RecordContributionScreen> {
         savingsType: _kind,
       );
       if (!mounted) return;
-      Navigator.of(context).pop();
+      setState(() => _submitting = false);
+      await showRecordSaved(
+        context,
+        created: created,
+        title: 'Contribution recorded',
+        memberName: _memberNameById(memberId),
+        meetingTitle: _meetingTitle,
+        onAgain: () => setState(() => _applyKind(_kind)),
+      );
     } catch (e) {
       _showError(e.toString());
     } finally {

@@ -7,10 +7,10 @@
       "type": "dart"
     },
     {
-      "name": "HelaBox - LIVE server (161.97.99.40)",
+      "name": "HelaBox - LIVE server (157.245.46.244)",
       "request": "launch",
       "type": "dart",
-      "args": ["--dart-define=API_BASE_URL=http://161.97.99.40:8090"]
+      "args": ["--dart-define=API_BASE_URL=http://157.245.46.244:8090"]
     }
   ]
 }

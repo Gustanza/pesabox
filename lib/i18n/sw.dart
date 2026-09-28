@@ -809,6 +809,13 @@ const Map<String, String> kSw = {
   'Your group\'s financial rules are shown below. These limits drive lending, savings and fines for every member.': 'Kanuni za kifedha za kikundi chako ziko hapa chini. Viwango hivi vinaongoza mikopo, akiba na faini kwa kila mwanachama.',
   '{0} months': 'Miezi {0}',
   '{0} remaining': '{0} zimebaki',
+  // ---- Record saved popup
+  'Record another': 'Rekodi nyingine',
+  'Done': 'Maliza',
+  'View details': 'Angalia maelezo',
+  'Contribution recorded': 'Mchango umehifadhiwa',
+  'Shares recorded': 'Hisa zimehifadhiwa',
+  'Social fund recorded': 'Mfuko wa jamii umehifadhiwa',
 };
 
 /// English text for strings that are written in Swahili in the code, so the

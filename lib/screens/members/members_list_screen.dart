@@ -45,9 +45,11 @@ class _MembersListScreenState extends State<MembersListScreen>
     final q = _query.trim().toLowerCase();
     if (q.isEmpty) return _members;
     return _members
-        .where((m) =>
-            m.fullName.toLowerCase().contains(q) ||
-            m.phone.toLowerCase().contains(q))
+        .where(
+          (m) =>
+              m.fullName.toLowerCase().contains(q) ||
+              m.phone.toLowerCase().contains(q),
+        )
         .toList();
   }
 
@@ -94,10 +96,7 @@ class _MembersListScreenState extends State<MembersListScreen>
               ),
               const SizedBox(height: AppSpace.x16),
               TextField(
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: AppColors.ink900,
-                ),
+                style: GoogleFonts.inter(fontSize: 14, color: AppColors.ink900),
                 onChanged: (v) => setState(() => _query = v),
                 decoration: InputDecoration(
                   hintText: tr('Search members...'),
@@ -106,8 +105,10 @@ class _MembersListScreenState extends State<MembersListScreen>
                     color: AppColors.ink400,
                     size: 20,
                   ),
-                  prefixIconConstraints:
-                      const BoxConstraints(minWidth: 40, minHeight: 40),
+                  prefixIconConstraints: const BoxConstraints(
+                    minWidth: 40,
+                    minHeight: 40,
+                  ),
                 ),
               ),
               const SizedBox(height: AppSpace.x16),
@@ -160,36 +161,37 @@ class _MembersListScreenState extends State<MembersListScreen>
       );
     }
 
-    return HxSurface(
-      padding: const EdgeInsets.symmetric(vertical: AppSpace.x4),
-      child: ListView.separated(
-        padding: EdgeInsets.zero,
-        shrinkWrap: true,
-        itemCount: visible.length,
-        separatorBuilder: (_, _) => const Divider(
-          height: 1,
-          color: AppColors.line,
-          indent: 68,
+    // AnimatedSwitcher centres its child; the shrink-wrapped list belongs at
+    // the top, right under the search field.
+    return Align(
+      alignment: Alignment.topCenter,
+      child: HxSurface(
+        padding: const EdgeInsets.symmetric(vertical: AppSpace.x4),
+        child: ListView.separated(
+          padding: EdgeInsets.zero,
+          shrinkWrap: true,
+          itemCount: visible.length,
+          separatorBuilder: (_, _) =>
+              const Divider(height: 1, color: AppColors.line, indent: 68),
+          itemBuilder: (context, index) {
+            final member = visible[index];
+            return HxRow(
+              onTap: () {
+                Navigator.of(context)
+                    .pushNamed(AppRouter.memberDetailsPath(member.id));
+              },
+              leading: HxAvatar(initials: tr(member.initials)),
+              title: tr(member.fullName),
+              subtitle: tr(member.phone),
+              titleTrailing: _statusPill(member),
+              trailing: const Icon(
+                Icons.chevron_right_rounded,
+                size: 22,
+                color: AppColors.ink400,
+              ),
+            );
+          },
         ),
-        itemBuilder: (context, index) {
-          final member = visible[index];
-          return HxRow(
-            onTap: () {
-              Navigator.of(context).pushNamed(
-                AppRouter.memberDetailsPath(member.id),
-              );
-            },
-            leading: HxAvatar(initials: tr(member.initials)),
-            title: tr(member.fullName),
-            subtitle: tr(member.phone),
-            titleTrailing: _statusPill(member),
-            trailing: const Icon(
-              Icons.chevron_right_rounded,
-              size: 22,
-              color: AppColors.ink400,
-            ),
-          );
-        },
       ),
     );
   }

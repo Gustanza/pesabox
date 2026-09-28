@@ -205,23 +205,13 @@ class _SmsCard extends StatelessWidget {
               Container(
                 width: 40,
                 height: 40,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [AppColors.green500, AppColors.gold500],
-                  ),
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
                   borderRadius: AppRadius.sm,
+                  border: Border.all(color: AppColors.line),
                 ),
-                alignment: Alignment.center,
-                child: Text(
-                  kBrandName[0],
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.teal900,
-                  ),
-                ),
+                child: Image.asset(kBrandIconAsset, fit: BoxFit.contain),
               ),
               const SizedBox(width: 12),
               Expanded(

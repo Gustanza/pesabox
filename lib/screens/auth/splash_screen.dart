@@ -74,17 +74,14 @@ class _SplashScreenState extends State<SplashScreen> {
             child: Column(
               children: [
                 const Spacer(),
-                const BrandMark(size: 88, radius: 24, fontSize: 40),
-                const SizedBox(height: 22),
-                Text(
-                  kBrandName,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.white,
-                  ),
+                const BrandMark(size: 96, radius: 26),
+                const SizedBox(height: 24),
+                Image.asset(
+                  kBrandWordmarkWhiteAsset,
+                  height: 34,
+                  semanticLabel: kBrandName,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Text(
                   tr('Manage your group,\nsecure your future.'),
                   textAlign: TextAlign.center,

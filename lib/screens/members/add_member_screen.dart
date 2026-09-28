@@ -511,6 +511,9 @@ class _MemberOtpSheetState extends State<_MemberOtpSheet> {
                           decoration: const InputDecoration(
                             counterText: '',
                             border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            filled: false,
                             contentPadding: EdgeInsets.zero,
                           ),
                           onChanged: (value) {

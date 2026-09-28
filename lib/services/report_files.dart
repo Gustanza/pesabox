@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:archive/archive.dart';
 import 'package:excel/excel.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
@@ -131,6 +132,12 @@ Future<List<int>> buildPdf(
   final doc = pw.Document();
   final sw = I18n.isSwahili;
   final noData = sw ? 'Hakuna data kwa vigezo hivi.' : 'No data for these filters.';
+  pw.MemoryImage? logo;
+  try {
+    logo = pw.MemoryImage((await rootBundle.load(kBrandLogoAsset)).buffer.asUint8List());
+  } catch (_) {
+    logo = null; // no asset bundle (plain unit tests) — the title still names the brand
+  }
 
   doc.addPage(
     pw.MultiPage(
@@ -144,9 +151,18 @@ Future<List<int>> buildPdf(
         ),
       ),
       build: (ctx) => [
-        pw.Text(
-          _pdfSafe(sw ? 'Ripoti ya $kBrandName' : '$kBrandName Report'),
-          style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: green),
+        pw.Row(
+          crossAxisAlignment: pw.CrossAxisAlignment.center,
+          children: [
+            if (logo != null) ...[
+              pw.Image(logo, height: 40),
+              pw.SizedBox(width: 12),
+            ],
+            pw.Text(
+              _pdfSafe(sw ? 'Ripoti ya $kBrandName' : '$kBrandName Report'),
+              style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: green),
+            ),
+          ],
         ),
         pw.SizedBox(height: 4),
         pw.Text(

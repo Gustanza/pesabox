@@ -12,16 +12,16 @@ import '../../brand.dart';
 /// keep compiling — every widget now delegates to the `lib/ui` kit so the
 /// whole app inherits the unified treatment automatically.
 
+/// The HelaBox icon on a white rounded tile — reads on light and dark
+/// backgrounds alike.
 class BrandMark extends StatelessWidget {
   final double size;
   final double radius;
-  final double fontSize;
 
   const BrandMark({
     super.key,
     this.size = 88,
     this.radius = 24,
-    this.fontSize = 40,
   });
 
   @override
@@ -29,23 +29,12 @@ class BrandMark extends StatelessWidget {
     return Container(
       width: size,
       height: size,
+      padding: EdgeInsets.all(size * 0.14),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.green500, AppColors.gold500],
-        ),
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(radius),
       ),
-      alignment: Alignment.center,
-      child: Text(
-        kBrandName[0],
-        style: GoogleFonts.plusJakartaSans(
-          fontSize: fontSize,
-          fontWeight: FontWeight.w800,
-          color: AppColors.teal900,
-        ),
-      ),
+      child: Image.asset(kBrandIconAsset, fit: BoxFit.contain),
     );
   }
 }

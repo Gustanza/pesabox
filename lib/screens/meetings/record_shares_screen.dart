@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../../ui/ui.dart';
+import 'record_saved.dart';
 import '../auth/auth_widgets.dart';
 
 import '../../i18n/i18n.dart';
@@ -60,6 +61,13 @@ class _RecordSharesScreenState extends State<RecordSharesScreen> {
       .where((s) => (s ?? '').toString().isNotEmpty)
       .join(' ');
 
+  String _memberNameById(String id) {
+    for (final m in _members) {
+      if (m['id']?.toString() == id) return _memberName(m);
+    }
+    return '';
+  }
+
   String get _meetingTitle {
     final m = _meeting;
     if (m?['title']?.toString().isNotEmpty == true) return m!['title'].toString();
@@ -84,7 +92,7 @@ class _RecordSharesScreenState extends State<RecordSharesScreen> {
     }
     setState(() => _submitting = true);
     try {
-      await AppState.I.recordTransaction(
+      final created = await AppState.I.recordTransaction(
         type: 'share',
         memberId: memberId,
         meetingId: widget.meetingId,
@@ -92,7 +100,23 @@ class _RecordSharesScreenState extends State<RecordSharesScreen> {
         method: _method,
       );
       if (!mounted) return;
-      Navigator.of(context).pop();
+      setState(() => _submitting = false);
+      await showRecordSaved(
+        context,
+        created: created,
+        title: 'Shares recorded',
+        memberName: _memberNameById(memberId),
+        meetingTitle: _meetingTitle,
+        extra: [('Shares', '$count')],
+        onAgain: () {
+          _sharesController.clear();
+          setState(() {});
+          // the member's share total changed — refresh the "after" preview
+          AppState.I
+              .fetchMemberBalances(refresh: true)
+              .then((_) => mounted ? setState(() {}) : null);
+        },
+      );
     } catch (e) {
       _showError(e.toString());
     } finally {

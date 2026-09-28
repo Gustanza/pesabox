@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../../ui/ui.dart';
+import 'record_saved.dart';
 import '../auth/auth_widgets.dart';
 
 import '../../i18n/i18n.dart';
@@ -61,6 +62,13 @@ class _RecordSocialFundScreenState extends State<RecordSocialFundScreen> {
       .where((s) => (s ?? '').toString().isNotEmpty)
       .join(' ');
 
+  String _memberNameById(String id) {
+    for (final m in _members) {
+      if (m['id']?.toString() == id) return _memberName(m);
+    }
+    return '';
+  }
+
   String get _meetingTitle {
     final m = _meeting;
     if (m?['title']?.toString().isNotEmpty == true) return m!['title'].toString();
@@ -82,7 +90,7 @@ class _RecordSocialFundScreenState extends State<RecordSocialFundScreen> {
     }
     setState(() => _submitting = true);
     try {
-      await AppState.I.recordTransaction(
+      final created = await AppState.I.recordTransaction(
         type: 'social_fund',
         memberId: memberId,
         meetingId: widget.meetingId,
@@ -90,7 +98,20 @@ class _RecordSocialFundScreenState extends State<RecordSocialFundScreen> {
         method: _method,
       );
       if (!mounted) return;
-      Navigator.of(context).pop();
+      setState(() => _submitting = false);
+      await showRecordSaved(
+        context,
+        created: created,
+        title: 'Social fund recorded',
+        memberName: _memberNameById(memberId),
+        meetingTitle: _meetingTitle,
+        onAgain: () {
+          // the group's social fund total changed — refresh the preview
+          AppState.I
+              .fetchGroup(refresh: true)
+              .then((_) => mounted ? setState(() {}) : null);
+        },
+      );
     } catch (e) {
       _showError(e.toString());
     } finally {

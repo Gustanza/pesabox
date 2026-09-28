@@ -534,13 +534,26 @@ class _QuickAction extends StatelessWidget {
               child: Icon(icon, size: 20, color: AppColors.teal800),
             ),
             const SizedBox(height: AppSpace.x8),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: AppColors.ink900,
+            // Every label gets a two-line slot so all cards are the same
+            // height whether the label wraps ("Ongeza mwanachama") or not.
+            SizedBox(
+              height: MediaQuery.textScalerOf(context).scale(11) * 1.3 * 2,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      height: 1.3,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.ink900,
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
