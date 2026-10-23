@@ -8,6 +8,7 @@ import 'record_saved.dart';
 import '../auth/auth_widgets.dart';
 
 import '../../i18n/i18n.dart';
+import 'meeting_status.dart';
 
 class RecordSocialFundScreen extends StatefulWidget {
   const RecordSocialFundScreen({super.key, this.meetingId = '12'});
@@ -69,11 +70,7 @@ class _RecordSocialFundScreenState extends State<RecordSocialFundScreen> {
     return '';
   }
 
-  String get _meetingTitle {
-    final m = _meeting;
-    if (m?['title']?.toString().isNotEmpty == true) return m!['title'].toString();
-    return tr('Meeting #{0}', [m?['meetingNumber'] ?? widget.meetingId]);
-  }
+  String get _meetingTitle => meetingTitle(_meeting, widget.meetingId);
 
   double get _amount => double.tryParse(_amountController.text.trim()) ?? 0;
 

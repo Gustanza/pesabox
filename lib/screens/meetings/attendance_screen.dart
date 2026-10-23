@@ -8,6 +8,7 @@ import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 
 import '../../i18n/i18n.dart';
+import 'meeting_status.dart';
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key, this.meetingId = '12'});
@@ -77,9 +78,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   @override
   Widget build(BuildContext context) {
     final meeting = _meeting;
-    final title = meeting?['title']?.toString().isNotEmpty == true
-        ? meeting!['title'].toString()
-        : 'Meeting #${meeting?['meetingNumber'] ?? widget.meetingId}';
+    final title = meetingTitle(meeting, widget.meetingId);
 
     return Scaffold(
       backgroundColor: AppColors.cream,
@@ -234,11 +233,20 @@ class _MiniStat extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 2),
-            Text(
-              tr(label),
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                color: AppColors.ink400,
+            // One line, shrunk to fit: "Ameomba udhuru" used to wrap and
+            // make its card taller than the other three.
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  tr(label),
+                  maxLines: 1,
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: AppColors.ink400,
+                  ),
+                ),
               ),
             ),
           ],

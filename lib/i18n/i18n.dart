@@ -45,9 +45,28 @@ class I18n {
 /// Placeholders are written `{0}`, `{1}`, … and filled from [args] in order:
 /// `tr('Hello, {0}', [name])`.
 String tr(String en, [List<Object?> args = const []]) {
-  var text = I18n.isSwahili ? (kSw[en] ?? en) : (kEn[en] ?? en);
+  var text = I18n.isSwahili ? (kSw[en] ?? _numbered(en) ?? en) : (kEn[en] ?? en);
   for (var i = 0; i < args.length; i++) {
     text = text.replaceAll('{$i}', '${args[i]}');
+  }
+  return text;
+}
+
+final _number = RegExp(r'\d[\d,]*(?:\.\d+)?');
+
+/// Text with numbers in it, e.g. a server error like "Maximum shares per
+/// meeting is 5": looks the text up with its numbers as `{0}`, `{1}`, …
+/// ("Maximum shares per meeting is {0}") and puts them back. Null when there
+/// is no such entry.
+String? _numbered(String en) {
+  final numbers = _number.allMatches(en).map((m) => m[0]!).toList();
+  if (numbers.isEmpty) return null;
+  var i = 0;
+  final template = en.replaceAllMapped(_number, (_) => '{${i++}}');
+  var text = kSw[template];
+  if (text == null) return null;
+  for (var j = 0; j < numbers.length; j++) {
+    text = text!.replaceAll('{$j}', numbers[j]);
   }
   return text;
 }

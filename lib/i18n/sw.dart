@@ -375,6 +375,7 @@ const Map<String, String> kSw = {
   'Full name': 'Jina kamili',
   'Enter full name': 'Weka jina kamili',
   'Member number': 'Namba ya mwanachama',
+  'The member number is given automatically.': 'Namba ya mwanachama hutolewa yenyewe.',
   'e.g. 001': 'mfano: 001',
   'Gender': 'Jinsia',
   'Select gender': 'Chagua jinsia',
@@ -816,6 +817,169 @@ const Map<String, String> kSw = {
   'Contribution recorded': 'Mchango umehifadhiwa',
   'Shares recorded': 'Hisa zimehifadhiwa',
   'Social fund recorded': 'Mfuko wa jamii umehifadhiwa',
+  // ---- Server error messages (REST writes; exact English text from server/)
+  'this meeting is closed and can no longer be changed':
+      'Mkutano huu umefungwa na hauwezi kubadilishwa tena',
+  'this person is already an officer of a group':
+      'Mtu huyu tayari ni kiongozi wa kikundi',
+  'this transaction was already reversed': 'Muamala huu ulishabatilishwa',
+  // Server errors with numbers in them: {0}, {1}… stand for the numbers
+  // (see _numbered in i18n.dart).
+  'Minimum shares per meeting is {0}': 'Hisa za chini kwa mkutano ni {0}',
+  'Maximum shares per meeting is {0}': 'Hisa za juu kwa mkutano ni {0}',
+  'Social Fund contribution is TZS {0} per meeting':
+      'Mchango wa mfuko wa jamii ni TZS {0} kwa kila mkutano',
+  'Mandatory Savings is TZS {0} per meeting':
+      'Akiba ya lazima ni TZS {0} kwa kila mkutano',
+  'Share amounts must be exact multiples of the share value (TZS {0})':
+      'Kiasi cha hisa lazima kiwe kizidisho kamili cha thamani ya hisa (TZS {0})',
+  'repayment exceeds the remaining balance (TZS {0})':
+      'Rejesho linazidi salio lililobaki (TZS {0})',
+  'the social fund only holds TZS {0}': 'Mfuko wa jamii una TZS {0} tu',
+  "TZS {0} is more than this member can receive (TZS {1}: their savings and shares TZS {2} plus their share of the group's profit)":
+      'TZS {0} ni zaidi ya anachostahili mwanachama huyu (TZS {1}: akiba na hisa zake TZS {2} pamoja na sehemu yake ya faida ya kikundi)',
+  'the share-out (TZS {0}) is more than the cash available to share (TZS {1}, social fund kept apart)':
+      'Mgao (TZS {0}) ni zaidi ya fedha zilizopo za kugawa (TZS {1}, mfuko wa jamii haujajumuishwa)',
+  'the share-out pays TZS {0} of profit but the group has only TZS {1} of profit to share':
+      'Mgao unalipa faida ya TZS {0} lakini kikundi kina faida ya TZS {1} tu',
+  'this loan is above what the member may borrow: {0}× savings and shares (TZS {1}) less TZS {2} still owed leaves TZS {3} available':
+      'Mkopo huu unazidi kiwango anachoruhusiwa: {0}× akiba na hisa (TZS {1}) ukitoa deni la TZS {2} kinabaki TZS {3}',
+  'at most {0} payouts in one share-out': 'Malipo yasizidi {0} kwa mgao mmoja',
+  'payout {0}: member not found in your group':
+      'Malipo {0}: mwanachama hayupo kwenye kikundi chako',
+  'this kind of transaction cannot be reversed':
+      'Aina hii ya muamala haiwezi kubatilishwa',
+  "reverse this loan's repayments first":
+      'Batilisha kwanza marejesho ya mkopo huu',
+  'a reason is required': 'Sababu inahitajika',
+  'a positive amount is required': 'Kiasi chanya kinahitajika',
+  'payment exceeds the fine amount': 'Malipo yamezidi kiasi cha faini',
+  'waived fines cannot be paid': 'Faini iliyosamehewa haiwezi kulipwa',
+  'member not found in your group':
+      'Mwanachama hayupo kwenye kikundi chako',
+  'your role in this group does not allow this':
+      'Nafasi yako katika kikundi hiki haikuruhusu kufanya hili',
+  'your role does not allow this': 'Nafasi yako haikuruhusu kufanya hili',
+  'only the group admin can delete a member':
+      'Ni Mwenyekiti pekee anayeweza kufuta mwanachama',
+  'this member has financial records and cannot be deleted — deactivate them instead':
+      'Mwanachama huyu ana kumbukumbu za fedha na hawezi kufutwa — mzime badala yake',
+  'phone not verified — request and confirm an OTP first':
+      'Simu haijathibitishwa — omba na uthibitishe nambari ya OTP kwanza',
+  'invalid code': 'Nambari si sahihi',
+  'title is required': 'Kichwa kinahitajika',
+  'the lender and a positive amount are required':
+      'Mkopeshaji na kiasi chanya vinahitajika',
+  // ---- Server-generated transaction descriptions
+  'Mandatory savings contribution': 'Mchango wa akiba ya lazima',
+  'Social fund contribution': 'Mchango wa mfuko wa jamii',
+  'Social fund payout': 'Malipo kutoka mfuko wa jamii',
+  'Cycle share-out': 'Mgao wa mzunguko',
+  'Share-out': 'Mgao wa mzunguko',
+  'Cycle {0} share-out': 'Mgao wa mzunguko {0}',
+  // ---- Social fund payout / share-out
+  'Enter the reason for this payout':
+      'Weka sababu ya malipo haya',
+  'The social fund only holds {0}':
+      'Mfuko wa jamii una {0} tu',
+  'Social fund payout recorded':
+      'Malipo ya mfuko wa jamii yamehifadhiwa',
+  'Help a member in need or pay a group cause.':
+      'Msaidie mwanachama mwenye shida au lipia jambo la kikundi.',
+  'Social fund balance':
+      'Salio la mfuko wa jamii',
+  'Paid to':
+      'Analipwa',
+  'Group cause (no member)':
+      'Jambo la kikundi (si mwanachama)',
+  'e.g. 20,000':
+      'mfano: 20,000',
+  'e.g. hospital bill, funeral support':
+      'mfano: bili ya hospitali, rambirambi',
+  'Record payout':
+      'Rekodi malipo',
+  'Enter at least one payout.':
+      'Weka angalau malipo moja.',
+  'The share-out ({0}) is more than the cash available to share ({1}).':
+      'Mgao ({0}) unazidi fedha zilizopo za kugawa ({1}).',
+  'Confirm share-out':
+      'Thibitisha mgao',
+  'Pay out {0} to {1} members?':
+      'Lipa {0} kwa wanachama {1}?',
+  'Cycle {0} will be closed and cycle {1} started.':
+      'Mzunguko {0} utafungwa na mzunguko {1} utaanza.',
+  'Each payment is recorded as a transaction and can be reversed.':
+      'Kila malipo yanarekodiwa kama muamala na yanaweza kubatilishwa.',
+  'Pay out':
+      'Lipa',
+  'Share-out recorded: {0} to {1} members':
+      'Mgao umehifadhiwa: {0} kwa wanachama {1}',
+  'Cycle {0}':
+      'Mzunguko {0}',
+  'Cash in the box':
+      'Fedha kwenye sanduku',
+  'Social fund (kept apart)':
+      'Mfuko wa jamii (unabaki)',
+  'Available to share':
+      'Zilizopo za kugawa',
+  "Members' savings + shares":
+      'Akiba + hisa za wanachama',
+  'Profit to share':
+      'Faida ya kugawa',
+  'Loans still outstanding: {0}. Collect them first so that money is in the box to share.':
+      'Mikopo bado inadaiwa: {0}. Ikusanye kwanza ili fedha hizo ziwe kwenye sanduku la kugawa.',
+  'Payout per member':
+      'Malipo kwa kila mwanachama',
+  'Suggested: own savings + shares plus a share of the profit in proportion. You can change any amount; 0 leaves a member out.':
+      'Pendekezo: akiba + hisa zake pamoja na sehemu ya faida kwa uwiano. Unaweza kubadilisha kiasi chochote; 0 inamwacha mwanachama nje.',
+  'No members to pay':
+      'Hakuna wanachama wa kulipwa',
+  'Members with savings or shares appear here.':
+      'Wanachama wenye akiba au hisa wanaonekana hapa.',
+  'Total to pay out':
+      'Jumla ya kulipa',
+  'More than the cash available to share.':
+      'Inazidi fedha zilizopo za kugawa.',
+  'Also close cycle {0} and start cycle {1}':
+      'Pia funga mzunguko {0} na anza mzunguko {1}',
+  'Pay out {0}':
+      'Lipa {0}',
+  'Savings {0} · Shares {1}':
+      'Akiba {0} · Hisa {1}',
+  'Share-out →':
+      'Mgao →',
+  '{0} paid · {1} of it profit':
+      '{0} zimelipwa · {1} kati yake ni faida',
+  "More than this member's entitlement ({0})":
+      'Zaidi ya stahili ya mwanachama huyu ({0})',
+  '{0} in · {1} out':
+      '{0} ndani · {1} nje',
+  // ---- Overdue meetings / start meeting (Task: overdue pill)
+  'You are starting the scheduled {0}. This is not a new meeting.':
+      'Unaanza {0} uliopangwa. Huu si mkutano mpya.',
+  'You are starting the scheduled {0}, planned for {1}. This is not a new meeting.':
+      'Unaanza {0} uliopangwa kufanyika {1}. Huu si mkutano mpya.',
+  "Its date has passed and it was never started. Starting it now records today's activities against it.":
+      'Tarehe yake imepita na haukuanzishwa. Ukiuanza sasa, shughuli za leo zitarekodiwa kwenye mkutano huu.',
+  'Schedule a different meeting instead': 'Panga mkutano mwingine badala yake',
+  // ---- Member date of birth
+  'Date of birth': 'Tarehe ya kuzaliwa',
+  'Select date (optional)': 'Chagua tarehe (si lazima)',
+  'Clear': 'Futa',
+  '{0} years': 'Miaka {0}',
+  'Born {0}': 'Alizaliwa {0}',
+  // ---- Loan purpose
+  'Loan purpose (optional)': 'Madhumuni ya mkopo (si lazima)',
+  'Select purpose': 'Chagua madhumuni',
+  'Livestock': 'Mifugo',
+  'Health': 'Afya',
+  'Household needs': 'Matumizi ya nyumbani',
+  'Housing': 'Makazi',
+  'Enterprise type (optional)': 'Aina ya biashara/mradi (si lazima)',
+  'e.g. retail shop, maize farming, poultry':
+      'mfano: duka la rejareja, kilimo cha mahindi, kuku',
+  'Enterprise type': 'Aina ya biashara/mradi',
+  'Not specified': 'Haijabainishwa',
 };
 
 /// English text for strings that are written in Swahili in the code, so the

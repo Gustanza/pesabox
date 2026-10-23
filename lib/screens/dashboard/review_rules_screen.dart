@@ -150,7 +150,7 @@ class RulesSummaryCard extends StatelessWidget {
           for (final r in state.fineReasons) ...[
             const Divider(height: 24),
             _ReviewRow(
-              label: tr('Fine: {0}', [r['reason'] ?? '']),
+              label: tr('Fine: {0}', [tr('${r['reason'] ?? ''}')]),
               value: state.money((r['amount'] as num?) ?? 0),
             ),
           ],
@@ -168,8 +168,11 @@ class _ReviewRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A long value (the services list) wraps instead of overflowing and
+    // squeezing the label into a one-letter column.
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Flexible(
           child: Text(
@@ -182,12 +185,15 @@ class _ReviewRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        Text(
-          tr(value),
-          style: GoogleFonts.inter(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: AppColors.ink900,
+        Flexible(
+          child: Text(
+            tr(value),
+            textAlign: TextAlign.end,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.ink900,
+            ),
           ),
         ),
       ],

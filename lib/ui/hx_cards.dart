@@ -166,16 +166,21 @@ class HxKV extends StatelessWidget {
           ),
           const SizedBox(width: AppSpace.x12),
           Flexible(
-            child: trailing ??
-                Text(
-                  value,
-                  textAlign: TextAlign.right,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: bold ? FontWeight.w700 : FontWeight.w600,
-                    color: AppColors.ink900,
+            // Right-aligned in its half (a bare Flexible left the value
+            // floating mid-row).
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: trailing ??
+                  Text(
+                    value,
+                    textAlign: TextAlign.right,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: bold ? FontWeight.w700 : FontWeight.w600,
+                      color: AppColors.ink900,
+                    ),
                   ),
-                ),
+            ),
           ),
         ],
       ),

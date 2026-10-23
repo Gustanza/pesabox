@@ -8,6 +8,7 @@ import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 
 import '../../i18n/i18n.dart';
+import 'meeting_status.dart';
 
 class MeetingReviewScreen extends StatefulWidget {
   const MeetingReviewScreen({super.key, this.meetingId = '12'});
@@ -43,7 +44,7 @@ class _MeetingReviewScreenState extends State<MeetingReviewScreen> {
       _meeting = results[0] as Map<String, dynamic>?;
       _attendance = results[1] as List<Map<String, dynamic>>;
       _txns = (results[2] as List<Map<String, dynamic>>)
-          .where((t) => t['meetingId'] == widget.meetingId)
+          .where((t) => t['meetingId'] == widget.meetingId && t['reversed'] != true)
           .toList();
       _loading = false;
     });
@@ -56,11 +57,7 @@ class _MeetingReviewScreenState extends State<MeetingReviewScreen> {
       .where((t) => types.contains(t['type']))
       .fold<double>(0, (sum, t) => sum + (t['amount'] as num? ?? 0));
 
-  String get _meetingTitle {
-    final m = _meeting;
-    if (m?['title']?.toString().isNotEmpty == true) return m!['title'].toString();
-    return tr('Meeting #{0}', [m?['meetingNumber'] ?? widget.meetingId]);
-  }
+  String get _meetingTitle => meetingTitle(_meeting, widget.meetingId);
 
   Future<void> _close() async {
     setState(() => _closing = true);

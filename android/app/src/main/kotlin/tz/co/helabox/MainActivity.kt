@@ -1,4 +1,4 @@
-package com.example.pesa_box_app
+package tz.co.helabox
 
 import io.flutter.embedding.android.FlutterActivity
 

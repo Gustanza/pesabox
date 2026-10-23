@@ -231,10 +231,18 @@ class _LoanRow extends StatelessWidget {
       leading: HxAvatar(initials: state.initials(name)),
       title: name,
       subtitle:
-          '${state.money((loan['amount'] as num?) ?? 0)} · ${state.maxLoanPeriodMonths} months',
+          '${state.money((loan['amount'] as num?) ?? 0)} · ${tr('{0} months', [state.maxLoanPeriodMonths])}',
       trailing: HxPill(
-        text: active ? tr('Active') : tr('Repaid'),
-        tone: active ? HxPillTone.success : HxPillTone.neutral,
+        text: active
+            ? tr('Active')
+            : status == 'cancelled'
+                ? tr('Cancelled')
+                : tr('Repaid'),
+        tone: active
+            ? HxPillTone.success
+            : status == 'cancelled'
+                ? HxPillTone.danger
+                : HxPillTone.neutral,
       ),
     );
   }

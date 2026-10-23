@@ -6,6 +6,7 @@ import '../../services/app_data.dart';
 import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
 import '../../ui/ui.dart';
+import '../meetings/meeting_status.dart';
 import 'dashboard_nav_bar.dart';
 
 import '../../i18n/i18n.dart';
@@ -40,6 +41,12 @@ class _DashboardScreenState extends State<DashboardScreen>
     }
     final hasGroup = await AppState.I.checkGroupAssignment(refresh: refresh);
     if (!mounted) return;
+    if (!AppState.I.isSignedIn) {
+      // The server rejected the session: sign in again.
+      Navigator.of(context)
+          .pushNamedAndRemoveUntil(AppRouter.login, (r) => false);
+      return;
+    }
     if (!hasGroup) {
       // Reachable via the bottom nav's Home tab even without a group (e.g.
       // tapped from the awaiting-assignment screen) — bounce back rather
@@ -316,8 +323,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                       Text(
                         upcoming == null
                             ? tr('No upcoming meeting')
-                            : (upcoming['title']?.toString() ??
-                                'Meeting #${upcoming['meetingNumber']}'),
+                            : meetingTitle(upcoming),
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -338,9 +344,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                   ),
                 ),
                 if (upcoming != null)
-                  const Padding(
-                    padding: EdgeInsets.only(left: AppSpace.x8),
-                    child: HxPill(text: 'Upcoming', tone: HxPillTone.warning),
+                  Padding(
+                    padding: const EdgeInsets.only(left: AppSpace.x8),
+                    child: MeetingStatusPill(meeting: upcoming),
                   ),
               ],
             ),
@@ -351,61 +357,80 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _quickActions(AppState state, Map<String, dynamic>? upcoming) {
+    final actions = <Widget>[
+      _QuickAction(
+        icon: upcoming == null ? Icons.add_rounded : Icons.play_arrow_rounded,
+        // In progress → continue it; scheduled → start that meeting
+        // (the start screen names it and its date); none open →
+        // schedule a new one. A closed meeting is never offered.
+        label: upcoming == null
+            ? tr('Create meeting')
+            : upcoming['status'] == 'in_progress'
+                ? tr('Continue meeting')
+                : tr('Start meeting'),
+        onTap: () {
+          final id = upcoming?['id']?.toString();
+          if (id == null || id.isEmpty) {
+            Navigator.of(context).pushNamed(AppRouter.createMeeting);
+            return;
+          }
+          Navigator.of(context).pushNamed(
+            upcoming!['status'] == 'in_progress'
+                ? AppRouter.attendancePath(id)
+                : AppRouter.startMeetingPath(id),
+          );
+        },
+      ),
+      _QuickAction(
+        icon: Icons.person_add_rounded,
+        label: tr('Add member'),
+        onTap: () {
+          Navigator.of(context).pushNamed(AppRouter.addMember);
+        },
+      ),
+      if (AppState.I.serviceEnabled('Loans'))
+        _QuickAction(
+          icon: Icons.request_quote_rounded,
+          label: tr('Record loan'),
+          onTap: () {
+            Navigator.of(context).pushNamed(AppRouter.recordLoan);
+          },
+        ),
+      _QuickAction(
+        icon: Icons.bar_chart_rounded,
+        label: tr('View reports'),
+        onTap: () {
+          Navigator.of(context).pushNamed(AppRouter.reports);
+        },
+      ),
+    ];
+    // Two cards per row; an odd last card keeps half the width.
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpace.x20),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: _QuickAction(
-              icon: Icons.play_arrow_rounded,
-              label: tr('Start meeting'),
-              onTap: () {
-                final id = upcoming?['id']?.toString();
-                if (id == null || id.isEmpty) {
-                  Navigator.of(context)
-                      .pushNamed(AppRouter.createMeeting);
-                  return;
-                }
-                Navigator.of(context)
-                    .pushNamed(AppRouter.startMeetingPath(id));
-              },
+          for (var i = 0; i < actions.length; i += 2) ...[
+            if (i > 0) const SizedBox(height: AppSpace.x12),
+            Row(
+              children: [
+                Expanded(child: actions[i]),
+                const SizedBox(width: AppSpace.x12),
+                Expanded(
+                  child: i + 1 < actions.length
+                      ? actions[i + 1]
+                      : const SizedBox.shrink(),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(width: AppSpace.x12),
-          Expanded(
-            child: _QuickAction(
-              icon: Icons.person_add_rounded,
-              label: tr('Add member'),
-              onTap: () {
-                Navigator.of(context).pushNamed(AppRouter.addMember);
-              },
-            ),
-          ),
-          const SizedBox(width: AppSpace.x12),
-          if (AppState.I.serviceEnabled('Loans')) ...[
-            Expanded(
-              child: _QuickAction(
-                icon: Icons.request_quote_rounded,
-                label: tr('Record loan'),
-                onTap: () {
-                  Navigator.of(context).pushNamed(AppRouter.recordLoan);
-                },
-              ),
-            ),
-            const SizedBox(width: AppSpace.x12),
           ],
-          Expanded(
-            child: _QuickAction(
-              icon: Icons.bar_chart_rounded,
-              label: tr('View reports'),
-              onTap: () {
-                Navigator.of(context).pushNamed(AppRouter.reports);
-              },
-            ),
-          ),
         ],
       ),
     );
+  }
+
+  String _activityName(AppState state, Map<String, dynamic> txn) {
+    final name = (txn['fullName'] ?? txn['memberName'])?.toString().trim() ?? '';
+    return name.isNotEmpty ? name : state.groupName;
   }
 
   Widget _recentActivity(AppState state) {
@@ -444,14 +469,10 @@ class _DashboardScreenState extends State<DashboardScreen>
                       for (var i = 0; i < txns.length; i++) ...[
                         if (i > 0) const Divider(height: 1, indent: 68),
                         _ActivityRow(
-                          name: txns[i]['fullName']?.toString() ??
-                              txns[i]['memberName']?.toString() ??
-                              '',
-                          initials: state.initials(
-                            txns[i]['fullName']?.toString() ??
-                                txns[i]['memberName']?.toString() ??
-                                '',
-                          ),
+                          // Group-level money (expenses, payouts to a cause)
+                          // has no member: show the group, not "?".
+                          name: _activityName(state, txns[i]),
+                          initials: state.initials(_activityName(state, txns[i])),
                           detail: state.txnTypeLabel(
                               txns[i]['type']?.toString() ?? ''),
                           amount: state.amountLabel(txns[i]),
@@ -516,13 +537,16 @@ class _QuickAction extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: AppSpace.x16),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpace.x12,
+          vertical: AppSpace.x12,
+        ),
         decoration: BoxDecoration(
           color: AppColors.white,
           borderRadius: AppRadius.md,
           border: Border.all(color: AppColors.line),
         ),
-        child: Column(
+        child: Row(
           children: [
             Container(
               width: 40,
@@ -533,23 +557,22 @@ class _QuickAction extends StatelessWidget {
               ),
               child: Icon(icon, size: 20, color: AppColors.teal800),
             ),
-            const SizedBox(height: AppSpace.x8),
-            // Every label gets a two-line slot so all cards are the same
-            // height whether the label wraps ("Ongeza mwanachama") or not.
-            SizedBox(
-              height: MediaQuery.textScalerOf(context).scale(11) * 1.3 * 2,
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
+            const SizedBox(width: AppSpace.x12),
+            // A two-line slot keeps every card the same height whether the
+            // label wraps ("Ongeza mwanachama") or not.
+            Expanded(
+              child: SizedBox(
+                height: MediaQuery.textScalerOf(context).scale(13) * 1.3 * 2,
+                child: Align(
+                  alignment: Alignment.centerLeft,
                   child: Text(
                     label,
-                    textAlign: TextAlign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.inter(
-                      fontSize: 11,
+                      fontSize: 13,
                       height: 1.3,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w600,
                       color: AppColors.ink900,
                     ),
                   ),

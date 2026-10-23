@@ -8,6 +8,7 @@ import 'record_saved.dart';
 import '../auth/auth_widgets.dart';
 
 import '../../i18n/i18n.dart';
+import 'meeting_status.dart';
 
 class RecordContributionScreen extends StatefulWidget {
   const RecordContributionScreen({super.key, this.meetingId = '12'});
@@ -60,11 +61,7 @@ class _RecordContributionScreenState extends State<RecordContributionScreen> {
     _amountController.text = kind == 'mandatory' && mandatory > 0 ? mandatory.toStringAsFixed(0) : '';
   }
 
-  String get _meetingTitle {
-    final m = _meeting;
-    if (m?['title']?.toString().isNotEmpty == true) return m!['title'].toString();
-    return tr('Meeting #{0}', [m?['meetingNumber'] ?? widget.meetingId]);
-  }
+  String get _meetingTitle => meetingTitle(_meeting, widget.meetingId);
 
   @override
   void dispose() {

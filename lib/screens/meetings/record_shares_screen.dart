@@ -8,6 +8,7 @@ import 'record_saved.dart';
 import '../auth/auth_widgets.dart';
 
 import '../../i18n/i18n.dart';
+import 'meeting_status.dart';
 
 class RecordSharesScreen extends StatefulWidget {
   const RecordSharesScreen({super.key, this.meetingId = '12'});
@@ -68,11 +69,7 @@ class _RecordSharesScreenState extends State<RecordSharesScreen> {
     return '';
   }
 
-  String get _meetingTitle {
-    final m = _meeting;
-    if (m?['title']?.toString().isNotEmpty == true) return m!['title'].toString();
-    return tr('Meeting #{0}', [m?['meetingNumber'] ?? widget.meetingId]);
-  }
+  String get _meetingTitle => meetingTitle(_meeting, widget.meetingId);
 
   int get _shareCount => int.tryParse(_sharesController.text.trim()) ?? 0;
 
@@ -203,7 +200,7 @@ class _RecordSharesScreenState extends State<RecordSharesScreen> {
                       _KVRow(label: tr('Total value'), value: state.money(totalValue)),
                       _KVRow(
                         label: tr('New cumulative'),
-                        value: '${_currentShares + _shareCount} shares',
+                        value: tr('{0} shares', [_currentShares + _shareCount]),
                       ),
                     ],
                   ),

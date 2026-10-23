@@ -1,15 +1,29 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Talk to the HelaBox API. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- open_filex (used only to open PDF/Excel/CSV report exports the app
+         generates itself, see lib/services/file_saver_io.dart) declares
+         these in its own manifest defensively for every file type it can
+         open, regardless of which ones the host app actually uses. HelaBox
+         never reads the user's photo/video/audio library, so strip them
+         rather than carry unjustified sensitive permissions into the Play
+         Store listing. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove" />
     <application
         android:label="HelaBox"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">
-        <!-- The Go backend is plain HTTP in development (no TLS cert for
-             10.0.2.2/localhost). Android blocks cleartext traffic by default
-             since API 28 — allow it here for now. Tighten this to a proper
-             network_security_config scoped to the dev host before shipping
-             a release build. -->
+        <!-- The API is plain HTTP (live server http://157.245.46.244:8090 and
+             the local dev server), and Android blocks cleartext traffic by
+             default since API 28 — so it is allowed here. Once the server has
+             HTTPS, remove usesCleartextTraffic. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -47,6 +61,24 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- Exported reports are opened in another app (open_filex); since
+             Android 11 the app must declare which viewers it looks for. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:mimeType="application/pdf"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:mimeType="text/csv"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:mimeType="*/*"/>
         </intent>
     </queries>
 </manifest>

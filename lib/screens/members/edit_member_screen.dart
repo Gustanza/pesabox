@@ -7,6 +7,7 @@ import '../../services/graphql_client.dart';
 import '../../theme/app_theme.dart';
 import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
+import 'dob_field.dart';
 import '../../i18n/i18n.dart';
 
 /// Edits an existing member via `POST /api/main/members/:id` (the backend
@@ -30,6 +31,10 @@ class _EditMemberScreenState extends State<EditMemberScreen> {
   String _phone = '';
   String _gender = 'Female';
   String _status = 'Active';
+  // Date of birth (YYYY-MM-DD) comes from the REST balances list — the
+  // GraphQL member query doesn't ask for it, so older servers keep working.
+  String? _dob;
+  String? _originalDob;
   bool _loading = true;
   bool _saving = false;
   bool _deactivating = false;
@@ -42,13 +47,22 @@ class _EditMemberScreenState extends State<EditMemberScreen> {
   }
 
   Future<void> _load() async {
-    await AppState.I.fetchMembers(refresh: true);
+    await Future.wait([
+      AppState.I.fetchMembers(refresh: true),
+      AppState.I.fetchMemberBalances(refresh: true),
+    ]);
     if (!mounted) return;
     final member = AppState.I.members.firstWhere(
       (m) => m['id'] == widget.memberId,
       orElse: () => const {},
     );
+    final balance = AppState.I.memberBalances.firstWhere(
+      (m) => m['id'] == widget.memberId,
+      orElse: () => const {},
+    );
+    final dob = parseDob(member['dateOfBirth'] ?? balance['dateOfBirth']);
     setState(() {
+      _dob = _originalDob = dob == null ? null : isoDay(dob);
       _firstName.text = member['firstName']?.toString() ?? '';
       _lastName.text = member['lastName']?.toString() ?? '';
       _memberNumber.text = member['memberNumber']?.toString() ?? '';
@@ -85,6 +99,8 @@ class _EditMemberScreenState extends State<EditMemberScreen> {
         gender: _gender,
         memberNumber: _memberNumber.text.trim(),
         status: _status,
+        // Only sent when changed ('' clears it).
+        dateOfBirth: _dob == _originalDob ? null : (_dob ?? ''),
       );
       if (!mounted) return;
       Navigator.of(context).pushNamedAndRemoveUntil(
@@ -183,6 +199,11 @@ class _EditMemberScreenState extends State<EditMemberScreen> {
                   value: _gender,
                   items: const ['Male', 'Female'],
                   onChanged: (v) => setState(() => _gender = v),
+                ),
+                const SizedBox(height: 18),
+                DateOfBirthField(
+                  value: _dob,
+                  onChanged: (v) => setState(() => _dob = v),
                 ),
                 const SizedBox(height: 18),
                 AuthTextField(

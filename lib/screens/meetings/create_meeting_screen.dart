@@ -8,6 +8,7 @@ import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 
 import '../../i18n/i18n.dart';
+import 'start_meeting_screen.dart';
 
 class CreateMeetingScreen extends StatefulWidget {
   const CreateMeetingScreen({super.key});
@@ -77,6 +78,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
       if (!mounted) return;
       Navigator.of(context).pushReplacementNamed(
         AppRouter.startMeetingPath(created['id']?.toString() ?? ''),
+        arguments: StartMeetingScreen.justCreated,
       );
     } catch (e) {
       if (!mounted) return;

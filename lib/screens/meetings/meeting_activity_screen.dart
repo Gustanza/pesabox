@@ -7,6 +7,7 @@ import '../../theme/app_theme.dart';
 import '../auth/auth_widgets.dart';
 
 import '../../i18n/i18n.dart';
+import 'meeting_status.dart';
 
 class MeetingActivityScreen extends StatefulWidget {
   const MeetingActivityScreen({super.key, this.meetingId = '12'});
@@ -32,9 +33,7 @@ class _MeetingActivityScreenState extends State<MeetingActivityScreen> {
   Widget build(BuildContext context) {
     final meetingId = widget.meetingId;
     final meeting = _meeting;
-    final title = meeting?['title']?.toString().isNotEmpty == true
-        ? meeting!['title'].toString()
-        : 'Meeting #${meeting?['meetingNumber'] ?? meetingId}';
+    final title = meetingTitle(meeting, meetingId);
 
     return Scaffold(
       backgroundColor: AppColors.cream,

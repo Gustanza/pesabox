@@ -7,6 +7,7 @@ import '../../theme/app_theme.dart';
 import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 import '../../i18n/i18n.dart';
+import '../meetings/meeting_status.dart';
 
 class TransactionDetailsScreen extends StatefulWidget {
   const TransactionDetailsScreen({super.key, this.transactionId = ''});
@@ -130,7 +131,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
           const SizedBox(height: 4),
           Text(
             txn['description']?.toString().isNotEmpty == true
-                ? txn['description'].toString()
+                ? _describe(txn['description'].toString())
                 : state.txnTypeLabel(type),
             style: GoogleFonts.inter(
               fontSize: 14,
@@ -149,9 +150,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     final meeting = _meeting;
     final meetingLabel = meeting == null
         ? '—'
-        : (meeting['title']?.toString().isNotEmpty == true
-            ? meeting['title'].toString()
-            : tr('Meeting #{0}', [meeting['meetingNumber'] ?? '']));
+        : meetingTitle(meeting);
     final reference = txn['reference']?.toString() ?? '';
     final reversed = txn['reversed'] == true;
 
@@ -179,7 +178,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
           _KVRow(
             label: 'Payment method',
             value: txn['method']?.toString().isNotEmpty == true
-                ? txn['method'].toString()
+                ? tr(txn['method'].toString())
                 : tr('Cash'),
           ),
           if (reference.isNotEmpty) ...[
@@ -261,4 +260,12 @@ class _StatusRow extends StatelessWidget {
       ],
     );
   }
+}
+
+/// A server-written description in the current language: its fixed English
+/// defaults have Swahili entries; "Cycle N share-out" carries a number.
+String _describe(String text) {
+  final cycle = RegExp(r'^Cycle (\d+) share-out$').firstMatch(text);
+  if (cycle != null) return tr('Cycle {0} share-out', [cycle.group(1)]);
+  return tr(text);
 }

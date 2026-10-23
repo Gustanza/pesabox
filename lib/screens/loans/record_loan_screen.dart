@@ -5,6 +5,7 @@ import '../../services/app_data.dart';
 import '../../theme/app_theme.dart';
 import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
+import 'loan_purpose.dart';
 
 import '../../i18n/i18n.dart';
 
@@ -17,6 +18,8 @@ class RecordLoanScreen extends StatefulWidget {
 
 class _RecordLoanScreenState extends State<RecordLoanScreen> {
   final _amountController = TextEditingController();
+  final _enterpriseController = TextEditingController();
+  String? _purpose; // optional; a kLoanPurposes key
   List<Map<String, dynamic>> _members = [];
   String? _memberId;
   String? _meetingId;
@@ -54,6 +57,7 @@ class _RecordLoanScreenState extends State<RecordLoanScreen> {
   @override
   void dispose() {
     _amountController.dispose();
+    _enterpriseController.dispose();
     super.dispose();
   }
 
@@ -123,6 +127,10 @@ class _RecordLoanScreenState extends State<RecordLoanScreen> {
         amount: amount,
         meetingId: _meetingId,
         method: _method,
+        purpose: _purpose,
+        enterpriseType: purposeNeedsEnterprise(_purpose)
+            ? _enterpriseController.text.trim()
+            : null,
       );
       if (!mounted) return;
       Navigator.of(context).pop();
@@ -214,6 +222,38 @@ class _RecordLoanScreenState extends State<RecordLoanScreen> {
                           onChanged: (v) => setState(() => _method = v ?? 'Cash'),
                         ),
                       ),
+                      const SizedBox(height: 16),
+                      _Field(
+                        label: tr('Loan purpose (optional)'),
+                        child: DropdownButtonFormField<String>(
+                          key: const ValueKey('loan-purpose'),
+                          initialValue: _purpose,
+                          isExpanded: true,
+                          hint: Text(tr('Select purpose')),
+                          items: kLoanPurposes.entries
+                              .map((e) => DropdownMenuItem(
+                                    value: e.key,
+                                    child: Text(tr(e.value)),
+                                  ))
+                              .toList(),
+                          onChanged: (v) => setState(() => _purpose = v),
+                        ),
+                      ),
+                      if (purposeNeedsEnterprise(_purpose)) ...[
+                        const SizedBox(height: 16),
+                        _Field(
+                          label: tr('Enterprise type (optional)'),
+                          child: TextField(
+                            key: const ValueKey('loan-enterprise'),
+                            controller: _enterpriseController,
+                            textCapitalization: TextCapitalization.sentences,
+                            maxLength: kMaxEnterpriseType,
+                            decoration: InputDecoration(
+                              hintText: tr('e.g. retail shop, maize farming, poultry'),
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

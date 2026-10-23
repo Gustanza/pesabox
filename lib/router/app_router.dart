@@ -40,6 +40,7 @@ import '../screens/transactions/transactions_list_screen.dart';
 import '../screens/transactions/transaction_details_screen.dart';
 import '../screens/transactions/correction_reversal_screen.dart';
 import '../screens/funds/funds_screen.dart';
+import '../screens/funds/social_fund_payout_screen.dart';
 import '../screens/reports/reports_screen.dart';
 import '../screens/reports/group_statement_screen.dart';
 import '../screens/reports/export_report_screen.dart';
@@ -104,6 +105,7 @@ class AppRouter {
   static const String correctionReversal = '/transactions/:id/correction';
 
   static const String funds = '/funds';
+  static const String socialFundPayout = '/funds/social-fund-payout';
 
   static const String reports = '/reports';
   static const String groupStatement = '/reports/group-statement';
@@ -184,6 +186,8 @@ class AppRouter {
 
       case funds:
         return _buildRoute(settings, const FundsScreen());
+      case socialFundPayout:
+        return _buildRoute(settings, const SocialFundPayoutScreen());
 
       case reports:
         return _buildRoute(settings, const ReportsScreen());

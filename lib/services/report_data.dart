@@ -178,7 +178,8 @@ const valueSw = {
   'loan_repayment': 'Marejesho ya Mkopo', 'fine': 'Faini', 'fine_payment': 'Malipo ya Faini',
   'meeting_reminder': 'Kikumbusho cha Mkutano', 'loan_due_soon': 'Mkopo Unakaribia Kuisha',
   'loan_overdue': 'Mkopo Umechelewa', 'other': 'Nyingine', 'expense': 'Matumizi',
-  'withdrawal': 'Uondoaji',
+  'withdrawal': 'Uondoaji', 'social_fund_payout': 'Malipo ya Mfuko wa Jamii',
+  'share_out': 'Mgao wa Mzunguko',
 };
 
 const _enumColumns = {'Type', 'Status', 'Direction', 'Gender', 'Method'};
@@ -215,6 +216,7 @@ const _txLabels = {
   'contribution': 'Mandatory Savings', 'share': 'Shares', 'social_fund': 'Social Fund',
   'loan_repayment': 'Loan Repayment', 'loan_disbursement': 'Loan Disbursement',
   'fine': 'Fine Payment', 'expense': 'Expense', 'withdrawal': 'Withdrawal',
+  'social_fund_payout': 'Social Fund Payout', 'share_out': 'Share-out',
 };
 
 /// The one "active member" rule (same as the server): status Active, or no
@@ -277,6 +279,11 @@ class GroupFigures {
           shares += a;
         case 'social_fund':
           socialFund += a;
+        case 'social_fund_payout':
+          socialFund -= a;
+        case 'share_out': // members' own savings/shares coming back
+          savings -= _n(t['savingsReturned']);
+          shares -= _n(t['sharesReturned']);
         case 'fine':
           fines += a;
         case 'expense':
@@ -284,6 +291,8 @@ class GroupFigures {
       }
     }
     if (savings < 0) savings = 0;
+    if (shares < 0) shares = 0;
+    if (socialFund < 0) socialFund = 0;
     for (final l in loans) {
       if (_s(l['status']) == 'cancelled') continue;
       loansDisbursed += _n(l['amount']);

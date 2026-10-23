@@ -10,6 +10,7 @@ import '../../services/graphql_client.dart';
 import '../../theme/app_theme.dart';
 import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
+import 'dob_field.dart';
 
 import '../../i18n/i18n.dart';
 
@@ -22,13 +23,12 @@ class AddMemberScreen extends StatefulWidget {
 
 class _MemberFormData {
   final nameController = TextEditingController();
-  final numberController = TextEditingController();
   String phone = '';
   String? gender;
+  String? dateOfBirth; // YYYY-MM-DD, optional
 
   void dispose() {
     nameController.dispose();
-    numberController.dispose();
   }
 }
 
@@ -84,7 +84,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
           lastName: lastName,
           phone: phone,
           gender: f.gender!,
-          memberNumber: f.numberController.text.trim(),
+          dateOfBirth: f.dateOfBirth,
         );
         addedAny = true;
       }
@@ -271,11 +271,15 @@ class _MemberFormState extends State<_MemberForm> {
           onChanged: (v) => setState(() => widget.data.gender = v),
         ),
         const SizedBox(height: 18),
-        AuthTextField(
-          label: tr('Member number'),
-          hint: tr('e.g. 001'),
-          requiredField: false,
-          controller: widget.data.numberController,
+        DateOfBirthField(
+          value: widget.data.dateOfBirth,
+          onChanged: (v) => setState(() => widget.data.dateOfBirth = v),
+        ),
+        const SizedBox(height: 10),
+        // Member numbers are given out by the server (001, 002, … per group).
+        Text(
+          tr('The member number is given automatically.'),
+          style: GoogleFonts.inter(fontSize: 12, color: AppColors.ink400),
         ),
       ],
     );

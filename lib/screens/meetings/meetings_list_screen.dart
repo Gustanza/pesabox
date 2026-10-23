@@ -9,6 +9,8 @@ import '../../ui/ui.dart';
 import '../dashboard/dashboard_nav_bar.dart';
 
 import '../../i18n/i18n.dart';
+import 'close_cycle_screen.dart' show currentCycle;
+import 'meeting_status.dart';
 
 class MeetingsListScreen extends StatefulWidget {
   const MeetingsListScreen({super.key});
@@ -43,10 +45,10 @@ class _MeetingsListScreenState extends State<MeetingsListScreen>
   }
 
   List<Map<String, dynamic>> get _visible {
-    if (_view == 0) {
-      return _meetings.where((m) => m['status'] == 'upcoming').toList();
-    }
-    return _meetings.where((m) => m['status'] != 'upcoming').toList();
+    // Open meetings (scheduled, overdue or in progress) vs. closed ones — an
+    // in-progress meeting is not history yet.
+    if (_view == 0) return _meetings.where(meetingIsOpen).toList();
+    return _meetings.where((m) => !meetingIsOpen(m)).toList();
   }
 
   @override
@@ -85,9 +87,7 @@ class _MeetingsListScreenState extends State<MeetingsListScreen>
                   children: [
                     _CycleCard(
                       held: state.meetingsHeld,
-                      cycleNumber: (state.group?['cycleCurrent'] as num?)
-                              ?.toInt() ??
-                          1,
+                      cycleNumber: currentCycle(state.group),
                       total: (state.group?['cycleTotal'] as num?)?.toInt() ??
                           30,
                       startedLabel: state.group?['formationDate'] == null
@@ -236,14 +236,17 @@ class _CycleCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              // Closing the cycle is a core group decision — Mwenyekiti only.
-              if (AppState.I.isGroupAdmin)
+              // Share-out needs finance.write; closing the cycle as well is a
+              // core group decision (group.settings, Mwenyekiti).
+              if (AppState.I.can('finance.write'))
                 Pressable(
                   onTap: () {
                     Navigator.of(context).pushNamed(AppRouter.closeCycle);
                   },
                   child: Text(
-                    tr('Close cycle →'),
+                    AppState.I.isGroupAdmin
+                        ? tr('Close cycle →')
+                        : tr('Share-out →'),
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -305,18 +308,9 @@ class _MeetingList extends StatelessWidget {
                   color: AppColors.teal800,
                 ),
               ),
-              title:
-                  meetings[i]['title']?.toString() ??
-                  tr('Meeting #{0}', [meetings[i]['meetingNumber']]),
+              title: meetingTitle(meetings[i]),
               subtitle: state.meetingSubtitle(meetings[i]),
-              trailing: HxPill(
-                text: meetings[i]['status'] == 'upcoming'
-                    ? tr('Upcoming')
-                    : tr('Closed'),
-                tone: meetings[i]['status'] == 'upcoming'
-                    ? HxPillTone.warning
-                    : HxPillTone.neutral,
-              ),
+              trailing: MeetingStatusPill(meeting: meetings[i]),
             ),
           ],
         ],

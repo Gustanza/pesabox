@@ -84,7 +84,8 @@ class Member {
   }
 
   static MemberStatus _memberStatusFromString(String? s) {
-    switch (s) {
+    // The backend stores "Active" / "Inactive" / "Suspended".
+    switch (s?.toLowerCase()) {
       case 'inactive':
         return MemberStatus.inactive;
       case 'suspended':

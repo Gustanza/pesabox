@@ -486,6 +486,12 @@ class _RepaySheetState extends State<_RepaySheet> {
       setState(() => _error = tr('Enter a positive amount'));
       return;
     }
+    final outstanding = widget.loan['outstanding'];
+    if (outstanding is num && amount > outstanding) {
+      // Same rule the server enforces, but with a translated message.
+      setState(() => _error = tr('Repayment exceeds the remaining balance'));
+      return;
+    }
     setState(() {
       _saving = true;
       _error = null;

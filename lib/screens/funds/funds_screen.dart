@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../router/app_router.dart';
 import '../../services/app_data.dart';
 import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
@@ -37,12 +38,22 @@ class _FundsScreenState extends State<FundsScreen> with AutoRefreshOnPop {
     final now = DateTime.now();
     setState(() {
       _thisMonth = txns.where((t) {
+        if (t['reversed'] == true) return false; // undone: not money moved
         final dt = DateTime.tryParse(t['createdAt']?.toString() ?? '');
         return dt != null && dt.year == now.year && dt.month == now.month;
       }).toList();
       _loading = false;
     });
   }
+
+  String _inOut(double inAmount, double outAmount) => tr('{0} in · {1} out',
+      [AppState.I.money(inAmount), AppState.I.money(outAmount)]);
+
+  /// Sum of [field] over this month's share-out transactions: each payment
+  /// splits into savingsReturned + sharesReturned + profit (server/payouts.go).
+  double _shareOut(String field) => _thisMonth
+      .where((t) => t['type'] == 'share_out')
+      .fold<double>(0, (sum, t) => sum + ((t[field] as num?)?.toDouble() ?? 0));
 
   double _sum(String type) => _thisMonth
       .where((t) => t['type'] == type)
@@ -77,7 +88,7 @@ class _FundsScreenState extends State<FundsScreen> with AutoRefreshOnPop {
                   children: [
                     Expanded(
                       child: HxStat(
-                        label: 'Savings fund',
+                        label: tr('Savings fund'),
                         value: state.money(state.groupSavings),
                         valueColor: AppColors.teal800,
                       ),
@@ -85,7 +96,7 @@ class _FundsScreenState extends State<FundsScreen> with AutoRefreshOnPop {
                     const SizedBox(width: AppSpace.x12),
                     Expanded(
                       child: HxStat(
-                        label: 'Share fund',
+                        label: tr('Share fund'),
                         value: state.money(state.groupShares),
                         valueColor: AppColors.info,
                       ),
@@ -97,7 +108,7 @@ class _FundsScreenState extends State<FundsScreen> with AutoRefreshOnPop {
                   children: [
                     Expanded(
                       child: HxStat(
-                        label: 'Social Fund',
+                        label: tr('Social Fund'),
                         value: state.money(state.groupSocialFund),
                         valueColor: AppColors.gold500,
                       ),
@@ -105,13 +116,23 @@ class _FundsScreenState extends State<FundsScreen> with AutoRefreshOnPop {
                     const SizedBox(width: AppSpace.x12),
                     Expanded(
                       child: HxStat(
-                        label: 'Loan fund out',
+                        label: tr('Loan fund out'),
                         value: state.money(state.groupLoansOut),
                         valueColor: AppColors.danger,
                       ),
                     ),
                   ],
                 ),
+                if (state.can('finance.write')) ...[
+                  const SizedBox(height: AppSpace.x16),
+                  HxButton(
+                    key: const ValueKey('social-fund-payout'),
+                    text: tr('Social fund payout'),
+                    variant: HxButtonVariant.secondary,
+                    onPressed: () => Navigator.of(context)
+                        .pushNamed(AppRouter.socialFundPayout),
+                  ),
+                ],
                 const SizedBox(height: AppSpace.x24),
                 const HxSectionTitle(title: 'Fund movement this month'),
                 const SizedBox(height: AppSpace.x12),
@@ -151,22 +172,23 @@ class _FundsScreenState extends State<FundsScreen> with AutoRefreshOnPop {
                         icon: Icons.savings_outlined,
                         name: 'Savings',
                         detail:
-                            '${state.money(_sum('contribution'))} in · ${state.money(_sum('withdrawal'))} out',
+                            _inOut(_sum('contribution'),
+                                _sum('withdrawal') + _shareOut('savingsReturned')),
                         color: AppColors.teal800,
                       ),
                       const Divider(height: 1, indent: 56),
                       _FundRow(
                         icon: Icons.pie_chart_outline_rounded,
                         name: 'Shares',
-                        detail: '${state.money(_sum('share'))} in · TZS 0 out',
+                        detail: _inOut(_sum('share'), _shareOut('sharesReturned')),
                         color: AppColors.info,
                       ),
                       const Divider(height: 1, indent: 56),
                       _FundRow(
                         icon: Icons.favorite_outline_rounded,
                         name: 'Social Fund',
-                        detail:
-                            '${state.money(_sum('social_fund'))} in · TZS 0 out',
+                        detail: _inOut(
+                            _sum('social_fund'), _sum('social_fund_payout')),
                         color: AppColors.gold500,
                       ),
                       const Divider(height: 1, indent: 56),
@@ -174,9 +196,22 @@ class _FundsScreenState extends State<FundsScreen> with AutoRefreshOnPop {
                         icon: Icons.request_quote_outlined,
                         name: 'Loan fund',
                         detail:
-                            '${state.money(_sum('loan_repayment'))} in · ${state.money(_sum('loan_disbursement'))} out',
+                            _inOut(_sum('loan_repayment'), _sum('loan_disbursement')),
                         color: AppColors.teal700,
                       ),
+                      if (_sum('share_out') > 0) ...[
+                        const Divider(height: 1, indent: 56),
+                        _FundRow(
+                          key: const ValueKey('fund-share-out'),
+                          icon: Icons.call_split_rounded,
+                          name: 'Share-out',
+                          detail: tr('{0} paid · {1} of it profit', [
+                            state.money(_sum('share_out')),
+                            state.money(_shareOut('profit')),
+                          ]),
+                          color: AppColors.info,
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -242,6 +277,7 @@ class _FundRow extends StatelessWidget {
   final Color color;
 
   const _FundRow({
+    super.key,
     required this.icon,
     required this.name,
     required this.detail,

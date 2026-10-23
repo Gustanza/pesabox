@@ -216,7 +216,7 @@ class _FinesListScreenState extends State<FinesListScreen>
                               _fines[i]['memberId']?.toString(),
                             ),
                             subtitle:
-                                '${_fines[i]['reason']?.toString() ?? ''} · '
+                                '${tr(_fines[i]['reason']?.toString() ?? '')} · '
                                 '${state.money((_fines[i]['amount'] as num?) ?? 0)}',
                             trailing: _statusPill(
                               _fines[i]['status']?.toString() ?? 'pending',

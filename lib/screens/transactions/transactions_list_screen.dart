@@ -67,7 +67,9 @@ class _TransactionsListScreenState extends State<TransactionsListScreen>
             .where((t) =>
                 t['type'] == 'expense' ||
                 t['type'] == 'withdrawal' ||
-                t['type'] == 'social_fund')
+                t['type'] == 'social_fund' ||
+                t['type'] == 'social_fund_payout' ||
+                t['type'] == 'share_out')
             .toList();
     }
     final q = _query.trim().toLowerCase();
@@ -275,6 +277,8 @@ class _TxIcon extends StatelessWidget {
       'share' => AppColors.gold500,
       'social_fund' => AppColors.gold500,
       'expense' || 'withdrawal' => AppColors.ink600,
+      'social_fund_payout' => AppColors.gold500,
+      'share_out' => AppColors.info,
       _ => AppColors.teal800,
     };
     final icon = switch (type) {
@@ -284,6 +288,8 @@ class _TxIcon extends StatelessWidget {
       'social_fund' => Icons.favorite_outline_rounded,
       'expense' => Icons.receipt_long_outlined,
       'withdrawal' => Icons.money_off_rounded,
+      'social_fund_payout' => Icons.volunteer_activism_outlined,
+      'share_out' => Icons.call_split_rounded,
       _ => Icons.savings_outlined,
     };
     return Container(

@@ -8,11 +8,17 @@ import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 
 import '../../i18n/i18n.dart';
+import 'meeting_status.dart';
 
 class StartMeetingScreen extends StatefulWidget {
   const StartMeetingScreen({super.key, this.meetingId = '12'});
 
   final String meetingId;
+
+  /// Route argument from Create Meeting: the user has just scheduled this
+  /// meeting, so the "this is the scheduled meeting, not a new one" note
+  /// would only confuse.
+  static const String justCreated = 'just-created';
 
   @override
   State<StartMeetingScreen> createState() => _StartMeetingScreenState();
@@ -44,12 +50,17 @@ class _StartMeetingScreenState extends State<StartMeetingScreen> {
     try {
       await AppState.I.startMeeting(widget.meetingId);
       if (!mounted) return;
+      // Coming back here later shows "Continue meeting", not "Start".
+      setState(() => _meeting = {...?_meeting, 'status': 'in_progress'});
       Navigator.of(context)
           .pushNamed(AppRouter.attendancePath(widget.meetingId));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(tr(e.toString())), behavior: SnackBarBehavior.floating),
+        SnackBar(
+          content: Text(tr(e.toString())),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     } finally {
       if (mounted) setState(() => _starting = false);
@@ -60,13 +71,16 @@ class _StartMeetingScreenState extends State<StartMeetingScreen> {
   Widget build(BuildContext context) {
     final state = AppState.I;
     final meeting = _meeting;
-    final title = meeting?['title']?.toString().isNotEmpty == true
-        ? meeting!['title'].toString()
-        : 'Meeting #${meeting?['meetingNumber'] ?? widget.meetingId}';
-    final subtitle = meeting != null
-        ? (meeting['location']?.toString().isNotEmpty == true
-            ? meeting['location'].toString()
-            : state.meetingSubtitle(meeting))
+    final title = meetingTitle(meeting, widget.meetingId);
+    final location = meeting?['location']?.toString().trim() ?? '';
+    final when = meeting != null ? state.meetingSubtitle(meeting) : '';
+    final subtitle = [
+      when,
+      if (location.isNotEmpty && location != '_') location,
+    ].where((s) => s.isNotEmpty).join(' · ');
+    final phase = meeting != null ? meetingPhase(meeting) : null;
+    final dateLabel = meeting?['date']?.toString().isNotEmpty == true
+        ? state.shortDate(meeting!['date'])
         : '';
 
     return Scaffold(
@@ -97,7 +111,10 @@ class _StartMeetingScreenState extends State<StartMeetingScreen> {
                   ),
                   child: Text(
                     tr('Meeting not found.'),
-                    style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600),
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: AppColors.ink600,
+                    ),
                   ),
                 )
               else ...[
@@ -139,7 +156,7 @@ class _StartMeetingScreenState extends State<StartMeetingScreen> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              tr(subtitle),
+                              subtitle,
                               style: GoogleFonts.inter(
                                 fontSize: 13,
                                 color: AppColors.ink400,
@@ -148,9 +165,42 @@ class _StartMeetingScreenState extends State<StartMeetingScreen> {
                           ],
                         ),
                       ),
+                      const SizedBox(width: AppSpace.x8),
+                      MeetingStatusPill(meeting: meeting),
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
+                // Says plainly which meeting this is: the quick action opens
+                // the group's next *scheduled* meeting, not a new one.
+                if (ModalRoute.of(context)?.settings.arguments !=
+                    StartMeetingScreen.justCreated)
+                  HxHint(
+                    icon: phase == MeetingPhase.overdue
+                        ? Icons.warning_amber_rounded
+                        : Icons.info_outline_rounded,
+                    background: phase == MeetingPhase.overdue
+                        ? AppColors.gold100
+                        : AppColors.green100,
+                    foreground: phase == MeetingPhase.overdue
+                        ? AppColors.teal900
+                        : AppColors.teal800,
+                    text: [
+                      dateLabel.isEmpty
+                          ? tr(
+                              'You are starting the scheduled {0}. This is not a new meeting.',
+                              [title],
+                            )
+                          : tr(
+                              'You are starting the scheduled {0}, planned for {1}. This is not a new meeting.',
+                              [title, dateLabel],
+                            ),
+                      if (phase == MeetingPhase.overdue)
+                        tr(
+                          "Its date has passed and it was never started. Starting it now records today's activities against it.",
+                        ),
+                    ].join(' '),
+                  ),
                 const SizedBox(height: 16),
                 Container(
                   width: double.infinity,
@@ -161,7 +211,10 @@ class _StartMeetingScreenState extends State<StartMeetingScreen> {
                     border: Border.all(color: AppColors.line),
                   ),
                   child: Text(
-                    tr('Starting this meeting will open the live meeting flow. You will record attendance, contributions, shares, and other member activities for {0}.', [title]),
+                    tr(
+                      'Starting this meeting will open the live meeting flow. You will record attendance, contributions, shares, and other member activities for {0}.',
+                      [title],
+                    ),
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       color: AppColors.ink600,
@@ -171,9 +224,27 @@ class _StartMeetingScreenState extends State<StartMeetingScreen> {
                 ),
                 const SizedBox(height: 32),
                 HxButton(
-                  text: tr('Start meeting'),
+                  text: switch (phase) {
+                    MeetingPhase.completed => tr('Meeting completed'),
+                    MeetingPhase.inProgress => tr('Continue meeting'),
+                    _ => tr('Start meeting'),
+                  },
                   loading: _starting,
-                  onPressed: _starting ? null : _start,
+                  onPressed:
+                      _starting ||
+                          phase == MeetingPhase.completed ||
+                          phase == MeetingPhase.cancelled
+                      ? null
+                      : _start,
+                ),
+                const SizedBox(height: 12),
+                Center(
+                  child: HxLink(
+                    text: tr('Schedule a different meeting instead'),
+                    onPressed: () =>
+                        Navigator.of(context)
+                            .pushReplacementNamed(AppRouter.createMeeting),
+                  ),
                 ),
               ],
               const SizedBox(height: 32),

@@ -7,6 +7,7 @@ import '../../services/route_observer.dart';
 import '../../theme/app_theme.dart';
 import '../../ui/ui.dart';
 import '../../i18n/i18n.dart';
+import 'dob_field.dart';
 
 class MemberDetailsScreen extends StatefulWidget {
   const MemberDetailsScreen({super.key, this.memberId = ''});
@@ -298,6 +299,17 @@ class _ProfileCard extends StatelessWidget {
                     color: AppColors.ink400,
                   ),
                 ),
+                if (dobWithAge(balance['dateOfBirth']) != null) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    tr('Born {0}', [dobWithAge(balance['dateOfBirth'])]),
+                    key: const ValueKey('member-dob'),
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: AppColors.ink400,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

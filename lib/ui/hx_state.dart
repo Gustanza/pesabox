@@ -30,7 +30,10 @@ class HxEmpty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final content = Padding(
+    // Full width in every mode, so it never shrinks to its text and sits
+    // off-centre inside a start-aligned Column or a caller's own card.
+    final content = Container(
+      width: double.infinity,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpace.x24,
         vertical: AppSpace.x32,

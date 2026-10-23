@@ -8,6 +8,7 @@ import '../../theme/app_theme.dart';
 import '../../ui/ui.dart';
 
 import '../../i18n/i18n.dart';
+import 'meeting_status.dart';
 
 class MeetingDetailsScreen extends StatefulWidget {
   const MeetingDetailsScreen({super.key, this.meetingId = '12'});
@@ -56,18 +57,14 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen>
       _meeting = results[0] as Map<String, dynamic>?;
       _attendance = results[1] as List<Map<String, dynamic>>;
       _txns = (results[2] as List<Map<String, dynamic>>)
-          .where((t) => t['meetingId'] == widget.meetingId)
+          .where((t) => t['meetingId'] == widget.meetingId && t['reversed'] != true)
           .toList();
       _memberCount = (results[3] as List<Map<String, dynamic>>).length;
       _loading = false;
     });
   }
 
-  String get _title {
-    final m = _meeting;
-    if (m?['title']?.toString().isNotEmpty == true) return m!['title'].toString();
-    return tr('Meeting #{0}', [m?['meetingNumber'] ?? widget.meetingId]);
-  }
+  String get _title => meetingTitle(_meeting, widget.meetingId);
 
   double _sumType(String type) => _txns
       .where((t) => t['type'] == type)
@@ -111,6 +108,11 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen>
                   message: 'This meeting may have been deleted.',
                 )
               else ...[
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: MeetingStatusPill(meeting: meeting),
+                ),
+                const SizedBox(height: AppSpace.x12),
                 Row(
                   children: [
                     Expanded(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../i18n/i18n.dart';
+import '../meetings/close_cycle_screen.dart' show currentCycle;
 import '../../services/app_data.dart';
 import '../../services/report_data.dart';
 import '../../services/report_service.dart';
@@ -138,7 +139,7 @@ class _GroupStatementScreenState extends State<GroupStatementScreen>
   Widget build(BuildContext context) {
     final app = AppState.I;
     final group = _group ?? app.group;
-    final cycle = (group?['cycleCurrent'] as num?)?.toInt();
+    final int? cycle = group == null ? null : currentCycle(group);
     final cycleTotal = (group?['cycleTotal'] as num?)?.toInt();
     final held = cycleTotal != null && cycleTotal > 0
         ? '$_meetingsHeld / $cycleTotal'

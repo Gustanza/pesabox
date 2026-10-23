@@ -9,6 +9,7 @@ import 'graphql_client.dart';
 import 'report_data.dart' show loanBalance;
 import '../i18n/i18n.dart';
 import '../brand.dart';
+import '../screens/meetings/meeting_status.dart' show pickNextMeeting;
 
 /// Application-wide state: auth session + cached group data fetched from the
 /// Go backend. Screens read from here instead of the hardcoded mock file.
@@ -88,10 +89,28 @@ class AppState {
     String accessToken,
     String? refreshTokenValue,
   ) async {
+    // A new login may be another person / group: never show the previous
+    // account's cached lists.
+    if (user?['id'] != loggedInUser['id']) clearCachedData();
     token = accessToken;
     refreshToken = refreshTokenValue;
     user = loggedInUser;
     await _persist();
+  }
+
+  /// Forgets every cached list of group data (members, money, meetings, ...)
+  /// so the next screen fetches the current account's group afresh.
+  void clearCachedData() {
+    members = [];
+    meetings = [];
+    transactions = [];
+    loans = [];
+    _loansLoaded = false;
+    fines = [];
+    announcements = [];
+    smsActivity = [];
+    memberBalances = [];
+    govLoans = [];
   }
 
   Future<void> _persist() async {
@@ -193,6 +212,7 @@ class AppState {
     group = null;
     groupPosition = '';
     groupPermissions = {};
+    clearCachedData();
     await _persist();
   }
 
@@ -284,6 +304,14 @@ class AppState {
       if (throwOnError) rethrow;
       return group != null;
     } catch (e) {
+      // An invalid token gets a 307 with no Location header, which the http
+      // client reports as a ClientException: the session is dead.
+      if (e is http.ClientException &&
+          e.message.contains('no Location header for redirect')) {
+        await _clearLocalSession();
+        if (throwOnError) rethrow;
+        return false;
+      }
       // Keep whatever was cached; don't flip an assigned group back to
       // "awaiting" just because a single request failed.
       debugPrint('checkGroupAssignment failed: $e');
@@ -311,6 +339,7 @@ class AppState {
     group = null;
     groupPosition = '';
     groupPermissions = {};
+    clearCachedData();
     await _persist();
   }
 
@@ -552,6 +581,7 @@ class AppState {
     required String phone,
     required String gender,
     String? memberNumber,
+    String? dateOfBirth, // YYYY-MM-DD, optional
   }) async {
     final groupId = group?['id'] as String?;
     if (groupId == null) {
@@ -565,6 +595,8 @@ class AppState {
       'gender': gender,
       if (memberNumber != null && memberNumber.isNotEmpty)
         'memberNumber': memberNumber,
+      if (dateOfBirth != null && dateOfBirth.isNotEmpty)
+        'dateOfBirth': dateOfBirth,
     });
     members = [...members, created];
   }
@@ -583,6 +615,7 @@ class AppState {
     String? gender,
     String? memberNumber,
     String? status,
+    String? dateOfBirth, // YYYY-MM-DD; '' clears it
   }) async {
     final changes = {
       if (firstName != null) 'firstName': firstName,
@@ -591,6 +624,7 @@ class AppState {
       if (gender != null) 'gender': gender,
       if (memberNumber != null) 'memberNumber': memberNumber,
       if (status != null) 'status': status,
+      'dateOfBirth': ?dateOfBirth,
     };
     await _restPost('/api/main/members/$memberId', changes);
     final i = members.indexWhere((m) => m['id'] == memberId);
@@ -631,10 +665,13 @@ class AppState {
     final decoded = jsonDecode(res.body);
     final data =
         decoded is Map ? Map<String, dynamic>.from(decoded) : <String, dynamic>{};
-    if (res.statusCode >= 400) {
+    // 3xx too: the auth middleware answers an invalid token with a 307
+    // JSON body ({"error": "Access token invalid"}), not a 4xx.
+    if (res.statusCode >= 300) {
+      // Server messages are English; known ones have a Swahili entry.
       throw GraphQLException(
-        (data['error'] as String?) ??
-            tr('Request failed ({0})', [res.statusCode]),
+        tr((data['error'] as String?) ??
+            tr('Request failed ({0})', [res.statusCode])),
       );
     }
     return data;
@@ -874,12 +911,17 @@ class AppState {
     required double amount,
     String? meetingId,
     String method = 'Cash',
+    String? purpose, // business / agriculture / … (optional)
+    String? enterpriseType, // optional, for business/agriculture/livestock
   }) async {
     final created = await _restPost('/api/main/loans', {
       'memberId': memberId,
       'amount': amount,
       if (meetingId != null && meetingId.isNotEmpty) 'meetingId': meetingId,
       'method': method,
+      if (purpose != null && purpose.isNotEmpty) 'purpose': purpose,
+      if (enterpriseType != null && enterpriseType.isNotEmpty)
+        'enterpriseType': enterpriseType,
     });
     loans = [created, ...loans];
     return created;
@@ -1017,7 +1059,9 @@ class AppState {
     }
 
     final decoded = jsonDecode(res.body);
-    if (res.statusCode >= 400) {
+    // 3xx too: the auth middleware answers an invalid token with a 307
+    // JSON body ({"error": "Access token invalid"}), not a 4xx.
+    if (res.statusCode >= 300) {
       final message = (decoded is Map ? decoded['error'] as String? : null) ??
           tr('Request failed ({0})', [res.statusCode]);
       throw GraphQLException(message);
@@ -1037,11 +1081,13 @@ class AppState {
     if (res.statusCode == 401 && !retrying && await refreshSession()) {
       return _restDelete(path, retrying: true);
     }
-    if (res.statusCode >= 400) {
+    // 3xx too: the auth middleware answers an invalid token with a 307
+    // JSON body ({"error": "Access token invalid"}), not a 4xx.
+    if (res.statusCode >= 300) {
       final decoded = jsonDecode(res.body);
       throw GraphQLException(
-        (decoded is Map ? decoded['error'] as String? : null) ??
-            tr('Request failed ({0})', [res.statusCode]),
+        tr((decoded is Map ? decoded['error'] as String? : null) ??
+            tr('Request failed ({0})', [res.statusCode])),
       );
     }
   }
@@ -1145,6 +1191,54 @@ class AppState {
     ]);
   }
 
+  // ---------------------------------------------------------------------------
+  // Money paid out that is not a loan (server/payouts.go). Both are ordinary
+  // transactions, undone with [reverseTransaction] like any other.
+  // ---------------------------------------------------------------------------
+
+  /// Pays [amount] out of the social fund — to a member in need, or to a
+  /// group cause when [memberId] is null. Needs finance.write.
+  Future<Map<String, dynamic>> socialFundPayout({
+    required double amount,
+    required String reason,
+    String? memberId,
+    String? meetingId,
+    String method = 'Cash',
+  }) async {
+    final created = await _restPost('/api/main/social-fund/payout', {
+      'amount': amount,
+      'reason': reason,
+      if (memberId != null && memberId.isNotEmpty) 'memberId': memberId,
+      if (meetingId != null && meetingId.isNotEmpty) 'meetingId': meetingId,
+      'method': method,
+    });
+    await Future.wait([
+      fetchTransactions(refresh: true),
+      checkGroupAssignment(refresh: true),
+    ]);
+    return created;
+  }
+
+  /// End-of-cycle share-out: one payment per member ({memberId, amount}).
+  /// [closeCycle] also moves the group to its next cycle (group.settings).
+  Future<Map<String, dynamic>> shareOut({
+    required List<Map<String, dynamic>> payouts,
+    bool closeCycle = false,
+    String method = 'Cash',
+  }) async {
+    final result = await _restPost('/api/main/share-out', {
+      'payouts': payouts,
+      'method': method,
+      if (closeCycle) 'closeCycle': true,
+    });
+    await Future.wait([
+      fetchTransactions(refresh: true),
+      fetchMemberBalances(refresh: true),
+      checkGroupAssignment(refresh: true),
+    ]);
+    return result;
+  }
+
   Future<List<Map<String, dynamic>>> _list(String path) async {
     final raw = await _restGet('/api/main$path');
     final list = raw is List ? raw : const [];
@@ -1157,12 +1251,9 @@ class AppState {
   // Derived helpers
   // ---------------------------------------------------------------------------
 
-  Map<String, dynamic>? get nextMeeting {
-    for (final m in meetings) {
-      if (m['status'] == 'upcoming') return m;
-    }
-    return meetings.isEmpty ? null : meetings.first;
-  }
+  /// The meeting the dashboard offers next: the one in progress, else the
+  /// earliest scheduled one, else null (a closed meeting is never offered).
+  Map<String, dynamic>? get nextMeeting => pickNextMeeting(meetings);
 
   int get meetingsHeld =>
       meetings.where((m) => m['status'] == 'completed').length;
@@ -1179,7 +1270,7 @@ class AppState {
     if (parts.length != 3) return s;
     final month = int.tryParse(parts[1]) ?? 0;
     final monthName =
-        (month >= 1 && month <= 12) ? _months[month] : parts[1];
+        (month >= 1 && month <= 12) ? tr(_months[month]) : parts[1];
     return '${parts[2]} $monthName ${parts[0]}';
   }
 
@@ -1190,7 +1281,7 @@ class AppState {
   String isoDate(Object? value) {
     final dt = DateTime.tryParse(value?.toString() ?? '');
     if (dt == null) return value?.toString() ?? '';
-    return '${dt.day} ${_months[dt.month]} ${dt.year}';
+    return '${dt.day} ${tr(_months[dt.month])} ${dt.year}';
   }
 
   /// Same as [isoDate] but with a local time-of-day suffix:
@@ -1203,7 +1294,7 @@ class AppState {
     final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
     final minute = local.minute.toString().padLeft(2, '0');
     final period = hour24 < 12 ? 'AM' : 'PM';
-    return '${local.day} ${_months[local.month]} ${local.year} · '
+    return '${local.day} ${tr(_months[local.month])} ${local.year} · '
         '$hour12:$minute $period';
   }
 
@@ -1270,6 +1361,10 @@ class AppState {
         return tr('Group expense');
       case 'withdrawal':
         return tr('Withdrawal');
+      case 'social_fund_payout':
+        return tr('Social fund payout');
+      case 'share_out':
+        return tr('Share-out');
       default:
         return type.isEmpty ? tr('Transaction') : type;
     }

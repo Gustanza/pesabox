@@ -10,6 +10,7 @@ import '../../ui/ui.dart';
 import '../auth/auth_widgets.dart';
 
 import '../../i18n/i18n.dart';
+import 'loan_purpose.dart';
 
 class LoanDetailsScreen extends StatefulWidget {
   const LoanDetailsScreen({super.key, this.loanId = 'l3'});
@@ -225,6 +226,15 @@ class _KeyValueCard extends StatelessWidget {
     final totalDue = loanTotalDue(loan);
     final outstanding = loanBalance(loan);
     final active = loan['status'] == 'active';
+    final cancelled = loan['status'] == 'cancelled';
+    // The loan's own term (fixed at issue: dueDate − issuedDate), falling
+    // back to the group's current rule for loans without dates.
+    final issued = DateTime.tryParse(loan['issuedDate']?.toString() ?? '');
+    final due = DateTime.tryParse(loan['dueDate']?.toString() ?? '');
+    final months = issued != null && due != null
+        ? (due.year - issued.year) * 12 + due.month - issued.month
+        : state.maxLoanPeriodMonths;
+    final enterprise = loan['enterpriseType']?.toString().trim() ?? '';
 
     return Container(
       width: double.infinity,
@@ -249,7 +259,22 @@ class _KeyValueCard extends StatelessWidget {
           const Divider(height: 24),
           _KVRow(label: tr('Total to repay'), value: loan['status'] == 'cancelled' ? '—' : state.money(totalDue)),
           const Divider(height: 24),
-          _KVRow(label: tr('Duration'), value: '${state.maxLoanPeriodMonths} months'),
+          _KVRow(label: tr('Duration'), value: tr('{0} months', [months])),
+          const Divider(height: 24),
+          _KVRow(
+            key: const ValueKey('loan-purpose'),
+            label: tr('Purpose'),
+            value: loanPurposeLabel(loan['purpose']),
+          ),
+          if (enterprise.isNotEmpty ||
+              purposeNeedsEnterprise(loan['purpose']?.toString())) ...[
+            const Divider(height: 24),
+            _KVRow(
+              key: const ValueKey('loan-enterprise'),
+              label: tr('Enterprise type'),
+              value: enterprise.isEmpty ? tr('Not specified') : enterprise,
+            ),
+          ],
           const Divider(height: 24),
           _KVRow(
             label: tr('Disbursed'),
@@ -267,12 +292,28 @@ class _KeyValueCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: active ? AppColors.green100 : AppColors.line,
+                  color: active
+                      ? AppColors.green100
+                      : cancelled
+                          ? AppColors.danger100
+                          : AppColors.line,
                   borderRadius: AppRadius.sm,
                 ),
                 child: Text(
-                  active ? tr('Active') : tr('Repaid'),
-                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: active ? AppColors.teal800 : AppColors.ink600),
+                  active
+                      ? tr('Active')
+                      : cancelled
+                          ? tr('Cancelled')
+                          : tr('Repaid'),
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: active
+                        ? AppColors.teal800
+                        : cancelled
+                            ? AppColors.danger
+                            : AppColors.ink600,
+                  ),
                 ),
               ),
             ],
@@ -287,15 +328,23 @@ class _KVRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _KVRow({required this.label, required this.value});
+  const _KVRow({super.key, required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(tr(label), style: GoogleFonts.inter(fontSize: 13, color: AppColors.ink600)),
-        Text(tr(value), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink900)),
+        const SizedBox(width: 12),
+        Flexible(
+          child: Text(
+            tr(value),
+            textAlign: TextAlign.end,
+            style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink900),
+          ),
+        ),
       ],
     );
   }

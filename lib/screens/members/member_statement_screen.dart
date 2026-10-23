@@ -290,6 +290,9 @@ class _TypeIcon extends StatelessWidget {
       'loan_repayment' => (AppColors.teal700, Icons.replay_outlined),
       'fine' => (AppColors.danger, Icons.gavel_outlined),
       'social_fund' => (AppColors.gold500, Icons.people_outline),
+      'social_fund_payout' =>
+        (AppColors.gold500, Icons.volunteer_activism_outlined),
+      'share_out' => (AppColors.info, Icons.call_split_rounded),
       _ => (AppColors.ink400, Icons.receipt_long_outlined),
     };
     return Container(
